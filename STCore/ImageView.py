@@ -7,44 +7,37 @@ import matplotlib.backends.tkagg as tkagg
 from matplotlib.widgets import Slider
 import Tkinter as tk
 import ttk
+from STCore.item.itemStar import ItemStar
+import STCore.SetStar
 
 def ImageClick(event):
-	print event.x, event.y
-	canvas.create_circle(event.x, event.y, 24, outline = "white")
 
-def Create_circle(self,x, y, r, **kwargs):
-    return self.create_oval(x-r, y-r, x+r, y+r, **kwargs)
-tk.Canvas.create_circle = Create_circle
+	print maxval
+	STCore.SetStar.CreateWindow(app, dat, maxval, (int(event.ydata), int(event.xdata)), stars, UpdateStarList)
+	print stars
+	print event.xdata, event.ydata, dat[int(event.ydata), int(event.xdata)]
 
 def UpdateImage(val):
+	global maxval
 	maxval = float(val);
 	im.norm.vmax = maxval
 	fig.canvas.draw_idle()
-	figImage = DisplayImage(canvas, fig)
+	pltCanvas.draw_idle()
 	if "_bLb" in globals():
 		_bLb.config(text = "Brillo maximo: "+str(int(maxval)))
-
-def DisplayImage(canvas, figure):
-	pltCanvas.draw()
-	figure_x, figure_y, figure_w, figure_h = figure.bbox.bounds
-	figure_w, figure_h = int(figure_w), int(figure_h)
-	canvas.itemconfig(canvasImage, image = figImage)
-	tkagg.blit(figImage, pltCanvas.get_renderer()._renderer, colormode=2)
 
 def CreateCanvas(app, ImageClick):
 	viewer = tk.Frame(app, width = 700, height = 400, bg = "white")
 	viewer.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)	
-	canvas = tk.Canvas(viewer, width=700, height=400, borderwidth=0, highlightthickness=0, bg="white")
-	canvas.bind("<Button-1>", ImageClick)
-	canvas.pack(anchor = tk.W, expand = True, fill = tk.BOTH)
-	
-	figImage = tk.PhotoImage(master=canvas, width=700, height=400)
+
 	fig = matplotlib.figure.Figure(figsize = (7,4), dpi = 100)
 	ax = fig.add_subplot(111)
 	im = ax.imshow(dat,vmin = 1000, vmax = numpy.max(dat), cmap="gray")
-	pltCanvas = FigureCanvasTkAgg(fig,master=app)
-	canvasImage = canvas.create_image(700/2, 400/2, tag = "Image")
-	return canvas, canvasImage, fig, figImage, im, pltCanvas, viewer
+	pltCanvas = FigureCanvasTkAgg(fig,master=viewer)
+	pltCanvas.draw()
+	pltCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+	pltCanvas.mpl_connect('button_press_event',ImageClick)
+	return pltCanvas, fig, im, viewer
 
 def CreateSlider(UpdateImage):
 	s = ttk.Scale(viewer, from_=numpy.min(dat), to=numpy.max(dat), orient=tk.HORIZONTAL, command = UpdateImage)
@@ -58,20 +51,31 @@ def CreateSidebar(app):
 	_l = ttk.Label(text="Opciones de analisis")
 	sidebar = tk.LabelFrame(app, relief=tk.RIDGE, width = 400, height = 400, labelwidget = _l)
 	sidebar.pack(side = tk.RIGHT, expand = True, fill = tk.BOTH, anchor = tk.NE)
-	
+
+	starFrame = tk.LabelFrame(sidebar)
+	starFrame.pack()
+	for s in stars:
+		tk.Label(starFrame, text = s.name).pack()
 	ttk.Button(sidebar, text = "Agregar estrella").pack()
-	return sidebar
+	return sidebar, starFrame
+
+def UpdateStarList():
+	global starFrame
+	for child in starFrame.winfo_children():
+		child.destroy()
+	for s in stars:
+		tk.Label(starFrame, text = s.name).pack()
 
 #Main Body
 app = tk.Tk()
+app.wm_title(string = "StarTrak v1.0.0")
 tk.Label(text="Visor de Imagen").pack()
 dat = fits.getdata("AEFor/aefor3.fit")
-
-canvas, canvasImage, fig, figImage, im, pltCanvas, viewer = CreateCanvas(app, ImageClick)
-
-DisplayImage(canvas, fig)
+maxval = numpy.max(dat)
+stars = []
+pltCanvas, fig, im, viewer = CreateCanvas(app, ImageClick)
 _bSld, _bLb = CreateSlider(UpdateImage)
-CreateSidebar(app)
+sidebar, starFrame = CreateSidebar(app)
 
 
 app.mainloop()

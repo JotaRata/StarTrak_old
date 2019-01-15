@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{bf5a8c2e-0a6e-4ee6-995c-ba067480051b}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>ImageView.py</StartupFile>
+    <StartupFile>STCore\ImageView.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -19,10 +19,26 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ImageView.py" />
+    <Compile Include="STCore\item\itemStar.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="STCore\item\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="STCore\ImageView.py" />
+    <Compile Include="STCore\SetStar.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="STCore\__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|2.7" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="C:\Users\Jota\Documents\StarTrak\STCore\" />
+    <Folder Include="STCore\" />
+    <Folder Include="C:\Users\Jota\Documents\StarTrak\STCore\item\" />
+    <Folder Include="STCore\item\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>
