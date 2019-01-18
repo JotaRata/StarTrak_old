@@ -7,7 +7,7 @@ from STCore.item.itemStar import ItemStar
 #import STCore.ImageView
 
 #Star index = -1 para NUEVAS estrellas, > 0 para extrellas existentes
-def CreateWindow(root, data, brightness, stars, updF, starIndex = -1,stName = "Nueva Estrella", stLoc = (20, 20), stRad = 20, stType = 0):
+def CreateWindow(root, data, brightness, stars, OnStarChange, starIndex = -1,stName = "Nueva Estrella", stLoc = (20, 20), stRad = 20, stType = 0):
 	win = tk.Toplevel()
 	win.wm_title(string = "Configurar Estrella")
 	leftPanel = tk.Frame(win)
@@ -57,7 +57,7 @@ def CreateWindow(root, data, brightness, stars, updF, starIndex = -1,stName = "N
 	xloc.trace("w",cmd)
 	yloc.trace("w",cmd)
 	radius.trace("w",cmd)
-	applycmd = lambda: Apply(win, sName.get(),(int(yloc.get()), int(xloc.get())), int(radius.get()), typeSelection.get(), stars, updF, starIndex)
+	applycmd = lambda: Apply(win, sName.get(),(int(yloc.get()), int(xloc.get())), int(radius.get()), typeSelection.get(), stars, OnStarChange, starIndex)
 	
 	controlButtons = tk.Frame(rightPanel)
 	controlButtons.grid(row =3)
@@ -80,7 +80,7 @@ def UpdateCanvas(data, im, stLoc, radius, pltCanvas, brightLabel):
 	brightLabel.config(text = "Maximo brillo: "+str(int(numpy.max(crop))))
 	pltCanvas.draw()
 
-def Apply(window, stName, stLoc, stRad, stType, stars, updF, starIndex):
+def Apply(window, stName, stLoc, stRad, stType, stars, OnStarChange, starIndex):
 
 	st = ItemStar()
 	st.name = stName
@@ -91,5 +91,5 @@ def Apply(window, stName, stLoc, stRad, stType, stars, updF, starIndex):
 		stars.append(st)
 	else:
 		stars[starIndex] = st
-	updF()
+	OnStarChange()
 	window.destroy()
