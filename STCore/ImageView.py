@@ -10,7 +10,7 @@ import ttk
 from STCore.item.itemStar import ItemStar
 import STCore.SetStar
 import STCore.utils.backgroundEstimator
-
+import STCore.Tracker
 #region Messages and Events
 
 def OnImageClick(event):
@@ -82,7 +82,7 @@ def CreateCanvas(app, ImageClick):
 
 	fig = matplotlib.figure.Figure(figsize = (7,4), dpi = 100)
 	ax = fig.add_subplot(111)
-	im = ax.imshow(dat,vmin = 1000, vmax = numpy.max(dat), cmap="gray")
+	im = ax.imshow(dat, vmin = numpy.min(dat), vmax = numpy.max(dat), cmap="gray")
 	pltCanvas = FigureCanvasTkAgg(fig,master=viewer)
 	pltCanvas.draw()
 	pltCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
@@ -106,8 +106,11 @@ def CreateSidebar(app):
 	starFrame.pack(expand = 1, fill = tk.X, anchor = tk.NW)
 	loc = (int(dat.shape[0] * 0.5), int (dat.shape[1] * 0.5))
 	cmd = lambda : 	STCore.SetStar.CreateWindow(app, dat, maxval, stars, OnStarChange, stLoc = loc)
+	cmdTrack = lambda : STCore.Tracker.Track(fits.getdata("AEFor/aefor6.fit"), stars, 4000)
 
-	ttk.Button(sidebar, text = "Agregar estrella", command = cmd).pack()
+	ttk.Button(sidebar, text = "Agregar estrella", command = cmd).pack(side = tk.LEFT)
+	ttk.Button(sidebar, text = "Analiar", command = cmdTrack).pack(side = tk.RIGHT)
+
 	return sidebar, starFrame
 #endregion
 
@@ -116,7 +119,7 @@ def CreateSidebar(app):
 app = tk.Tk()
 app.wm_title(string = "StarTrak v1.0.0")
 tk.Label(text="Visor de Imagen").pack()
-dat = fits.getdata("AEFor/aefor3.fit")
+dat =  fits.getdata("AEFor/aefor3.fit")
 maxval = numpy.max(dat)
 stars = []
 pltCanvas, fig, im, viewer, ax = CreateCanvas(app, OnImageClick)

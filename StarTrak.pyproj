@@ -30,6 +30,9 @@
     <Compile Include="STCore\SetStar.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="STCore\Tracker.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="STCore\utils\backgroundEstimator.py" />
     <Compile Include="STCore\utils\__init__.py" />
     <Compile Include="STCore\__init__.py" />

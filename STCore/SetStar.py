@@ -57,7 +57,10 @@ def CreateWindow(root, data, brightness, stars, OnStarChange, starIndex = -1,stN
 	xloc.trace("w",cmd)
 	yloc.trace("w",cmd)
 	radius.trace("w",cmd)
-	applycmd = lambda: Apply(win, sName.get(),(int(yloc.get()), int(xloc.get())), int(radius.get()), typeSelection.get(), stars, OnStarChange, starIndex)
+	
+	applycmd = lambda: Apply(win, sName.get(),(int(yloc.get()), int(xloc.get())), int(radius.get())
+						  , typeSelection.get(), numpy.max(data[int(yloc.get())-int(radius.get()) : int(yloc.get())+int(radius.get()),int(xloc.get())-int(radius.get()) : int(xloc.get())+int(radius.get())]),
+						 stars, OnStarChange, starIndex)
 	
 	controlButtons = tk.Frame(rightPanel)
 	controlButtons.grid(row =3)
@@ -80,13 +83,14 @@ def UpdateCanvas(data, im, stLoc, radius, pltCanvas, brightLabel):
 	brightLabel.config(text = "Maximo brillo: "+str(int(numpy.max(crop))))
 	pltCanvas.draw()
 
-def Apply(window, stName, stLoc, stRad, stType, stars, OnStarChange, starIndex):
+def Apply(window, stName, stLoc, stRad, stType, sval, stars, OnStarChange, starIndex):
 
 	st = ItemStar()
 	st.name = stName
 	st.type = stType
 	st.location = stLoc
 	st.radius = stRad
+	st.value = sval
 	if starIndex == -1:
 		stars.append(st)
 	else:
