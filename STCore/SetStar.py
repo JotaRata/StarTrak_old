@@ -7,22 +7,22 @@ from STCore.item.itemStar import ItemStar
 #import STCore.ImageView
 
 #Star index = -1 para NUEVAS estrellas, > 0 para extrellas existentes
-def CreateWindow(root, data, brightness, stars, OnStarChange, starIndex = -1,stName = "Nueva Estrella", stLoc = (20, 20), stRad = 20, stType = 0):
-	win = tk.Toplevel()
-	win.wm_title(string = "Configurar Estrella")
-	leftPanel = tk.Frame(win)
+def CreateWindow(Root, Data, Brightness, Stars, OnStarChange, starIndex = -1,stName = "Nueva Estrella", stLoc = (20, 20), stRad = 20, stType = 0):
+	Win = tk.Toplevel()
+	Win.wm_title(string = "Configurar Estrella")
+	leftPanel = tk.Frame(Win)
 	leftPanel.grid(row = 0,column = 0, sticky=tk.NS)
-	rightPanel = tk.Frame(win)
+	rightPanel = tk.Frame(Win)
 	rightPanel.grid(row=0,column = 1, sticky=tk.NS, padx = 20)
 
 	nameFrame = tk.Frame(leftPanel)
 	nameFrame.grid(row = 0, column = 0, sticky = tk.W)
 	tk.Label(nameFrame, text = "Nombre de la estrella: ").grid(row = 0, column = 0, sticky = tk.W)
-	sName = tk.StringVar(win, value = stName)
+	sName = tk.StringVar(Win, value = stName)
 	nameEntry = ttk.Entry(nameFrame, textvariable = sName)
 	nameEntry.grid (row =0,column = 1, sticky = tk.EW)
 	
-	typeSelection = tk.IntVar(win, value = stType)
+	typeSelection = tk.IntVar(Win, value = stType)
 	typeFrame = tk.LabelFrame(leftPanel,text = "Tipo de Estrella")
 	typeFrame.grid(row = 1, column = 0, columnspan = 1, sticky = tk.W + tk.E)
 	ttk.Radiobutton(typeFrame, text = "Variable", variable = typeSelection, value = 0).grid(row = 0, sticky = tk.W)
@@ -30,7 +30,7 @@ def CreateWindow(root, data, brightness, stars, OnStarChange, starIndex = -1,stN
 	
 	viewer = tk.LabelFrame(rightPanel,text = "Vista previa")
 	viewer.grid(row = 0, column = 0, rowspan=2, sticky = tk.NSEW)
-	fig, im = DrawCanvas(rightPanel, stLoc, stRad, data, brightness)
+	fig, im = DrawCanvas(rightPanel, stLoc, stRad, Data, Brightness)
 	pltCanvas = FigureCanvasTkAgg(fig,master=viewer)
 	pltCanvas.draw()
 	pltCanvas.get_tk_widget().grid(sticky = tk.NSEW)
@@ -44,10 +44,10 @@ def CreateWindow(root, data, brightness, stars, OnStarChange, starIndex = -1,stN
 	_bLb.grid(row = 5, column = 2, sticky = tk.EW)
 
 	tk.Label(locFrame, text = "Posicion:").grid(row = 3, column = 2, sticky = tk.W)
-	cmd = lambda a,b,c : UpdateCanvas(data, im,(int(yloc.get()), int(xloc.get())), int(radius.get()),pltCanvas, _bLb)
-	_xSp = tk.Spinbox(locFrame, from_ = 0, to = data.shape[1], textvariable = xloc, width = 10)
-	_ySp = tk.Spinbox(locFrame, from_ = 0, to = data.shape[0], textvariable = yloc, width = 10)
-	_rad = tk.Spinbox(locFrame, from_ = 0, to = min(data.shape), textvariable = radius, width = 10)
+	cmd = lambda a,b,c : UpdateCanvas(Data, im,(int(yloc.get()), int(xloc.get())), int(radius.get()),pltCanvas, _bLb)
+	_xSp = tk.Spinbox(locFrame, from_ = 0, to = Data.shape[1], textvariable = xloc, width = 10)
+	_ySp = tk.Spinbox(locFrame, from_ = 0, to = Data.shape[0], textvariable = yloc, width = 10)
+	_rad = tk.Spinbox(locFrame, from_ = 0, to = min(Data.shape), textvariable = radius, width = 10)
 
 	_xSp.grid(row = 3, column = 3)
 	_ySp.grid(row = 3, column = 4, padx = 20)
@@ -58,14 +58,14 @@ def CreateWindow(root, data, brightness, stars, OnStarChange, starIndex = -1,stN
 	yloc.trace("w",cmd)
 	radius.trace("w",cmd)
 	
-	applycmd = lambda: Apply(win, sName.get(),(int(yloc.get()), int(xloc.get())), int(radius.get())
-						  , typeSelection.get(), numpy.max(data[int(yloc.get())-int(radius.get()) : int(yloc.get())+int(radius.get()),int(xloc.get())-int(radius.get()) : int(xloc.get())+int(radius.get())]),
-						 stars, OnStarChange, starIndex)
+	applycmd = lambda: Apply(Win, sName.get(),(int(yloc.get()), int(xloc.get())), int(radius.get())
+						  , typeSelection.get(), numpy.max(Data[int(yloc.get())-int(radius.get()) : int(yloc.get())+int(radius.get()),int(xloc.get())-int(radius.get()) : int(xloc.get())+int(radius.get())]),
+						 Stars, OnStarChange, starIndex)
 	
 	controlButtons = tk.Frame(rightPanel)
 	controlButtons.grid(row =3)
 	ttk.Button(controlButtons, text = "Aceptar", command = applycmd).grid(row = 0, column = 1)
-	ttk.Button(controlButtons, text = "Cancelar", command = win.destroy).grid(row = 0, column = 0)
+	ttk.Button(controlButtons, text = "Cancelar", command = Win.destroy).grid(row = 0, column = 0)
 
 def DrawCanvas(app, stLoc, radius, data, brightness):
 	fig = matplotlib.figure.Figure(figsize = (2,2), dpi = 100)
@@ -77,6 +77,7 @@ def DrawCanvas(app, stLoc, radius, data, brightness):
 	return fig, im
 
 def UpdateCanvas(data, im, stLoc, radius, pltCanvas, brightLabel):
+	radius = numpy.clip(radius, 2, 1000000)
 	loc2 = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[loc2[0]-radius : loc2[0]+radius,loc2[1]-radius : loc2[1]+radius]
 	im.set_array(crop)
