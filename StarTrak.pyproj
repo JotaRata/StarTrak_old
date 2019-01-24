@@ -21,13 +21,19 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="STCore\item\File.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="STCore\item\Track.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="STCore\Main.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="STCore\ImageSelector.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="STCore\item\itemStar.py">
+    <Compile Include="STCore\item\Star.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="STCore\item\__init__.py">

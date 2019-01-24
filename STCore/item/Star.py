@@ -1,5 +1,5 @@
 
-class ItemStar():
+class StarItem():
 	name = "Star"
 	type = 0
 	location = (0,0)

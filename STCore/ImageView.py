@@ -6,15 +6,16 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle
 import Tkinter as tk
 import ttk
-from STCore.item.itemStar import ItemStar
+from STCore.item.Star import StarItem
 from STCore import SetStar, Tracker
+from STCore.utils.backgroundEstimator import GetBackground
 #from STCore.utils import backgroundEstimator
 
 #region Messages and Events
 
 def OnImageClick(event):
 	loc = (int(event.ydata), int(event.xdata))
-	SetStar.CreateWindow(Window, Data, Brightness, Stars, OnStarChange, stLoc = loc)
+	SetStar.CreateWindow(ViewerFrame, Data, Brightness, Stars, OnStarChange, stLoc = loc)
 
 def OnStarChange():
 	UpdateStarList()
@@ -40,7 +41,7 @@ def UpdateStarList():
 #Las funciones lambda no se pueden llamar dentro de un loop for o while,
 ## para eso hay que crear una funcion que retorne un lambda
 def __helperCreateWindow(index, stName, stLoc, stRad, stType):
-	return lambda: STCore.SetStar.CreateWindow(Window, Data, Brightness, Stars, OnStarChange, index, stName, stLoc, stRad, stType)
+	return lambda: SetStar.CreateWindow(ViewerFrame, Data, Brightness, Stars, OnStarChange, index, stName, stLoc, stRad, stType)
 def __helperPop (list, index):
 	return lambda: (list.pop(index), OnStarChange())
 
@@ -91,8 +92,8 @@ def CreateSlider(UpdateImage):
 	l = tk.Label(ImageFrame, text = "Brillo maximo: "+str(max(Data)))
 	l.pack(fill = tk.X, anchor = tk.S, side = tk.BOTTOM)
 	return l
-
-def CreateSidebar(app):
+def CreateSidebar(app, root, items):
+	import STCore.ImageSelector
 	_l = ttk.Label(text="Opciones de analisis")
 	sidebar = tk.LabelFrame(app, relief=tk.RIDGE, width = 400, height = 400, labelwidget = _l)
 	sidebar.pack(side = tk.RIGHT, expand = True, fill = tk.BOTH, anchor = tk.NE)
@@ -100,17 +101,20 @@ def CreateSidebar(app):
 	list = tk.Frame(sidebar)
 	list.pack(expand = 1, fill = tk.X, anchor = tk.NW)
 	loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
-	cmd = lambda : 	STCore.SetStar.CreateWindow(app, Data, Brightness, Stars, OnStarChange, stLoc = loc)
-	cmdTrack = lambda : STCore.Tracker.Track(fits.getdata("AEFor/aefor7.fit"), Stars, 4000)
-
-	ttk.Button(sidebar, text = "Agregar estrella", command = cmd).pack(side = tk.LEFT)
+	
+	cmd = lambda : 	(Destroy(), STCore.ImageSelector.Awake(root, []))
+	cmd2 = lambda : 	SetStar.CreateWindow(app, Data, Brightness, Stars, OnStarChange, stLoc = loc)
+	cmdTrack = lambda : (Destroy(), Tracker.Awake(root, Stars, items))
+	#Tracker.Track(fits.getdata("AEFor/aefor7.fit"), Stars, 4000)
+	ttk.Button(sidebar, text = "Volver", command = cmd).pack(side = tk.LEFT)
+	ttk.Button(sidebar, text = "Agregar estrella", command = cmd2).pack(side = tk.LEFT)
 	ttk.Button(sidebar, text = "Analizar", command = cmdTrack).pack(side = tk.RIGHT)
 
 	return sidebar, list
 #endregion
 
 #region Global Variables
-Window = None
+ViewerFrame = None
 Data = None
 Brightness = 0
 Stars = []
@@ -125,21 +129,21 @@ SliderLabel = None
 
 #region Main Body
 
-def Awake(main):
-	global Window, Data, Brightness, Stars, ImageCanvas, Image, ImageFrame, ImageAxis, Sidebar, SidebarList, SliderLabel
+def Awake(root, items):
+	global ViewerFrame, Data, Brightness, Stars, ImageCanvas, Image, ImageFrame, ImageAxis, Sidebar, SidebarList, SliderLabel
 
-	Window = tk.Frame(main)
-	Window.pack( fill = tk.BOTH, expand = 1)
-	tk.Label(Window,text="Visor de Imagen").pack(fill = tk.X)
-	Data =  fits.getdata("AEFor/aefor3.fit")
+	ViewerFrame = tk.Frame(root)
+	ViewerFrame.pack( fill = tk.BOTH, expand = 1)
+	tk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
+	Data =  items[0].data
 	Brightness = max(Data)
 	Stars = []
-	ImageCanvas, Image, ImageFrame, ImageAxis = CreateCanvas(Window, OnImageClick)
+	ImageCanvas, Image, ImageFrame, ImageAxis = CreateCanvas(ViewerFrame, OnImageClick)
 	SliderLabel = CreateSlider(UpdateImage)
-	Sidebar, SidebarList = CreateSidebar(Window)
+	Sidebar, SidebarList = CreateSidebar(ViewerFrame, root, items)
 	OnStarChange()
 
 def Destroy():
-	Window.destroy()
+	ViewerFrame.destroy()
 
 #endregion

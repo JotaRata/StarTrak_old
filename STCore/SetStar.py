@@ -3,7 +3,7 @@ import matplotlib
 import Tkinter as tk
 import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from STCore.item.itemStar import ItemStar
+from STCore.item.Star import StarItem
 #import STCore.ImageView
 
 #Star index = -1 para NUEVAS estrellas, > 0 para extrellas existentes
@@ -59,13 +59,18 @@ def CreateWindow(Root, Data, Brightness, Stars, OnStarChange, starIndex = -1,stN
 	radius.trace("w",cmd)
 	
 	applycmd = lambda: Apply(Win, sName.get(),(int(yloc.get()), int(xloc.get())), int(radius.get())
-						  , typeSelection.get(), numpy.max(Data[int(yloc.get())-int(radius.get()) : int(yloc.get())+int(radius.get()),int(xloc.get())-int(radius.get()) : int(xloc.get())+int(radius.get())]),
+						  , typeSelection.get(),
+						 GetMaxima(Data,int(xloc.get()), int(yloc.get()), int(radius.get())),
 						 Stars, OnStarChange, starIndex)
 	
 	controlButtons = tk.Frame(rightPanel)
 	controlButtons.grid(row =3)
 	ttk.Button(controlButtons, text = "Aceptar", command = applycmd).grid(row = 0, column = 1)
 	ttk.Button(controlButtons, text = "Cancelar", command = Win.destroy).grid(row = 0, column = 0)
+
+def GetMaxima(data, xloc, yloc, radius):
+	vloc = numpy.clip((xloc,yloc), radius, (data.shape[0] - radius, data.shape[1] - radius))
+	return  numpy.max(data[vloc[0]-radius : vloc[0]+radius,vloc[1]-radius : vloc[1]+radius])
 
 def DrawCanvas(app, stLoc, radius, data, brightness):
 	fig = matplotlib.figure.Figure(figsize = (2,2), dpi = 100)
@@ -86,7 +91,7 @@ def UpdateCanvas(data, im, stLoc, radius, pltCanvas, brightLabel):
 
 def Apply(window, stName, stLoc, stRad, stType, sval, stars, OnStarChange, starIndex):
 
-	st = ItemStar()
+	st = StarItem()
 	st.name = stName
 	st.type = stType
 	st.location = stLoc
