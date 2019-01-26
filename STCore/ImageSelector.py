@@ -25,7 +25,7 @@ def LoadFiles(paths, root):
 		item = FileItem()
 		item.path = str(p)
 		item.data = fits.getdata(item.path)
-		item.active = tk.IntVar(value=1)
+		item.active = 1
 		ItemList.append(item)
 		CreateFileGrid(index + listSize, item, root)
 		# Barra de progreso
@@ -97,14 +97,18 @@ def CreateFileGrid(index, item, root):
 	Pic.thumbnail((200, 200))
 	Img = ImageTk.PhotoImage(Pic)
 	tk.Label(GridFrame, text=basename(item.path)).grid(row=0,column=0, sticky=tk.W)
-	Ckeckbox = tk.Checkbutton(GridFrame, variable = ItemList[index].active)
+	isactive =tk.IntVar(ImagesFrame, value=item.active)
+	Ckeckbox = tk.Checkbutton(GridFrame, variable = isactive)
 	Ckeckbox.grid(row=0,column=1, sticky=tk.E)
+	isactive.trace("w", lambda a,b,c: SetActive(item, isactive))
 	ImageLabel = tk.Label(GridFrame, image = Img, width = 200, height = 200 * item.data.shape[0]/float(item.data.shape[1]))
 	ImageLabel.image = Img
 	ImageLabel.grid(row=1,column=0, columnspan=2)
+def SetActive(item, intvar):
+	item.active = intvar.get()
 
 def Apply(root):
-	FList = filter(lambda item: item.active.get() == 1, ItemList)
+	FList = filter(lambda item: item.active == 1, ItemList)
 	if len(FList) == 0:
 		tkMessageBox.showerror("Error", "Debe seleccionar al menos un archivo")
 		return

@@ -22,15 +22,13 @@ def LoadFiles():
 def Destoy():
 	StartFrame.destroy()
 
-
-Window = tk.Tk()
-StartFrame = None
-Window.wm_title(string = "StarTrak v1.0.0")
-Window.geometry("1080x480")
-
-Awake(Window)
-#ImageView.Awake(Window)
-
-Window.mainloop()
+if __name__ == "__main__":
+	Window = tk.Tk()
+	StartFrame = None
+	Window.wm_title(string = "StarTrak v1.0.0")
+	Window.geometry("1080x480")
+	Awake(Window)
+	#ImageView.Awake(Window)
+	Window.mainloop()
 def GetWindow():
 	return Window 

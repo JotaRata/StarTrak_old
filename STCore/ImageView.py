@@ -15,7 +15,7 @@ from STCore.utils.backgroundEstimator import GetBackground
 
 def OnImageClick(event):
 	loc = (int(event.ydata), int(event.xdata))
-	SetStar.CreateWindow(ViewerFrame, Data, Brightness, Stars, OnStarChange, stLoc = loc)
+	SetStar.CreateWindow(ViewerFrame, Data, Brightness, Stars, OnStarChange, location = loc)
 
 def OnStarChange():
 	UpdateStarList()
@@ -33,15 +33,15 @@ def UpdateStarList():
 		_frame = tk.Frame(SidebarList)
 		_frame.pack(fill = tk.X, expand = 1, anchor = tk.N, pady = 5)
 
-		cmd = __helperCreateWindow(index, stName = s.name, stLoc = s.location, stRad = s.radius, stType = s.type)
+		cmd = __helperCreateWindow(index, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = s.threshold)
 		cmd2= __helperPop(Stars, index)
 		ttk.Button(_frame, text = s.name, width = 10, command = cmd).pack(side = tk.LEFT, fill = tk.X, expand = 1)
 		ttk.Button(_frame, text = "X", width = 1, command = cmd2).pack(side = tk.RIGHT)
 		index += 1
 #Las funciones lambda no se pueden llamar dentro de un loop for o while,
 ## para eso hay que crear una funcion que retorne un lambda
-def __helperCreateWindow(index, stName, stLoc, stRad, stType):
-	return lambda: SetStar.CreateWindow(ViewerFrame, Data, Brightness, Stars, OnStarChange, index, stName, stLoc, stRad, stType)
+def __helperCreateWindow(index, stName, stLoc, stRadius, stBound, stType,stThr):
+	return lambda: SetStar.CreateWindow(ViewerFrame, Data, Brightness, Stars, OnStarChange, index, stName, stLoc, stRadius, stBound, stType, stThr)
 def __helperPop (list, index):
 	return lambda: (list.pop(index), OnStarChange())
 
@@ -56,8 +56,11 @@ def UpdateCanvasOverlay():
 	for s in Stars:
 		rect_pos = (s.location[1] - s.radius, s.location[0] - s.radius)
 		rect = Rectangle(rect_pos, s.radius *2, s.radius *2, edgecolor = "w", facecolor='none')
+		bound_pos = (s.location[1] - s.bounds, s.location[0] - s.bounds)
+		bound = Rectangle(bound_pos, s.bounds*2, s.bounds *2, edgecolor = "0.5", linestyle = 'dashed', facecolor='none')
 		ImageAxis.add_artist(rect)
-		text_pos = (s.location[1], s.location[0] - s.radius * 2)
+		ImageAxis.add_artist(bound)
+		text_pos = (s.location[1], s.location[0] - s.bounds - 6)
 		ImageAxis.annotate(s.name, text_pos, color='w', weight='bold',fontsize=6, ha='center', va='center')
 	ImageCanvas.draw()
 
@@ -103,8 +106,8 @@ def CreateSidebar(app, root, items):
 	loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
 	
 	cmd = lambda : 	(Destroy(), STCore.ImageSelector.Awake(root, []))
-	cmd2 = lambda : 	SetStar.CreateWindow(app, Data, Brightness, Stars, OnStarChange, stLoc = loc)
-	cmdTrack = lambda : (Destroy(), Tracker.Awake(root, Stars, items))
+	cmd2 = lambda : 	SetStar.CreateWindow(app, Data, Brightness, Stars, OnStarChange, location = loc)
+	cmdTrack = lambda : (Destroy(), Tracker.Awake(root, Stars, items, Brightness))
 	#Tracker.Track(fits.getdata("AEFor/aefor7.fit"), Stars, 4000)
 	ttk.Button(sidebar, text = "Volver", command = cmd).pack(side = tk.LEFT)
 	ttk.Button(sidebar, text = "Agregar estrella", command = cmd2).pack(side = tk.LEFT)
