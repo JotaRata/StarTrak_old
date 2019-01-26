@@ -125,7 +125,7 @@ def ClearList(root):
 		child.destroy()
 
 def AddFiles(root):
-	paths = tkFileDialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit")])
+	paths = tkFileDialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
 	paths = root.tk.splitlist(paths)
 	LoadFiles(paths, root)
 

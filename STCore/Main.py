@@ -14,7 +14,7 @@ def Awake(root):
 	
 
 def LoadFiles():
-	paths = tkFileDialog.askopenfilenames(parent = Window, filetypes=[("FIT Image", "*.fits;*.fit")])
+	paths = tkFileDialog.askopenfilenames(parent = Window, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
 	paths = Window.tk.splitlist(paths)
 	Destoy()
 	STCore.ImageSelector.Awake(Window, paths)
