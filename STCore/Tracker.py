@@ -32,6 +32,7 @@ def Awake(root, stars, ItemList, brightness):
 	ImgFrame.pack(fill = tk.BOTH, expand = 1)
 	for s in stars:
 		item = TrackItem()
+		item.name = s.name
 		item.lastValue = s.value
 		item.currPos = s.location
 		TrackedStars.append(item)
@@ -96,9 +97,8 @@ def Track(index, ItemList, stars):
 		Pos = TrackedStars[starIndex].currPos
 		vloc = numpy.clip(Pos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
 		crop = data[vloc[0]-s.bounds : vloc[0]+s.bounds,vloc[1]-s.bounds : vloc[1]+s.bounds]
-		DataNoBG = numpy.clip(crop - back, 0, numpy.max(data))
 		#indices = numpy.where((numpy.abs(-data + s.value) < s.threshold) & (DataNoBG > 100))
-		indices = numpy.unravel_index(numpy.flatnonzero((numpy.abs(-crop + s.value) < s.threshold) & (DataNoBG > 100)),crop.shape)
+		indices = numpy.unravel_index(numpy.flatnonzero((numpy.abs(-crop + s.value) < s.threshold) & (crop > bgStD + back)),crop.shape)
 		SearchIndices = numpy.swapaxes(numpy.array(indices), 0, 1)
 		RegPositions = numpy.empty((0,2), int)
 		i = 0
@@ -119,6 +119,7 @@ def Track(index, ItemList, stars):
 				TrackedStars[starIndex].lastSeen = index
 			TrackedStars[starIndex].lostPoints.append(index)
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].lastPos)))
+		print TrackedStars[starIndex].lastValue
 		starIndex += 1
 	#sleep(0.1)
 # Copiado de SetStar
