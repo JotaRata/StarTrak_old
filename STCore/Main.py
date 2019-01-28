@@ -5,7 +5,8 @@ import sys
 from os.path import dirname, abspath 
 sys.path.append(dirname(dirname(abspath(__file__))))
 import STCore.ImageSelector
-print sys.path
+#print sys.path
+
 def Awake(root):
 	global StartFrame
 	StartFrame = tk.Frame(root, width = 1100, height = 400)
