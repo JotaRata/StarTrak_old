@@ -40,6 +40,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="STCore\ImageView.py" />
+    <Compile Include="STCore\Results.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="STCore\SetStar.py">
       <SubType>Code</SubType>
     </Compile>
@@ -47,6 +50,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="STCore\utils\backgroundEstimator.py" />
+    <Compile Include="STCore\utils\thicc.py" />
     <Compile Include="STCore\utils\__init__.py" />
     <Compile Include="STCore\__init__.py" />
   </ItemGroup>

@@ -1,5 +1,6 @@
 from matplotlib import pylab as plt
 
+# Actualizacion: Cambie reference1, reference2 y variable a una sola lista
 def thicc(reference1,reference2,variable,time):
     f, pl = plt.subplots()
     pl.plot(time,reference1,"o")

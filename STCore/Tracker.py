@@ -29,7 +29,7 @@ def Awake(root, stars, ItemList, brightness):
 	TitleLabel = tk.Label(TrackerFrame, text = "Analizando imagen..")
 	TitleLabel.pack(fill = tk.X)
 	ImgFrame = tk.Frame(TrackerFrame)
-	ImgFrame.pack(fill = tk.BOTH, expand = 1)
+	ImgFrame.pack(side = tk.LEFT, fill = tk.BOTH, expand = 1)
 	for s in stars:
 		item = TrackItem()
 		item.name = s.name
@@ -37,9 +37,27 @@ def Awake(root, stars, ItemList, brightness):
 		item.currPos = s.location
 		TrackedStars.append(item)
 	CreateCanvas(ItemList[0].data, brightness)
+	CreateSidebar(root, ItemList)
 	#map(partial(UpdateTrack, ItemList = ItemList, stars = stars), range(0, len(ItemList)))
 	#CreatePools(ItemList, stars)
 	UpdateTrack(ItemList, stars)
+def Destroy():
+	TrackerFrame.destroy()
+	TrackedStars =[]
+
+def CreateSidebar(root, ItemList):
+	import STCore.ImageView
+	global TrackerFrame
+	sidebar = tk.Frame(TrackerFrame, width = 400)
+	sidebar.pack(side = tk.RIGHT, expand = True, fill = tk.BOTH, anchor = tk.NE)
+
+	cmd = lambda: (Destroy(), STCore.ImageView.Awake(root, ItemList))
+	cmd2 = lambda: (Destroy(), STCore.ImageView.Awake(root, ItemList))
+
+	buttonsFrame = tk.Frame(sidebar)
+	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
+	ttk.Button(buttonsFrame, text = "Volver", command = cmd).grid(row = 0, column = 0, sticky = tk.EW)
+	ttk.Button(buttonsFrame, text = "Continuar", command = cmd2).grid(row = 0, column = 1, sticky = tk.EW)
 
 def CreateCanvas(data, brightness):
 	global ImgCanvas, ImgFrame, Img, ImgAxis

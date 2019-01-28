@@ -108,10 +108,12 @@ def CreateSidebar(app, root, items):
 	cmd = lambda : 	(Destroy(), STCore.ImageSelector.Awake(root, []))
 	cmd2 = lambda : 	SetStar.CreateWindow(app, Data, Brightness, Stars, OnStarChange, location = loc)
 	cmdTrack = lambda : (Destroy(), Tracker.Awake(root, Stars, items, Brightness))
-	#Tracker.Track(fits.getdata("AEFor/aefor7.fit"), Stars, 4000)
-	ttk.Button(sidebar, text = "Volver", command = cmd).pack(side = tk.LEFT)
-	ttk.Button(sidebar, text = "Agregar estrella", command = cmd2).pack(side = tk.LEFT)
-	ttk.Button(sidebar, text = "Analizar", command = cmdTrack).pack(side = tk.RIGHT)
+	
+	buttonsFrame = tk.Frame(sidebar)
+	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
+	ttk.Button(buttonsFrame, text = "Volver", command = cmd).grid(row = 0, column = 0, sticky = tk.EW)
+	ttk.Button(buttonsFrame, text = "Agregar estrella", command = cmd2).grid(row = 0, column = 1, sticky = tk.EW)
+	ttk.Button(buttonsFrame, text = "Analizar", command = cmdTrack).grid(row = 0, column = 2, sticky = tk.EW)
 
 	return sidebar, list
 #endregion
@@ -140,7 +142,6 @@ def Awake(root, items):
 	tk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
 	Data =  items[0].data
 	Brightness = max(Data)
-	Stars = []
 	ImageCanvas, Image, ImageFrame, ImageAxis = CreateCanvas(ViewerFrame, OnImageClick)
 	SliderLabel = CreateSlider(UpdateImage)
 	Sidebar, SidebarList = CreateSidebar(ViewerFrame, root, items)
