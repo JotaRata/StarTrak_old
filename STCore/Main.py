@@ -14,7 +14,6 @@ def Awake(root):
 	tk.Label(StartFrame, text = "Por favor seleccione las imagenes que quiera analizar").pack(anchor = tk.CENTER)
 	ttk.Button(StartFrame, text = "Seleccionar Imagenes", command = LoadFiles).pack(anchor = tk.CENTER)
 	
-
 def LoadFiles():
 	paths = tkFileDialog.askopenfilenames(parent = Window, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
 	paths = Window.tk.splitlist(paths)
@@ -30,7 +29,6 @@ if __name__ == "__main__":
 	Window.wm_title(string = "StarTrak v1.0.0")
 	Window.geometry("1080x480")
 	Awake(Window)
-	#ImageView.Awake(Window)
 	Window.mainloop()
 def GetWindow():
 	return Window 
