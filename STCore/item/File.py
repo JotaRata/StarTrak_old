@@ -2,7 +2,7 @@
 class FileItem(object):
 	def __init__(self):
 		self.path = ""
-		self.active = None
+		self.active = 1
 		self.data = None
 	
 	def PrintData(self):

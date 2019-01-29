@@ -9,34 +9,51 @@ import tkFileDialog
 import tkMessageBox
 from STCore.item.File import FileItem
 import STCore.ImageView
+import numpy
+from multiprocessing.dummy import Pool as ThreadPool
+from functools import partial
+from threading import Lock
 #region Variables
 SelectorFrame = None
 ImagesFrame = None
 ScrollView = None
 ItemList = []
+loadIndex = 0
+lock = Lock();
 #endregion
 
 def LoadFiles(paths, root):
-	index = 0
+	global loadIndex
 	listSize = len(ItemList)
-	progress = tk.DoubleVar()
-	loadPopup, loadLabel, loadBar = CreateLoadBar(root, progress)
-	for p in sorted(paths, key=lambda f: int(filter(str.isdigit, str(f)))):
+	Progress = tk.DoubleVar()
+	LoadWindow = CreateLoadBar(root, Progress)
+	LoadWindow[0].update()
+	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
+	sortedP = sorted(paths, key=lambda f: int(filter(str.isdigit, str(f))))
+	pool = ThreadPool(4)
+	pool.map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
+	pool.close()
+	pool.join()
+	loadIndex = 0
+	LoadWindow[0].update()
+	LoadWindow[0].destroy()
+	ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
+
+def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
+	global loadIndex
+	with lock:
 		item = FileItem()
-		item.path = str(p)
+		item.path = str(path)
 		item.data = fits.getdata(item.path)
 		item.active = 1
 		ItemList.append(item)
-		CreateFileGrid(index + listSize, item, root)
-		# Barra de progreso
-		progress.set(100*float(index)/len(paths))
-		loadLabel.config(text="Cargando archivo "+str(index)+" de "+str(len(paths)))
-		loadPopup.update()
-		if index % 2 == 0:
-			sleep(0.1)
-		index += 1
-	loadPopup.destroy()
-	ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
+		CreateFileGrid(loadIndex + ListSize, item, root)
+		progress.set(100*float(loadIndex)/PathSize)
+		loadWindow[1].config(text="Cargando archivo "+str(loadIndex)+" de "+str(PathSize))
+		#loadWindow[2]["value"] = (100 * float(loadIndex)/PathSize)
+		sleep(0.01)
+		loadIndex += 1
+	#lock.relase()
 
 def Awake(root, paths):
 	global SelectorFrame, ItemList, ImagesFrame, ScrollView
@@ -80,7 +97,7 @@ def CreateLoadBar(root, progress):
 	popup = tk.Toplevel()
 	popup.geometry("300x60+%d+%d" % (root.winfo_width()/2,  root.winfo_height()/2) )
 	popup.wm_title(string = "Cargando..")
-	popup.overrideredirect(1)
+	#popup.overrideredirect(1)
 	pframe = tk.LabelFrame(popup)
 	pframe.pack(fill = tk.BOTH, expand = 1)
 	label = tk.Label(pframe, text="Cargando archivo..")
@@ -93,7 +110,11 @@ def CreateFileGrid(index, item, root):
 	GridFrame = tk.LabelFrame(ImagesFrame, width = 200, height = 200)
 	Row, Col = GridPlace(root, index, 250)
 	GridFrame.grid(row = Row, column = Col, sticky = tk.NSEW, padx = 20, pady = 20)
-	Pic = Image.fromarray(item.data.astype("uint8"))
+	dat = item.data.astype(float)
+	minv = numpy.min(dat)
+	maxv = numpy.max(dat)
+	thumb = numpy.clip(255*(dat - minv)/(maxv - minv), 0, 255).astype(numpy.uint8)
+	Pic = Image.fromarray(thumb)
 	Pic.thumbnail((200, 200))
 	Img = ImageTk.PhotoImage(Pic)
 	tk.Label(GridFrame, text=basename(item.path)).grid(row=0,column=0, sticky=tk.W)

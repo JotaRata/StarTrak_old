@@ -5,12 +5,12 @@ import sys
 from os.path import dirname, abspath 
 sys.path.append(dirname(dirname(abspath(__file__))))
 import STCore.ImageSelector
-print sys.path
+
 def Awake(root):
 	global StartFrame
 	StartFrame = tk.Frame(root, width = 1100, height = 400)
 	StartFrame.pack(expand = 1, fill = tk.BOTH)
-	tk.Label(StartFrame, text = "Bienvenido a StarTrak").pack()
+	tk.Label(StartFrame, text = "Bienvenido a StarTrak",font="-weight bold").pack()
 	tk.Label(StartFrame, text = "Por favor seleccione las imagenes que quiera analizar").pack(anchor = tk.CENTER)
 	ttk.Button(StartFrame, text = "Seleccionar Imagenes", command = LoadFiles).pack(anchor = tk.CENTER)
 	
