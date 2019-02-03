@@ -10,16 +10,13 @@ import tkMessageBox
 from STCore.item.File import FileItem
 import STCore.ImageView
 import numpy
-from multiprocessing.dummy import Pool as ThreadPool
 from functools import partial
-from threading import Lock
 #region Variables
 SelectorFrame = None
 ImagesFrame = None
 ScrollView = None
 ItemList = []
 loadIndex = 0
-lock = Lock();
 #endregion
 
 def LoadFiles(paths, root):
@@ -30,29 +27,26 @@ def LoadFiles(paths, root):
 	LoadWindow[0].update()
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
 	sortedP = sorted(paths, key=lambda f: int(filter(str.isdigit, str(f))))
-	pool = ThreadPool(4)
-	pool.map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
-	pool.close()
-	pool.join()
+	map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
 	loadIndex = 0
-	LoadWindow[0].update()
+	
 	LoadWindow[0].destroy()
 	ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
 
 def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	global loadIndex
-	with lock:
-		item = FileItem()
-		item.path = str(path)
-		item.data = fits.getdata(item.path)
-		item.active = 1
-		ItemList.append(item)
-		CreateFileGrid(loadIndex + ListSize, item, root)
-		progress.set(100*float(loadIndex)/PathSize)
-		loadWindow[1].config(text="Cargando archivo "+str(loadIndex)+" de "+str(PathSize))
-		#loadWindow[2]["value"] = (100 * float(loadIndex)/PathSize)
-		sleep(0.01)
-		loadIndex += 1
+	item = FileItem()
+	item.path = str(path)
+	item.data = fits.getdata(item.path)
+	item.active = 1
+	ItemList.append(item)
+	CreateFileGrid(loadIndex + ListSize, item, root)
+	progress.set(100*float(loadIndex)/PathSize)
+	loadWindow[1].config(text="Cargando archivo "+str(loadIndex)+" de "+str(PathSize))
+	loadWindow[0].update()
+	#loadWindow[2]["value"] = (100 * float(loadIndex)/PathSize)
+	sleep(0.01)
+	loadIndex += 1
 	#lock.relase()
 
 def Awake(root, paths):

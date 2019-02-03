@@ -109,7 +109,7 @@ def DrawCanvas(stLoc, radius, data, brightness):
 	ImageCanvas.draw()
 	ImageCanvas.get_tk_widget().grid(sticky = tk.NSEW)
 
-def UpdateCanvas(data, stLoc, radius, brightLabel):
+def UpdateCanvas(data, stLoc, radius):
 	global Image, ImageCanvas, BrightLabel
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))

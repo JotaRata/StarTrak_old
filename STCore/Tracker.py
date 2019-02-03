@@ -11,7 +11,6 @@ import ttk
 from os.path import basename
 from STCore.item.Track import TrackItem
 from STCore.utils.backgroundEstimator import GetBackground
-#from multiprocessing import Pool
 from threading import Thread, Lock
 from time import sleep
 from functools import partial
@@ -26,27 +25,30 @@ Img = None
 ImgAxis = None
 Sidebar = None
 SidebarList = None
+BrightestStar = None
 TrackedStars = []
 lock = Lock()
 #endregion
 def Awake(root, stars, ItemList, brightness):
-	global TrackerFrame, TitleLabel, ImgFrame, TrackedStars, pool
+	global TrackerFrame, TitleLabel, ImgFrame, TrackedStars, pool, BrightestStar
 	TrackerFrame = tk.Frame(root)
 	TrackerFrame.pack(fill = tk.BOTH, expand = 1)
 	TitleLabel = tk.Label(TrackerFrame, text = "Analizando imagen..")
 	TitleLabel.pack(fill = tk.X)
 	ImgFrame = tk.Frame(TrackerFrame)
 	ImgFrame.pack(side = tk.LEFT, fill = tk.BOTH, expand = 1)
+	brightestStarValue = 0
 	for s in stars:
 		item = TrackItem()
 		item.name = s.name
 		item.lastValue = s.value
 		item.currPos = s.location
 		TrackedStars.append(item)
-	CreateCanvas(ItemList[0].data, brightness)
+		if s.value > brightestStarValue:
+			BrightestStar = s
+			brightestStarValue = s.value
 	CreateSidebar(root, ItemList)
-	#map(partial(UpdateTrack, ItemList = ItemList, stars = stars), range(0, len(ItemList)))
-	#CreatePools(ItemList, stars)
+	CreateCanvas(ItemList[0].data, brightness)
 	UpdateTrack(ItemList, stars)
 
 def Destroy():
@@ -83,10 +85,10 @@ def UpdateSidebar(data, stars):
 			frame = tk.LabelFrame(SidebarList)
 			frame.pack(fill = tk.X, anchor = tk.N)
 			tk.Label(frame, text = track.name,font="-weight bold").grid(row = 0, column = 0,sticky = tk.W, columnspan = 2)
-			tk.Label(frame, text = "Pos: " + str(track.currPos)).grid(row = 1, column = 0,sticky = tk.W)
-			tk.Label(frame, text = "Brillo: " + str(track.currValue)).grid(row = 1, column = 1,sticky = tk.W)
-			tk.Label(frame, text = "Rastreados: " + str(len(track.trackedPos) - len(track.lostPoints))).grid(row = 2, column = 0,sticky = tk.W)
-			tk.Label(frame, text = "Perdidos: " + str(len(track.lostPoints))).grid(row = 2, column = 1,sticky = tk.W)
+			tk.Label(frame, text = "Pos: " + str(track.currPos), width = 12).grid(row = 1, column = 0,sticky = tk.W)
+			tk.Label(frame, text = "Brillo: " + str(track.currValue), width = 9).grid(row = 1, column = 1,sticky = tk.W)
+			tk.Label(frame, text = "Rastreados: " + str(len(track.trackedPos) - len(track.lostPoints)), width = 15).grid(row = 2, column = 0,sticky = tk.W)
+			tk.Label(frame, text = "Perdidos: " + str(len(track.lostPoints)), width = 15).grid(row = 2, column = 1,sticky = tk.W)
 			clipLoc = numpy.clip(track.currPos, stars[index].radius, (data.shape[0] - stars[index].radius, data.shape[1] - stars[index].radius))
 			crop = data[clipLoc[0]-stars[index].radius : clipLoc[0]+stars[index].radius,clipLoc[1]-stars[index].radius : clipLoc[1]+stars[index].radius].astype(float)
 			minv = numpy.min(crop)
@@ -128,7 +130,7 @@ def UpdateTrack(ItemList, stars, index = 0):
 	updsThread.join()
 	#UpdateSidebar(ItemList[index].data, stars)
 	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[index].path))
-	TrackerFrame.after(200, lambda: UpdateTrack(ItemList, stars, index + 1))
+	TrackerFrame.after(50, lambda: UpdateTrack(ItemList, stars, index + 1))
 
 def UpdateCanvasOverlay(stars, ImgIndex, data):
 	for a in reversed(ImgAxis.artists):
@@ -143,7 +145,7 @@ def UpdateCanvasOverlay(stars, ImgIndex, data):
 			continue
 		if TrackedStars[stIndex].lastSeen != -1:
 			col = "r"
-		poly = Polygon(TrackedStars[stIndex].trackedPos, closed = False, fill = False, edgecolor = "w", linewidth = 2)
+		poly = Polygon(TrackedStars[stIndex].trackedPos[-4:], closed = False, fill = False, edgecolor = "w", linewidth = 2)
 		rect_pos = (trackPos[1] - s.radius, trackPos[0] - s.radius)
 		rect = Rectangle(rect_pos, s.radius *2, s.radius *2, edgecolor = col, facecolor='none')
 		ImgAxis.add_artist(rect)
@@ -154,15 +156,21 @@ def UpdateCanvasOverlay(stars, ImgIndex, data):
 	ImgCanvas.draw()
 
 def Track(index, ItemList, stars):
-	global TrackedStars
-	starIndex = 0
+	global TrackedStars, BrightestStar
+	#starIndex = 0
 	data = ItemList[index].data
 	back, bgStD =  GetBackground(data)
-	for s in stars:
-		Pos = TrackedStars[starIndex].currPos
+	deltaPos = numpy.array([0,0])
+	indexes = range(len(stars))
+	for starIndex in sorted(indexes, key = lambda e: stars[e].value, reverse = True):
+		s = stars[starIndex]
+		print s.name
+		Pos = numpy.array(TrackedStars[starIndex].currPos)
 		clipLoc = numpy.clip(Pos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
+		if BrightestStar != s:
+			clipLoc = numpy.clip(Pos + deltaPos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
 		crop = data[clipLoc[0]-s.bounds : clipLoc[0]+s.bounds,clipLoc[1]-s.bounds : clipLoc[1]+s.bounds]
-		#indices = numpy.where((numpy.abs(-data + s.value) < s.threshold) & (DataNoBG > 100))
+		#indices = numpy.where((numpy.abs(-crop + s.value) < s.threshold) & (crop > bgStD*2 + back))
 		indices = numpy.unravel_index(numpy.flatnonzero((numpy.abs(-crop + s.value) < s.threshold) & (crop > bgStD*2 + back)),crop.shape)
 		SearchIndices = numpy.swapaxes(numpy.array(indices), 0, 1)
 		RegPositions = numpy.empty((0,2), int)
@@ -175,7 +183,7 @@ def Track(index, ItemList, stars):
 			MeanPos = numpy.mean(RegPositions, axis = 0)
 			TrackedStars[starIndex].lastPos = TrackedStars[starIndex].currPos
 			TrackedStars[starIndex].lastValue = TrackedStars[starIndex].currValue 
-			TrackedStars[starIndex].currPos = (int(MeanPos[0]), int(MeanPos[1]))
+			TrackedStars[starIndex].currPos = numpy.array(MeanPos.astype(int))
 			TrackedStars[starIndex].currValue = GetMaxima(data, int(MeanPos[0]), int(MeanPos[1]), s.radius, s.value)
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].currPos)))
 			if TrackedStars[starIndex].lastSeen != -1:
@@ -185,7 +193,10 @@ def Track(index, ItemList, stars):
 				TrackedStars[starIndex].lastSeen = index
 			TrackedStars[starIndex].lostPoints.append(index)
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].lastPos)))
-		starIndex += 1
+		if BrightestStar == s:
+			deltaPos = TrackedStars[starIndex].currPos - Pos
+		#starIndex += 1
+	
 # Copiado de SetStar
 def GetMaxima(data, xloc, yloc, radius, value):
 	clipLoc = numpy.clip((xloc,yloc), radius, (data.shape[0] - radius, data.shape[1] - radius))
