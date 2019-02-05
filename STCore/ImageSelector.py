@@ -3,7 +3,7 @@ import Tkinter as tk
 import ttk
 from PIL import Image, ImageTk
 from astropy.io import fits
-from os.path import basename
+from os.path import basename, getmtime
 from time import sleep
 import tkFileDialog
 import tkMessageBox
@@ -38,6 +38,7 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	item = FileItem()
 	item.path = str(path)
 	item.data = fits.getdata(item.path)
+	item.date = getmtime(item.path)
 	item.active = 1
 	ItemList.append(item)
 	CreateFileGrid(loadIndex + ListSize, item, root)

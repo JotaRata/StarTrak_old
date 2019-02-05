@@ -1,7 +1,7 @@
 
 class TrackItem(object):
 	def __init__(self):
-		self.name = ""
+		self.star = None
 		self.lastPos = (0,0)
 		self.lastSeen = -1
 		self.lastValue = 0
@@ -11,6 +11,6 @@ class TrackItem(object):
 		self.lostPoints = []
 	def PrintData(self):
 		print ""
-		print self.name, " Track Info: "
+		print self.star.name, " Track Info: "
 		print "Last seen at file: ", self.lastSeen," in ", self.lastPos," with value ",self.lastValue, "tracked for", len(self.trackedPos), "frames"
 		print "Lost Points: ", len(self.lostPoints)

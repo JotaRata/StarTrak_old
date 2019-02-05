@@ -11,6 +11,7 @@ import ttk
 from os.path import basename
 from STCore.item.Track import TrackItem
 from STCore.utils.backgroundEstimator import GetBackground
+import STCore.Results
 from threading import Thread, Lock
 from time import sleep
 from functools import partial
@@ -38,9 +39,10 @@ def Awake(root, stars, ItemList, brightness):
 	ImgFrame = tk.Frame(TrackerFrame)
 	ImgFrame.pack(side = tk.LEFT, fill = tk.BOTH, expand = 1)
 	brightestStarValue = 0
+	TrackedStars =[]
 	for s in stars:
 		item = TrackItem()
-		item.name = s.name
+		item.star = s
 		item.lastValue = s.value
 		item.currPos = s.location
 		TrackedStars.append(item)
@@ -54,7 +56,6 @@ def Awake(root, stars, ItemList, brightness):
 def Destroy():
 	global TrackedStars, Img, ImgAxis
 	TrackerFrame.destroy()
-	TrackedStars =[]
 	Img = None
 	ImgAxis = None
 
@@ -68,12 +69,16 @@ def CreateSidebar(root, ItemList):
 	SidebarList.pack(expand = 1, fill = tk.X, anchor = tk.NW)
 	
 	cmdBack = lambda: (Destroy(), STCore.ImageView.Awake(root, ItemList))
-	cmdNext = lambda: (Destroy(), STCore.ImageView.Awake(root, ItemList))
+	cmdNext = lambda: (Destroy(), STCore.Results.Awake(root, ItemList, GetTrackedStars()))
 
 	buttonsFrame = tk.Frame(Sidebar, width = 400)
 	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
 	ttk.Button(buttonsFrame, text = "Volver", command = cmdBack).grid(row = 0, column = 0, sticky = tk.EW)
 	ttk.Button(buttonsFrame, text = "Continuar", command = cmdNext).grid(row = 0, column = 1, sticky = tk.EW)
+
+def GetTrackedStars():
+	global TrackedStars
+	return TrackedStars
 
 def UpdateSidebar(data, stars):
 	global SidebarList
@@ -84,7 +89,7 @@ def UpdateSidebar(data, stars):
 		for track in TrackedStars:
 			frame = tk.LabelFrame(SidebarList)
 			frame.pack(fill = tk.X, anchor = tk.N)
-			tk.Label(frame, text = track.name,font="-weight bold").grid(row = 0, column = 0,sticky = tk.W, columnspan = 2)
+			tk.Label(frame, text = track.star.name,font="-weight bold").grid(row = 0, column = 0,sticky = tk.W, columnspan = 2)
 			tk.Label(frame, text = "Pos: " + str(track.currPos), width = 12).grid(row = 1, column = 0,sticky = tk.W)
 			tk.Label(frame, text = "Brillo: " + str(track.currValue), width = 9).grid(row = 1, column = 1,sticky = tk.W)
 			tk.Label(frame, text = "Rastreados: " + str(len(track.trackedPos) - len(track.lostPoints)), width = 15).grid(row = 2, column = 0,sticky = tk.W)
@@ -145,7 +150,8 @@ def UpdateCanvasOverlay(stars, ImgIndex, data):
 			continue
 		if TrackedStars[stIndex].lastSeen != -1:
 			col = "r"
-		poly = Polygon(TrackedStars[stIndex].trackedPos[-4:], closed = False, fill = False, edgecolor = "w", linewidth = 2)
+		points = TrackedStars[stIndex].trackedPos[-4:]
+		poly = Polygon(points , closed = False, fill = False, edgecolor = "w", linewidth = 2)
 		rect_pos = (trackPos[1] - s.radius, trackPos[0] - s.radius)
 		rect = Rectangle(rect_pos, s.radius *2, s.radius *2, edgecolor = col, facecolor='none')
 		ImgAxis.add_artist(rect)
@@ -180,10 +186,10 @@ def Track(index, ItemList, stars):
 			RegPositions = numpy.append(RegPositions, _ind, axis = 0)
 			i += 1
 		if len(RegPositions) != 0:
-			MeanPos = numpy.mean(RegPositions, axis = 0)
+			MeanPos = numpy.mean(RegPositions, axis = 0).astype(int)
 			TrackedStars[starIndex].lastPos = TrackedStars[starIndex].currPos
 			TrackedStars[starIndex].lastValue = TrackedStars[starIndex].currValue 
-			TrackedStars[starIndex].currPos = numpy.array(MeanPos.astype(int))
+			TrackedStars[starIndex].currPos = MeanPos.tolist()
 			TrackedStars[starIndex].currValue = GetMaxima(data, int(MeanPos[0]), int(MeanPos[1]), s.radius, s.value)
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].currPos)))
 			if TrackedStars[starIndex].lastSeen != -1:
@@ -194,7 +200,8 @@ def Track(index, ItemList, stars):
 			TrackedStars[starIndex].lostPoints.append(index)
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].lastPos)))
 		if BrightestStar == s:
-			deltaPos = TrackedStars[starIndex].currPos - Pos
+			deltaPos = numpy.array(TrackedStars[starIndex].currPos) - Pos
+			print deltaPos
 		#starIndex += 1
 	
 # Copiado de SetStar
