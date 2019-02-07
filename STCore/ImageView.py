@@ -10,7 +10,7 @@ import Tkinter as tk
 import ttk
 from STCore.item.Star import StarItem
 from STCore import SetStar, Tracker
-
+import STCore.DataManager
 #region Messages and Events
 
 def OnImageClick(event):
@@ -20,6 +20,7 @@ def OnImageClick(event):
 def OnStarChange():
 	UpdateStarList()
 	UpdateCanvasOverlay()
+	STCore.DataManager.StarItemList = Stars
 #endregion
 
 #region Update Funcions
@@ -109,7 +110,7 @@ def CreateSidebar(app, root, items):
 	
 	cmdBack = lambda : 	(Destroy(), STCore.ImageSelector.Awake(root, []))
 	cmdCreate = lambda : 	SetStar.Awake(app, Data, Brightness, Stars, OnStarChange, location = loc)
-	cmdTrack = lambda : (Destroy(), Tracker.Awake(root, Stars, items, Brightness))
+	cmdTrack = lambda : Apply(root, items)
 	
 	buttonsFrame = tk.Frame(Sidebar)
 	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
@@ -137,7 +138,7 @@ SliderLabel = None
 
 def Awake(root, items):
 	global ViewerFrame, Data, Brightness, Stars, ImageCanvas, Image, ImageFrame, ImageAxis, Sidebar, SidebarList, SliderLabel
-
+	STCore.DataManager.CurrentWindow = 2
 	ViewerFrame = tk.Frame(root)
 	ViewerFrame.pack( fill = tk.BOTH, expand = 1)
 	tk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
@@ -151,4 +152,15 @@ def Awake(root, items):
 def Destroy():
 	ViewerFrame.destroy()
 
+def Apply(root, items):
+	import tkMessageBox
+	if len(Stars) > 0:
+		Destroy()
+		Tracker.Awake(root, Stars, items, Brightness)
+	else:
+		tkMessageBox.showerror("Error", "Debe tener al menos una estrella para comenzar el analisis")
+		return
+def ClearStars():
+	global Stars
+	Stars = []
 #endregion

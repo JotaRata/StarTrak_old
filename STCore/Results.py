@@ -4,7 +4,7 @@ from matplotlib import figure, use
 use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy
-
+import STCore.DataManager
 #region  Variables
 ResultsFrame = None
 
@@ -12,10 +12,11 @@ ResultsFrame = None
 # Funcion Awake, crea los objetos de tkinter
 def Awake(root, ItemList, TrackedStars):
 	global ResultsFrame
+	STCore.DataManager.CurrentWindow = 4
 	ResultsFrame = tk.Frame(root)
 	ResultsFrame.pack(fill = tk.BOTH, expand = 1)
 	CreateCanvas(ResultsFrame, ItemList, TrackedStars)
-
+	
 # Esta funcion crea los objetos de matplotlib, desde la linea 23 hasta la 29 es igual que cualquier otro script
 def CreateCanvas(app, ItemList, TrackedStars):
 	viewer = tk.Frame(app, width = 700, height = 400, bg = "white")
@@ -47,3 +48,6 @@ def GetTrackedValue(ItemList, trackedPos, radius):
 		values.append(numpy.max(crop))
 		index += 1
 	return values
+
+def Destroy():
+	ResultsFrame.destroy()

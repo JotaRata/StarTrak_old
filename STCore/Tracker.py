@@ -12,6 +12,7 @@ from os.path import basename
 from STCore.item.Track import TrackItem
 from STCore.utils.backgroundEstimator import GetBackground
 import STCore.Results
+import STCore.DataManager
 from threading import Thread, Lock
 from time import sleep
 from functools import partial
@@ -32,6 +33,7 @@ lock = Lock()
 #endregion
 def Awake(root, stars, ItemList, brightness):
 	global TrackerFrame, TitleLabel, ImgFrame, TrackedStars, pool, BrightestStar
+	STCore.DataManager.CurrentWindow = 3
 	TrackerFrame = tk.Frame(root)
 	TrackerFrame.pack(fill = tk.BOTH, expand = 1)
 	TitleLabel = tk.Label(TrackerFrame, text = "Analizando imagen..")
@@ -82,8 +84,6 @@ def GetTrackedStars():
 
 def UpdateSidebar(data, stars):
 	global SidebarList
-	for child in SidebarList.winfo_children():
-		child.destroy()
 	index = 0
 	with lock:
 		for track in TrackedStars:
@@ -118,9 +118,13 @@ def CreateCanvas(data, brightness):
 	wdg.pack(fill=tk.BOTH, expand=1)
 	wdg.wait_visibility()
 
+def OnFinishTrack():
+	STCore.DataManager.TrackItemList = TrackedStars
+
 def UpdateTrack(ItemList, stars, index = 0):
-	global TrackedStars
+	global TrackedStars, SidebarList
 	if index >= len(ItemList):
+		OnFinishTrack()
 		for ts in TrackedStars:
 			ts.PrintData()
 		return
@@ -130,6 +134,8 @@ def UpdateTrack(ItemList, stars, index = 0):
 	trackThread.join()
 	#Track(index,ItemList, stars)	
 	UpdateCanvasOverlay(stars, index, ItemList[index].data)
+	for child in SidebarList.winfo_children():
+		child.destroy()
 	updsThread = Thread(target = UpdateSidebar, args = (ItemList[index].data, stars))
 	updsThread.start()
 	updsThread.join()
@@ -170,7 +176,6 @@ def Track(index, ItemList, stars):
 	indexes = range(len(stars))
 	for starIndex in sorted(indexes, key = lambda e: stars[e].value, reverse = True):
 		s = stars[starIndex]
-		print s.name
 		Pos = numpy.array(TrackedStars[starIndex].currPos)
 		clipLoc = numpy.clip(Pos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
 		if BrightestStar != s:
@@ -201,7 +206,6 @@ def Track(index, ItemList, stars):
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].lastPos)))
 		if BrightestStar == s:
 			deltaPos = numpy.array(TrackedStars[starIndex].currPos) - Pos
-			print deltaPos
 		#starIndex += 1
 	
 # Copiado de SetStar

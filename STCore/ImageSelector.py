@@ -1,14 +1,16 @@
+# coding=utf-8
 
 import Tkinter as tk
 import ttk
 from PIL import Image, ImageTk
 from astropy.io import fits
-from os.path import basename, getmtime
+from os.path import basename, getmtime, isfile
 from time import sleep
 import tkFileDialog
 import tkMessageBox
 from STCore.item.File import FileItem
 import STCore.ImageView
+import STCore.DataManager
 import numpy
 from functools import partial
 #region Variables
@@ -50,8 +52,9 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	loadIndex += 1
 	#lock.relase()
 
-def Awake(root, paths):
+def Awake(root, paths = []):
 	global SelectorFrame, ItemList, ImagesFrame, ScrollView
+	STCore.DataManager.CurrentWindow = 1
 	SelectorFrame = tk.Frame(root)
 	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
 	tk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
@@ -62,10 +65,17 @@ def Awake(root, paths):
 	ScrollBar.pack(side = tk.LEFT,fill=tk.Y) 
 	ImagesFrame = tk.Frame()
 	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 120)
-
 	if len(ItemList) != 0 and len(paths) == 0:
 		ind = 0
 		while ind < len(ItemList):
+			if ItemList[ind].data is None:
+				if isfile(ItemList[ind].path):
+					ItemList[ind].data = fits.getdata(ItemList[ind].path)
+					ItemList[ind].date = getmtime(ItemList[ind].path)
+				else:
+					tkMessageBox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ ItemList[ind].path)
+					break
+			ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
 			CreateFileGrid(ind, ItemList[ind], root)
 			ind += 1
 	else:
@@ -129,6 +139,14 @@ def Apply(root):
 		tkMessageBox.showerror("Error", "Debe seleccionar al menos un archivo")
 		return
 	Destroy()
+	# Crea otra lista identica pero solo conteniendo los valores path y active  para liberar espacio al guardar #
+	LightList = []
+	for i in ItemList:
+		item = FileItem()
+		item.path = i.path
+		item.active = i.active
+		LightList.append(item)
+	STCore.DataManager.FileItemList = LightList
 	STCore.ImageView.Awake(root, FList)
 
 def ClearList(root):
