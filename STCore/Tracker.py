@@ -17,6 +17,7 @@ from threading import Thread, Lock
 from time import sleep
 from functools import partial
 from PIL import Image, ImageTk
+import tkMessageBox
 
 #region Variables
 TrackerFrame = None
@@ -41,22 +42,25 @@ def Awake(root, stars, ItemList, brightness):
 	ImgFrame = tk.Frame(TrackerFrame)
 	ImgFrame.pack(side = tk.LEFT, fill = tk.BOTH, expand = 1)
 	brightestStarValue = 0
-	TrackedStars =[]
 	for s in stars:
-		item = TrackItem()
-		item.star = s
-		item.lastValue = s.value
-		item.currPos = s.location
-		TrackedStars.append(item)
 		if s.value > brightestStarValue:
 			BrightestStar = s
 			brightestStarValue = s.value
-	CreateSidebar(root, ItemList)
 	CreateCanvas(ItemList[0].data, brightness)
-	UpdateTrack(ItemList, stars)
+	CreateSidebar(root, ItemList)
+	if (len(TrackedStars) > 0 and tkMessageBox.askyesno("Confirmar sobreescritura", "Ya existen datos de rastreo, desea sobreescribirlos?")) or len(TrackedStars) == 0:
+		TrackedStars =[]
+		for s in stars:
+			item = TrackItem()
+			item.star = s
+			item.lastValue = s.value
+			item.currPos = s.location
+			TrackedStars.append(item)
+		UpdateTrack(ItemList, stars)
 
 def Destroy():
 	global TrackedStars, Img, ImgAxis
+	print len(TrackedStars)
 	TrackerFrame.destroy()
 	Img = None
 	ImgAxis = None

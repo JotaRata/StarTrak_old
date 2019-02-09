@@ -134,7 +134,7 @@ def SetActive(item, intvar):
 	item.active = intvar.get()
 
 def Apply(root):
-	FList = filter(lambda item: item.active == 1, ItemList)
+	FList = list(filter(lambda item: item.active == 1, ItemList))
 	if len(FList) == 0:
 		tkMessageBox.showerror("Error", "Debe seleccionar al menos un archivo")
 		return
