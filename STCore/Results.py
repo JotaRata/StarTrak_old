@@ -30,11 +30,11 @@ def GetConstant(data, TrackedStars, index, StarIndex, Ref):
 	clipLoc = numpy.clip(pos, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 	Backdata = GetBackground(data)
-	StarFlux = numpy.sum(crop)
+	RefFlux = numpy.sum(crop)
 	BackgroundFlux = Backdata[0] * 4 * (radius **2)
-	print StarFlux, BackgroundFlux
-	value = Ref + 2.5 * numpy.log10(StarFlux - BackgroundFlux)
-	return value
+	print RefFlux, BackgroundFlux
+	value = Ref + 2.5 * numpy.log10(RefFlux - BackgroundFlux)
+	return value, BackgroundFlux, RefFlux
 
 
 def CreateCanvas(app, ItemList, TrackedStars):
@@ -44,11 +44,12 @@ def CreateCanvas(app, ItemList, TrackedStars):
 	ax = fig.add_subplot(111)
 	XAxis = range(len(ItemList))
 	Xlabel= []
+	Constant, BackgroundFlux, StarFlux = GetConstant(ItemList[0].data, TrackedStars, 0, 1, 13.5)
 	for item in ItemList:
 		Xlabel.append(basename(item.path))
 	i = 0
 	while i < len(TrackedStars):
-		YAxis = GetTrackedValue(ItemList, TrackedStars, i)
+		YAxis = GetTrackedValue(ItemList, TrackedStars, i, Constant, BackgroundFlux, StarFlux)
 		Plot = ax.scatter(XAxis, YAxis, label = TrackedStars[i].star.name)
 		i += 1
 	ax.legend()
@@ -63,7 +64,7 @@ def CreateCanvas(app, ItemList, TrackedStars):
 	PlotCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 	return PlotCanvas
 
-def GetTrackedValue(ItemList, TrackedStars, Trackindex):
+def GetTrackedValue(ItemList, TrackedStars, Trackindex, Constant, BackgroundFlux, RefFlux):
 	values=[]
 	index = 0
 	Track = TrackedStars[Trackindex]
@@ -71,7 +72,6 @@ def GetTrackedValue(ItemList, TrackedStars, Trackindex):
 	while index < len(ItemList):
 		pos = list(reversed(Track.trackedPos[index]))
 		data = ItemList[index].data
-		Constant = GetConstant(data, TrackedStars, index, 1, 13.5)
 		clipLoc = numpy.clip(pos, radius, (data.shape[0] - radius, data.shape[1] - radius))
 		crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 		Backdata = GetBackground(data)
