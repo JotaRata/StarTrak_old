@@ -21,12 +21,11 @@ def Awake(root, ItemList, TrackedStars):
 	ResultsFrame.pack(fill = tk.BOTH, expand = 1)
 	CreateCanvas(ResultsFrame, ItemList, TrackedStars)
 	
-def tempo(ItemList):
+def GetTimeLabel(ItemList):
 	t=[]
 	for i in range(len(ItemList)):
-		t.append(ItemList[i].timee)
-	return sorted(t)	
-
+		t.append(ItemList[i].date)
+	return t
 def GetConstant(data, TrackedStars, index, StarIndex, Ref):
 	track = TrackedStars[StarIndex]
 	pos = list(reversed(track.trackedPos[index]))
@@ -41,15 +40,23 @@ def GetConstant(data, TrackedStars, index, StarIndex, Ref):
 	value = Ref + 2.5 * numpy.log10(RefFlux - BackgroundFlux)
 	return value, BackgroundFlux, RefFlux
 
+def GetDateValue(ItemList):
+	t=[]
+	for i in range(len(ItemList)):
+		ls = list(ItemList[i].date.split(":"))
+		t.append(int(ls[0])*3600 + int(ls[1])*60 + int(ls[2]))
+	print t
+	return t
 
 def CreateCanvas(app, ItemList, TrackedStars):
 	viewer = tk.Frame(app, width = 700, height = 400, bg = "white")
 	viewer.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
 	ax = fig.add_subplot(111)
-	XAxis = range(len(ItemList))
+
+	XAxis = GetDateValue(ItemList)
 	#Xlabel= []
-	wack=tempo(ItemList)
+	wack=GetTimeLabel(ItemList)
 	Constant, BackgroundFlux, StarFlux = GetConstant(ItemList[0].data, TrackedStars, 0, 1, 13.5)
 	#for item in ItemList:
 	#	Xlabel.append(basename(item.path))
@@ -63,7 +70,7 @@ def CreateCanvas(app, ItemList, TrackedStars):
 	ax.set_xticks(XAxis)
 	ax.set_xticklabels(Xlabel)
 	for tick in ax.get_xticklabels():
-		tick.set_rotation(90)
+		tick.set_rotation(30)
 	ax.invert_yaxis()	
 	ax.grid(axis = "y")
 	PlotCanvas = FigureCanvasTkAgg(fig,master=viewer)

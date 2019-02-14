@@ -41,7 +41,6 @@ def Awake(root, Data, Brightness, Stars, OnStarChange, starIndex = -1, name = "N
 	
 	ImageViewer = tk.LabelFrame(rightPanel,text = "Vista previa")
 	ImageViewer.grid(row = 0, column = 0, rowspan=2, sticky = tk.NSEW)
-	DrawCanvas(location, radius, Data, Brightness)
 
 	locFrame = tk.Frame(leftPanel)
 	locFrame.grid(row = 2, column = 0, sticky = tk.EW)
@@ -74,8 +73,9 @@ def Awake(root, Data, Brightness, Stars, OnStarChange, starIndex = -1, name = "N
 	ThreSpinBox.grid(row = 6, column = 3, columnspan = 1, sticky = tk.EW)
 	BrightLabel = tk.Label(trackFrame, text = "Máximo brillo: ")
 	BrightLabel.grid(row = 7, column = 2, sticky = tk.W)
+	DrawCanvas(location, radius, Data, Brightness)
 	tk.Label(trackFrame, text = str(numpy.max(Image.get_array()))).grid(row = 7, column = 3, sticky = tk.W)
-
+	
 	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()))
 	XLoc.trace("w",cmd)
 	YLoc.trace("w",cmd)

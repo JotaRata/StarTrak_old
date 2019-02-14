@@ -15,7 +15,7 @@ from STCore.utils.backgroundEstimator import GetBackground
 import STCore.Results
 import STCore.DataManager
 from threading import Thread, Lock
-from time import sleep
+from time import sleep, time
 from functools import partial
 from PIL import Image, ImageTk
 import tkMessageBox
@@ -69,7 +69,7 @@ def Awake(root, stars, ItemList, brightness):
 			item.lastValue = s.value
 			item.currPos = s.location
 			TrackedStars.append(item)
-	CreateCanvas(ItemList[CurrentFile].data,stars, brightness)
+	CreateCanvas(ItemList,stars, brightness)
 	CreateSidebar(root, ItemList, stars)
 	UpdateSidebar(ItemList[CurrentFile].data, stars)
 	UpdateCanvasOverlay(stars, CurrentFile)
@@ -154,9 +154,10 @@ def UpdateSidebar(data, stars):
 		ImageLabel.grid(row = 0, column = 2, columnspan = 1, rowspan = 3, padx = 20)
 		index += 1
 
-def CreateCanvas(data, stars, brightness):
+def CreateCanvas(ItemList, stars, brightness):
 	global ImgCanvas, ImgFrame, Img, ImgAxis
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
+	data = ItemList[CurrentFile].data
 	ImgAxis = fig.add_subplot(111)
 	Img = ImgAxis.imshow(data, vmin = numpy.min(data), vmax = brightness, cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
 	ImgCanvas = FigureCanvasTkAgg(fig,master=ImgFrame)
@@ -165,7 +166,7 @@ def CreateCanvas(data, stars, brightness):
 	ImgCanvas.draw()
 	ImgCanvas.mpl_connect("button_press_event", OnMousePress) 
 	ImgCanvas.mpl_connect("motion_notify_event", OnMouseDrag) 
-	ImgCanvas.mpl_connect("button_release_event", lambda event: OnMouseRelase(event, stars, data)) 
+	ImgCanvas.mpl_connect("button_release_event", lambda event: OnMouseRelase(event, stars, ItemList)) 
 	wdg = ImgCanvas.get_tk_widget()
 	wdg.config(cursor = "fleur")
 	wdg.pack(fill=tk.BOTH, expand=1)
@@ -212,7 +213,7 @@ def UpdateCanvasOverlay(stars, ImgIndex):
 		if TrackedStars[stIndex].lastSeen != -1:
 			col = "r"
 		if STCore.Settings._SHOW_TRACKEDPOS_.get() == 1:
-			points = TrackedStars[stIndex].trackedPos[:ImgIndex + 1]
+			points = TrackedStars[stIndex].trackedPos[max(ImgIndex - 4, 0):ImgIndex + 1]
 			poly = Polygon(points , closed = False, fill = False, edgecolor = "w", linewidth = 2)
 			poly.aname = "Poly"+str(stIndex)
 			ImgAxis.add_artist(poly)
@@ -273,20 +274,24 @@ def GetMaxima(data, xloc, yloc, radius, value):
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius].flatten()
 	return crop[numpy.abs(-crop + value).argmin()]
 	#return  numpy.max(data[vloc[0]-radius : vloc[0]+radius,vloc[1]-radius : vloc[1]+radius])
-
+MousePressTime=0
 def OnMousePress(event):
-	global ImgCanvas, MousePress, SelectedTrack, ImgAxis
+	global ImgCanvas, MousePress, SelectedTrack, ImgAxis, MousePressTime
+	if time() - MousePressTime < 0.2:
+		return
 	for a in ImgAxis.artists:
 		if a.aname != "Poly":
 			contains, attrd = a.contains(event)
 			if contains:
-				x0, y0 = a.xy
+				tup = a.xy
+				x0, y0 = tup[0], tup[1]
 				MousePress = x0, y0, event.xdata, event.ydata
 				SelectedTrack = int(filter(str.isdigit, a.aname)[0])
 				setp(a, linewidth = 4)
 			else:
 				setp(a, linewidth = 1)
 	ImgCanvas.draw()
+	MousePressTime = time()
 
 def OnMouseDrag(event):
 	global MousePress
@@ -301,15 +306,15 @@ def OnMouseDrag(event):
 		sel[0].set_y(y0+dy)
 		text[0].set_x(x0 + dx + TrackedStars[SelectedTrack].star.radius)
 		text[0].set_y(y0 - TrackedStars[SelectedTrack].star.radius + 6 +dy)
-		TrackedStars[SelectedTrack].trackedPos[CurrentFile][1] = int(y0 + dy + TrackedStars[SelectedTrack].star.radius)
-		TrackedStars[SelectedTrack].trackedPos[CurrentFile][0] = int(x0 + dx + TrackedStars[SelectedTrack].star.radius)
+		TrackedStars[SelectedTrack].trackedPos[CurrentFile][1] = int(y0 + dy)
+		TrackedStars[SelectedTrack].trackedPos[CurrentFile][0] = int(x0 + dx)
 	poly = filter(lambda obj: obj.aname == "Poly"+str(SelectedTrack), ImgAxis.artists)[0]
-	poly.set_xy(TrackedStars[SelectedTrack].trackedPos[:CurrentFile + 1])
+	poly.set_xy(TrackedStars[SelectedTrack].trackedPos[max(CurrentFile - 4, 0):CurrentFile + 1])
 	ImgCanvas.draw()
 
-def OnMouseRelase(event, stars, data):
+def OnMouseRelase(event, stars, ItemList):
 	global MousePress, SelectedTrack
-	UpdateSidebar(data, stars)
+	UpdateSidebar(ItemList[CurrentFile].data, stars)
 	MousePress = None
 	SelectedTrack = -1
 	ImgCanvas.draw()

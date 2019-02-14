@@ -5,7 +5,7 @@ import ttk
 from PIL import Image, ImageTk
 from astropy.io import fits
 from os.path import basename, getmtime, isfile
-from time import sleep
+from time import sleep, strftime, localtime
 import tkFileDialog
 import tkMessageBox
 from STCore.item.File import FileItem
@@ -39,9 +39,10 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	global loadIndex
 	item = FileItem()
 	item.path = str(path)
-	item.data = fits.getdata(item.path)
-	item.date = getmtime(item.path)
-	item.timee = header['NOTE'].split()[3]
+	item.data, header = fits.getdata(item.path, header = True)
+	item.date = strftime('%H:%M:%S', localtime(getmtime(item.path)))
+	#print strftime('%H/%M/%S', localtime(item.date))
+	#item.timee = header['NOTE'].split()[3]
 	item.active = 1
 	ItemList.append(item)
 	CreateFileGrid(loadIndex + ListSize, item, root)
@@ -74,7 +75,7 @@ def Awake(root, paths = []):
 			if ItemList[ind].data is None:
 				if isfile(ItemList[ind].path):
 					ItemList[ind].data = fits.getdata(ItemList[ind].path)
-					ItemList[ind].date = getmtime(ItemList[ind].path)
+					ItemList[ind].date = strftime('%H:%M:%S', localtime(getmtime(ItemList[ind].path)))
 					Progress.set(100*float(ind)/len(ItemList))
 					LoadWindow[0].update()
 				else:
