@@ -21,6 +21,9 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="STCore\Settings.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="STCore\DataManager.py">
       <SubType>Code</SubType>
     </Compile>

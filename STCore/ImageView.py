@@ -6,11 +6,14 @@ from matplotlib import use, figure
 use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle
+from matplotlib.colors import Normalize, PowerNorm, LogNorm
+from matplotlib.artist import setp
 import Tkinter as tk
 import ttk
 from STCore.item.Star import StarItem
 from STCore import SetStar, Tracker
 import STCore.DataManager
+from time import time
 #region Messages and Events
 
 def OnImageClick(event):
@@ -44,8 +47,9 @@ def UpdateStarList():
 def __helperCreateWindow(index, stName, stLoc, stRadius, stBound, stType,stThr):
 	return lambda: SetStar.Awake(ViewerFrame, Data, Brightness, Stars, OnStarChange, index, stName, stLoc, stRadius, stBound, stType, stThr)
 def __helperPop (list, index):
-	return lambda: (list.pop(index), OnStarChange())
-
+	return lambda: (list.pop(index), OnStarChange(), __helperTrackedChanged())
+def __helperTrackedChanged():
+	Tracker.DataChanged = True
 def UpdateCanvasOverlay():
 	# Si se elimina el primer elemento de un lista en un ciclo for, entonces
 	# ya no podra seguir iterando, lo que producir errores, se utiliza reversed para eliminar
@@ -57,25 +61,31 @@ def UpdateCanvasOverlay():
 	for s in Stars:
 		rect_pos = (s.location[1] - s.radius, s.location[0] - s.radius)
 		rect = Rectangle(rect_pos, s.radius *2, s.radius *2, edgecolor = "w", facecolor='none')
+		rect.aname = "Rect"+str(Stars.index(s))
 		bound_pos = (s.location[1] - s.bounds, s.location[0] - s.bounds)
 		bound = Rectangle(bound_pos, s.bounds*2, s.bounds *2, edgecolor = "0.5", linestyle = 'dashed', facecolor='none')
+		bound.aname = "Bound"+str(Stars.index(s))
 		ImageAxis.add_artist(rect)
 		ImageAxis.add_artist(bound)
 		text_pos = (s.location[1], s.location[0] - s.bounds - 6)
-		ImageAxis.annotate(s.name, text_pos, color='w', weight='bold',fontsize=6, ha='center', va='center')
+		text = ImageAxis.annotate(s.name, text_pos, color='w', weight='bold',fontsize=6, ha='center', va='center')
+		text.aname = "Text"+str(Stars.index(s))
 	ImageCanvas.draw()
 
 def UpdateImage(val):
 	global Brightness
+	if val == -1:
+		val = Brightness
 	Brightness = float(val);
 	Image.norm.vmax = Brightness
+	Image.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
+	Image.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
 	ImageCanvas.draw_idle()
 	if SliderLabel is not None:
 		SliderLabel.config(text = "Brillo máximo: "+str(int(Brightness)))
 #endregion
 
 #region Create Funcions
-
 def CreateCanvas(app, ImageClick):
 	global ImageCanvas, Image, ImageFrame, ImageAxis
 	ImageFrame = tk.Frame(app, width = 700, height = 400, bg = "white")
@@ -83,11 +93,18 @@ def CreateCanvas(app, ImageClick):
 
 	ImageFigure = figure.Figure(figsize = (7,4), dpi = 100)
 	ImageAxis = ImageFigure.add_subplot(111)
-	Image = ImageAxis.imshow(Data, vmin = min(Data), vmax = max(Data), cmap="gray")
+	Image = ImageAxis.imshow(Data, vmin = min(Data), vmax = max(Data), cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
+	if STCore.Settings._SHOW_GRID_.get() == 1:
+		ImageAxis.grid()
 	ImageCanvas = FigureCanvasTkAgg(ImageFigure,master=ImageFrame)
 	ImageCanvas.draw()
-	ImageCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-	ImageCanvas.mpl_connect('button_press_event',ImageClick)
+	wdg = ImageCanvas.get_tk_widget()
+	wdg.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+	wdg.config(cursor = "fleur")
+	#ImageCanvas.mpl_connect('button_press_event',ImageClick)
+	ImageCanvas.mpl_connect("button_press_event", OnMousePress) 
+	ImageCanvas.mpl_connect("motion_notify_event", OnMouseDrag) 
+	ImageCanvas.mpl_connect("button_release_event", OnMouseRelase) 
 
 def CreateSlider(UpdateImage):
 	global SliderLabel
@@ -132,6 +149,12 @@ ImageAxis = None
 Sidebar = None 
 SidebarList = None
 SliderLabel = None
+ColorMaps = {"Escala de grises" : "gray", "Temperatura" : "seismic", "Arcoiris" : "rainbow", "Negativo" : "binary"}
+Modes = {"Linear" : Normalize(), "Raiz cuadrada": PowerNorm(gamma = 0.5), "Logartitmico" : LogNorm()}
+
+SelectedStar = -1
+MousePress = None
+MousePressTime = -1
 #endregion
 
 #region Main Body
@@ -164,3 +187,48 @@ def ClearStars():
 	global Stars
 	Stars = []
 #endregion
+
+def OnMousePress(event):
+	global ImageCanvas, MousePress, SelectedStar, ImageAxis, MousePressTime
+	for a in ImageAxis.artists:
+		contains, attrd = a.contains(event)
+		if contains:
+			x0, y0 = a.xy
+			MousePress = x0, y0, event.xdata, event.ydata
+			SelectedStar = int(filter(str.isdigit, a.aname)[0])
+			setp(a, linewidth = 4)
+		else:
+			setp(a, linewidth = 1)
+	ImageCanvas.draw()
+	MousePressTime = time()
+
+def OnMouseDrag(event):
+	global MousePress, Stars
+	if MousePress is None or SelectedStar == -1 or len(Stars) == 0 or event.inaxes is None: return
+	x0, y0, xpress, ypress = MousePress
+	dx = event.xdata - xpress
+	dy = event.ydata - ypress
+	sel = filter(lambda obj: obj.aname == "Rect"+str(SelectedStar), ImageAxis.artists)
+	bod = filter(lambda obj: obj.aname == "Bound"+str(SelectedStar), ImageAxis.artists)
+	text = filter(lambda obj: obj.aname == "Text"+str(SelectedStar), ImageAxis.texts)
+	if len(sel) > 0 and len(text) > 0:
+		sel[0].set_x(x0+dx + Stars[SelectedStar].bounds - Stars[SelectedStar].radius)
+		sel[0].set_y(y0+dy + Stars[SelectedStar].bounds - Stars[SelectedStar].radius)
+		bod[0].set_x(x0+dx)
+		bod[0].set_y(y0+dy)
+		text[0].set_x(x0 + dx + Stars[SelectedStar].bounds)
+		text[0].set_y(y0 -6 +dy )
+		Stars[SelectedStar].location = (int(y0 + dy + Stars[SelectedStar].bounds), int(x0 + dx + Stars[SelectedStar].bounds))
+	ImageCanvas.draw()
+
+def OnMouseRelase(event):
+	global MousePress, SelectedStar
+	UpdateStarList()
+	MousePress = None
+	SelectedStar = -1
+	if time() - MousePressTime < 0.2:
+		OnImageClick(event)
+		print "timed"
+	for a in ImageAxis.artists:
+		setp(a, linewidth = 1)
+	ImageCanvas.draw()

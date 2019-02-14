@@ -4,15 +4,17 @@ import ttk
 import sys
 from os.path import dirname, abspath, basename
 sys.path.append(dirname(dirname(abspath(__file__))))
+
 import STCore.ImageSelector
 import STCore.Tools
 import STCore.DataManager
-
+import STCore.Settings
 def Awake(root):
 	global StartFrame
 	STCore.DataManager.CurrentWindow = 0
 	WindowName()
 	StartFrame = tk.Frame(root, width = 1100, height = 400)
+	STCore.Tracker.DataChanged = False
 	StartFrame.pack(expand = 1, fill = tk.BOTH)
 	tk.Label(StartFrame, text = "Bienvenido a StarTrak",font="-weight bold").pack()
 	tk.Label(StartFrame, text = "Por favor seleccione las imagenes que quiera analizar").pack(anchor = tk.CENTER)
@@ -37,7 +39,7 @@ def LoadData(window):
 	STCore.ImageSelector.ItemList = STCore.DataManager.FileItemList
 	STCore.ImageView.Stars = STCore.DataManager.StarItemList
 	STCore.Tracker.TrackedStars = STCore.DataManager.TrackItemList
-
+	STCore.Tracker.DataChanged = False
 	if window == 0:
 		# No hacer nada #
 		return
@@ -51,13 +53,13 @@ def Reset():
 		# No hacer nada #
 		return
 	if STCore.DataManager.CurrentWindow == 1:
-		STCore.ImageSelector.ClearList(win)
 		STCore.ImageSelector.Destroy()
+		STCore.ImageSelector.ClearList(win)
 		Awake(win)
 		return
 	if STCore.DataManager.CurrentWindow == 2:
-		STCore.ImageView.ClearStars()
 		STCore.ImageView.Destroy()
+		STCore.ImageView.ClearStars()
 		Awake(win)
 		return
 	if STCore.DataManager.CurrentWindow == 3:
@@ -77,6 +79,8 @@ if __name__ == "__main__":
 	StartFrame = None
 	Window.wm_title(string = "StarTrak v1.0.0")
 	Window.geometry("1080x480")
+	STCore.Settings.WorkingPath = dirname(dirname(abspath(__file__)))
+	STCore.Settings.LoadSettings()
 	Awake(Window)
 	STCore.Tools.Awake(Window)
 	Window.mainloop()

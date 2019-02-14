@@ -1,6 +1,7 @@
 import Tkinter as tk
 import ttk
 import STCore.DataManager
+import STCore.Settings
 import tkFileDialog
 import tkMessageBox
 #region Variables
@@ -26,8 +27,8 @@ def Awake(root):
 
 	toolmenu = tk.Menu(menubar, tearoff=0)
 	#toolmenu.add_command(label="Configurar magnitud base", command=hello)
-	toolmenu.add_command(label="Opciones de rastreo", command=hello)
-	toolmenu.add_command(label="Opciones", command=hello)
+	#toolmenu.add_command(label="Opciones de rastreo", command=hello)
+	toolmenu.add_command(label="Opciones", command=lambda: OpenSettingsCommand(root))
 	menubar.add_cascade(label="Herramientas", menu=toolmenu)
 
 	helpmenu = tk.Menu(menubar, tearoff=0)
@@ -57,5 +58,7 @@ def QuitAppCommand(root):
 	if tkMessageBox.askyesno("Confirmar Salida", "Desea descartar los cambios actuales?"):
 		root.quit()
 
+def OpenSettingsCommand(root):
+	STCore.Settings.Awake(root)
 def hello():
 	print "Coming soon.."

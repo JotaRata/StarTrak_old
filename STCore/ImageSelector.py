@@ -67,17 +67,22 @@ def Awake(root, paths = []):
 	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 120)
 	if len(ItemList) != 0 and len(paths) == 0:
 		ind = 0
+		Progress = tk.DoubleVar()
+		LoadWindow = CreateLoadBar(root, Progress, title = "Cargando "+basename(STCore.DataManager.CurrentFilePath))
 		while ind < len(ItemList):
 			if ItemList[ind].data is None:
 				if isfile(ItemList[ind].path):
 					ItemList[ind].data = fits.getdata(ItemList[ind].path)
 					ItemList[ind].date = getmtime(ItemList[ind].path)
+					Progress.set(100*float(ind)/len(ItemList))
+					LoadWindow[0].update()
 				else:
 					tkMessageBox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ ItemList[ind].path)
-					break
+					break	
 			ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
 			CreateFileGrid(ind, ItemList[ind], root)
 			ind += 1
+		LoadWindow[0].destroy()
 	else:
 		LoadFiles(paths, root)
 	
@@ -98,10 +103,10 @@ def GridPlace(root, index, size):
 		row += 1
 	return row, col
 
-def CreateLoadBar(root, progress):
+def CreateLoadBar(root, progress, title = "Cargando.."):
 	popup = tk.Toplevel()
 	popup.geometry("300x60+%d+%d" % (root.winfo_width()/2,  root.winfo_height()/2) )
-	popup.wm_title(string = "Cargando..")
+	popup.wm_title(string = title)
 	#popup.overrideredirect(1)
 	pframe = tk.LabelFrame(popup)
 	pframe.pack(fill = tk.BOTH, expand = 1)
@@ -126,13 +131,15 @@ def CreateFileGrid(index, item, root):
 	isactive =tk.IntVar(ImagesFrame, value=item.active)
 	Ckeckbox = tk.Checkbutton(GridFrame, variable = isactive)
 	Ckeckbox.grid(row=0,column=1, sticky=tk.E)
-	isactive.trace("w", lambda a,b,c: SetActive(item, isactive))
+	isactive.trace("w", lambda a,b,c: SetActive(item, isactive, c))
 	ImageLabel = tk.Label(GridFrame, image = Img, width = 200, height = 200 * item.data.shape[0]/float(item.data.shape[1]))
 	ImageLabel.image = Img
 	ImageLabel.grid(row=1,column=0, columnspan=2)
-def SetActive(item, intvar):
-	item.active = intvar.get()
 
+def SetActive(item, intvar, operation):
+	item.active = intvar.get()
+	if operation == "w":
+		STCore.Tracker.DataChanged = True
 def Apply(root):
 	FList = list(filter(lambda item: item.active == 1, ItemList))
 	if len(FList) == 0:
@@ -161,6 +168,7 @@ def ClearList(root):
 def AddFiles(root):
 	paths = tkFileDialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
 	paths = root.tk.splitlist(paths)
+	STCore.Tracker.DataChanged = True
 	LoadFiles(paths, root)
 
 def Destroy():

@@ -18,8 +18,9 @@ BrightLabel = None
 
 def Awake(root, Data, Brightness, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20),radius = 20, bounds = 80, Type = 0, threshold = 100):
 	global Window, Image, ImageCanvas, leftPanel, rightPanel, ImageViewer, BrightLabel
-	Window = tk.Toplevel()
+	Window = tk.Toplevel(root)
 	Window.wm_title(string = "Configurar Estrella")
+	Window.resizable(False, False)
 	leftPanel = tk.Frame(Window)
 	leftPanel.grid(row = 0,column = 0, sticky=tk.NS)
 	rightPanel = tk.Frame(Window)
@@ -32,11 +33,11 @@ def Awake(root, Data, Brightness, Stars, OnStarChange, starIndex = -1, name = "N
 	nameEntry = ttk.Entry(nameFrame, textvariable = StarName)
 	nameEntry.grid (row =0,column = 1, sticky = tk.EW)
 	
-	typeSelection = tk.IntVar(Window, value = Type)
-	typeFrame = tk.LabelFrame(leftPanel,text = "Tipo de Estrella")
-	typeFrame.grid(row = 1, column = 0, columnspan = 1, sticky = tk.W + tk.E)
-	ttk.Radiobutton(typeFrame, text = "Variable", variable = typeSelection, value = 0).grid(row = 0, sticky = tk.W)
-	ttk.Radiobutton(typeFrame, text = "Referencia", variable = typeSelection, value = 1).grid (row = 1, sticky = tk.W)
+	#typeSelection = tk.IntVar(Window, value = Type)
+	#typeFrame = tk.LabelFrame(leftPanel,text = "Tipo de Estrella")
+	#typeFrame.grid(row = 1, column = 0, columnspan = 1, sticky = tk.W + tk.E)
+	#ttk.Radiobutton(typeFrame, text = "Variable", variable = typeSelection, value = 0).grid(row = 0, sticky = tk.W)
+	#ttk.Radiobutton(typeFrame, text = "Referencia", variable = typeSelection, value = 1).grid (row = 1, sticky = tk.W)
 	
 	ImageViewer = tk.LabelFrame(rightPanel,text = "Vista previa")
 	ImageViewer.grid(row = 0, column = 0, rowspan=2, sticky = tk.NSEW)
@@ -81,7 +82,7 @@ def Awake(root, Data, Brightness, Stars, OnStarChange, starIndex = -1, name = "N
 	StarRadius.trace("w",cmd)
 	
 	applycmd = lambda: Apply(StarName.get(),(YLoc.get(), XLoc.get()), StarBounds.get(),
-						 StarRadius.get() , typeSelection.get(),
+						 StarRadius.get() , 1,
 						 GetMaxima(Data,XLoc.get(), YLoc.get(), StarRadius.get()), StarThreshold.get(),
 						 Stars, OnStarChange, starIndex)
 	controlButtons = tk.Frame(rightPanel)
