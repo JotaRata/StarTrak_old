@@ -21,6 +21,11 @@ def Awake(root, ItemList, TrackedStars):
 	ResultsFrame.pack(fill = tk.BOTH, expand = 1)
 	CreateCanvas(ResultsFrame, ItemList, TrackedStars)
 	
+def tempo(ItemList):
+	t=[]
+	for i in range(len(ItemList)):
+		t.append(ItemList[i].timee)
+	return sorted(t)	
 
 def GetConstant(data, TrackedStars, index, StarIndex, Ref):
 	track = TrackedStars[StarIndex]
@@ -43,10 +48,12 @@ def CreateCanvas(app, ItemList, TrackedStars):
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
 	ax = fig.add_subplot(111)
 	XAxis = range(len(ItemList))
-	Xlabel= []
+	#Xlabel= []
+	wack=tempo(ItemList)
 	Constant, BackgroundFlux, StarFlux = GetConstant(ItemList[0].data, TrackedStars, 0, 1, 13.5)
-	for item in ItemList:
-		Xlabel.append(basename(item.path))
+	#for item in ItemList:
+	#	Xlabel.append(basename(item.path))
+	Xlabel=wack
 	i = 0
 	while i < len(TrackedStars):
 		YAxis = GetTrackedValue(ItemList, TrackedStars, i, Constant, BackgroundFlux, StarFlux)

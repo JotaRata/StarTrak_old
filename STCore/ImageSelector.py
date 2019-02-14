@@ -41,6 +41,7 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	item.path = str(path)
 	item.data = fits.getdata(item.path)
 	item.date = getmtime(item.path)
+	item.timee = header['NOTE'].split()[3]
 	item.active = 1
 	ItemList.append(item)
 	CreateFileGrid(loadIndex + ListSize, item, root)
