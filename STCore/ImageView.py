@@ -76,13 +76,17 @@ def UpdateImage(val):
 	global Brightness
 	if val == -1:
 		val = Brightness
-	Brightness = float(val);
-	Image.norm.vmax = Brightness
-	Image.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
-	Image.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
-	ImageCanvas.draw_idle()
-	if SliderLabel is not None:
-		SliderLabel.config(text = "Brillo máximo: "+str(int(Brightness)))
+	try:
+		Brightness = float(val)
+		Image.norm.vmax = Brightness
+		Image.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
+		Image.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
+		STCore.DataManager.Brightness = Brightness
+		ImageCanvas.draw_idle()
+		if SliderLabel is not None:
+			SliderLabel.config(text = "Brillo máximo: "+str(int(Brightness)))
+	except:
+		pass
 #endregion
 
 #region Create Funcions
@@ -109,7 +113,7 @@ def CreateCanvas(app, ImageClick):
 def CreateSlider(UpdateImage):
 	global SliderLabel
 	SliderWdg = ttk.Scale(ImageFrame, from_=min(Data), to=max(Data), orient=tk.HORIZONTAL, command = UpdateImage)
-	SliderWdg.set(max(Data))
+	SliderWdg.set(STCore.DataManager.Brightness)
 	SliderWdg.pack(fill = tk.X, anchor = tk.S, side = tk.BOTTOM)
 	SliderLabel = tk.Label(ImageFrame, text = "Brillo máximo: "+str(max(Data)))
 	SliderLabel.pack(fill = tk.X, anchor = tk.S, side = tk.BOTTOM)
@@ -133,7 +137,7 @@ def CreateSidebar(app, root, items):
 	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
 	ttk.Button(buttonsFrame, text = "Volver", command = cmdBack).grid(row = 0, column = 0, sticky = tk.EW)
 	ttk.Button(buttonsFrame, text = "Agregar estrella", command = cmdCreate).grid(row = 0, column = 1, sticky = tk.EW)
-	ttk.Button(buttonsFrame, text = "Analizar", command = cmdTrack).grid(row = 0, column = 2, sticky = tk.EW)
+	ttk.Button(buttonsFrame, text = "Continuar", command = cmdTrack).grid(row = 0, column = 2, sticky = tk.EW)
 
 #endregion
 
@@ -166,7 +170,9 @@ def Awake(root, items):
 	ViewerFrame.pack( fill = tk.BOTH, expand = 1)
 	tk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
 	Data =  items[0].data
-	Brightness = max(Data)
+	if (STCore.DataManager.Brightness == -1):
+		Brightness = max(Data)
+		STCore.DataManager.Brightness = Brightness
 	CreateCanvas(ViewerFrame, OnImageClick)
 	CreateSlider(UpdateImage)
 	CreateSidebar(ViewerFrame, root, items)

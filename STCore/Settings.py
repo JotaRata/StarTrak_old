@@ -93,8 +93,8 @@ def Awake(root):
 	genSettings.pack(fill = tk.X, expand = 1)
 	tk.Checkbutton(genSettings, variable = _RECENT_FILES_).grid(row = 1, column = 1, columnspan = 1, sticky = tk.E)
 	tk.Label(genSettings, text = "Mostrar archivos recientes").grid(row = 1, column = 0, columnspan = 1, sticky = tk.W)
-	ttk.OptionMenu(genSettings, _PROCESS_NUMBER_,_PROCESS_NUMBER_.get(), *ThrNumber).grid(row = 2, column = 1, columnspan = 1, sticky = tk.E)
-	tk.Label(genSettings, text = "Número máximo de sub-procesos").grid(row = 2, column = 0, columnspan = 1, sticky = tk.W)
+	#ttk.OptionMenu(genSettings, _PROCESS_NUMBER_,_PROCESS_NUMBER_.get(), *ThrNumber).grid(row = 2, column = 1, columnspan = 1, sticky = tk.E)
+	#tk.Label(genSettings, text = "Número máximo de sub-procesos").grid(row = 2, column = 0, columnspan = 1, sticky = tk.W)
 
 	visSettings = tk.LabelFrame(SettingsFrame, text = "Configuración de Visualización:")
 	visSettings.pack(fill = tk.X, expand = 1)

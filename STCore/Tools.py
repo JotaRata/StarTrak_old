@@ -56,7 +56,7 @@ def SaveFileCommand():
 	
 def QuitAppCommand(root):
 	if tkMessageBox.askyesno("Confirmar Salida", "Desea descartar los cambios actuales?"):
-		root.quit()
+		root.destroy()
 
 def OpenSettingsCommand(root):
 	STCore.Settings.Awake(root)

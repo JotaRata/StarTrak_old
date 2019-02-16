@@ -19,6 +19,7 @@ ImagesFrame = None
 ScrollView = None
 ItemList = []
 loadIndex = 0
+FilteredList = []
 #endregion
 
 def LoadFiles(paths, root):
@@ -109,7 +110,7 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	popup = tk.Toplevel()
 	popup.geometry("300x60+%d+%d" % (root.winfo_width()/2,  root.winfo_height()/2) )
 	popup.wm_title(string = title)
-	#popup.overrideredirect(1)
+	popup.overrideredirect(1)
 	pframe = tk.LabelFrame(popup)
 	pframe.pack(fill = tk.BOTH, expand = 1)
 	label = tk.Label(pframe, text="Cargando archivo..")
@@ -142,9 +143,12 @@ def SetActive(item, intvar, operation):
 	item.active = intvar.get()
 	if operation == "w":
 		STCore.Tracker.DataChanged = True
+def SetFilteredList():
+	global FilteredList
+	FilteredList = list(filter(lambda item: item.active == 1, ItemList))
+
 def Apply(root):
-	FList = list(filter(lambda item: item.active == 1, ItemList))
-	if len(FList) == 0:
+	if len(FilteredList) == 0:
 		tkMessageBox.showerror("Error", "Debe seleccionar al menos un archivo")
 		return
 	Destroy()
@@ -156,7 +160,7 @@ def Apply(root):
 		item.active = i.active
 		LightList.append(item)
 	STCore.DataManager.FileItemList = LightList
-	STCore.ImageView.Awake(root, FList)
+	STCore.ImageView.Awake(root, FilteredList)
 
 def ClearList(root):
 	global ItemList
@@ -174,4 +178,5 @@ def AddFiles(root):
 	LoadFiles(paths, root)
 
 def Destroy():
+	SetFilteredList()
 	SelectorFrame.destroy()

@@ -40,6 +40,8 @@ def LoadData(window):
 	STCore.ImageView.Stars = STCore.DataManager.StarItemList
 	STCore.Tracker.TrackedStars = STCore.DataManager.TrackItemList
 	STCore.Tracker.DataChanged = False
+	STCore.ResultsConfigurator.SettingsObject = STCore.DataManager.ResultSetting
+	STCore.ImageView.Brightness = STCore.DataManager.Brightness
 	if window == 0:
 		# No hacer nada #
 		return
@@ -47,8 +49,30 @@ def LoadData(window):
 		Destroy()
 		STCore.ImageSelector.Awake(win)
 		return
+	if window == 2:
+		Destroy()
+		STCore.ImageSelector.Awake(win)
+		STCore.ImageSelector.Apply(win)
+		return
+	if window == 3:
+		Destroy()
+		STCore.ImageSelector.Awake(win)
+		STCore.ImageSelector.Destroy()
+		STCore.Tracker.Awake(win, STCore.ImageView.Stars, STCore.ImageSelector.FilteredList, STCore.ImageView.Brightness)
+		return
+	if window == 4:
+		Destroy()
+		STCore.ImageSelector.Awake(win)
+		STCore.ImageSelector.Destroy()
+		STCore.Results.Awake(win, STCore.ImageSelector.FilteredList, STCore.Tracker.TrackedStars)
+		return
 def Reset():
 	win = Window
+	STCore.ResultsConfigurator.SettingsObject = None
+	STCore.ImageSelector.ItemList = []
+	STCore.ImageView.ClearStars()
+	STCore.Tracker.TrackedStars = []
+	STCore.ImageView.Brightness = -1
 	if STCore.DataManager.CurrentWindow == 0:
 		# No hacer nada #
 		return

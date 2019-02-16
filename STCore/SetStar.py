@@ -5,7 +5,7 @@ import Tkinter as tk
 import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from STCore.item.Star import StarItem
-
+import STCore.Tracker
 #region Variables
 Window = None
 leftPanel = None
@@ -56,10 +56,10 @@ def Awake(root, Data, Brightness, Stars, OnStarChange, starIndex = -1, name = "N
 	tk.Label(locFrame, text = "Posicion:").grid(row = 3, column = 2, sticky = tk.W)
 	XLocSpinBox = tk.Spinbox(locFrame, from_ = 0, to = Data.shape[1], textvariable = XLoc, width = 10)
 	YLocSpinBox = tk.Spinbox(locFrame, from_ = 0, to = Data.shape[0], textvariable = YLoc, width = 10)
-	RadiusSpinBox = tk.Spinbox(locFrame, from_ = 0, to = min(Data.shape), textvariable = StarRadius, width = 10)
+	RadiusSpinBox = tk.Spinbox(locFrame, from_ = 0, to = min(Data.shape), textvariable = StarRadius, width = 10, increment = 5)
 	
-	BoundSpinBox = tk.Spinbox(trackFrame, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10)
-	ThreSpinBox = tk.Spinbox(trackFrame, from_ = 0, to = numpy.max(Data), textvariable = StarThreshold, width = 10)
+	BoundSpinBox = tk.Spinbox(trackFrame, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10, increment = 10)
+	ThreSpinBox = tk.Spinbox(trackFrame, from_ = 0, to = numpy.max(Data), textvariable = StarThreshold, width = 10, increment = 100)
 	
 	XLocSpinBox.grid(row = 3, column = 3)
 	YLocSpinBox.grid(row = 3, column = 4, padx = 20)
@@ -131,6 +131,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.threshold = threshold
 	if starIndex == -1:
 		stars.append(st)
+		STCore.Tracker.DataChanged = True
 	else:
 		stars[starIndex] = st
 	OnStarChange()

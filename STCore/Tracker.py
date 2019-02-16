@@ -14,6 +14,7 @@ from STCore.item.Track import TrackItem
 from STCore.utils.backgroundEstimator import GetBackground
 import STCore.Results
 import STCore.DataManager
+import STCore.ResultsConfigurator
 from threading import Thread, Lock
 from time import sleep, time
 from functools import partial
@@ -52,10 +53,13 @@ def Awake(root, stars, ItemList, brightness):
 	tk.Button(TitleFrame, text = ">", command = lambda: NextFile(ItemList, stars)).pack(side = tk.RIGHT)
 	ImgFrame = tk.Frame(TrackerFrame)
 	ImgFrame.pack(side = tk.LEFT, fill = tk.BOTH, expand = 1)
+	CreateCanvas(ItemList,stars, brightness)
+	Img.set_array(ItemList[CurrentFile].data)
 	CurrentFile = 0
 	if (len(TrackedStars) > 0 and DataChanged):
 		tkMessageBox.showwarning("Aviso", "La lista de estrellas ha sido modificada\nNo se podrán usar los datos de rastreo anteriores.")
 		TrackedStars = []
+		OnFinishTrack()
 	brightestStarValue = 0
 	for s in stars:
 		if s.value > brightestStarValue:
@@ -68,12 +72,12 @@ def Awake(root, stars, ItemList, brightness):
 			item.star = s
 			item.lastValue = s.value
 			item.currPos = s.location
+			item.trackedPos = []
 			TrackedStars.append(item)
-	CreateCanvas(ItemList,stars, brightness)
+			OnFinishTrack()
+	UpdateCanvasOverlay(stars, CurrentFile)
 	CreateSidebar(root, ItemList, stars)
 	UpdateSidebar(ItemList[CurrentFile].data, stars)
-	UpdateCanvasOverlay(stars, CurrentFile)
-	Img.set_array(ItemList[CurrentFile].data)
 
 def UpdateImage():
 	global Img
@@ -83,13 +87,14 @@ def UpdateImage():
 
 def StartTracking(ItemList, stars):
 	global TrackedStars
-	if (len(TrackedStars) > 0 and tkMessageBox.askyesno("Confirmar sobreescritura", "Ya existen datos de rastreo, desea sobreescribirlos?")) or len(TrackedStars) == 0:
+	if (len(TrackedStars[0].trackedPos) > 0 and tkMessageBox.askyesno("Confirmar sobreescritura", "Ya existen datos de rastreo, desea sobreescribirlos?")) or len(TrackedStars[0].trackedPos) == 0:
 		TrackedStars =[]
 		for s in stars:
 			item = TrackItem()
 			item.star = s
 			item.lastValue = s.value
 			item.currPos = s.location
+			item.trackedPos = []
 			TrackedStars.append(item)
 		UpdateTrack(ItemList, stars)
 
@@ -108,21 +113,40 @@ def CreateSidebar(root, ItemList, stars):
 	
 	SidebarList = tk.Frame(Sidebar)
 	SidebarList.pack(expand = 1, fill = tk.X, anchor = tk.NW)
-	
+
 	cmdBack = lambda: (Destroy(), STCore.ImageView.Awake(root, ItemList))
 	cmdNext = lambda: Apply(root, ItemList)
 	cmdTrack = lambda: StartTracking(ItemList, stars)
+
+	ApplyMenu = tk.Menu(Sidebar, tearoff=0)
+	ApplyMenu.add_command(label="Analizar", command=cmdNext)
+	if STCore.ResultsConfigurator.SettingsObject is not None:
+		ApplyMenu.add_command(label="Configurar analisiss", command=lambda: ResultSetting(root, ItemList))
+	ApplyMenu.add_command(label="Componer imagen", command=cmdNext)
 
 	buttonsFrame = tk.Frame(Sidebar, width = 400)
 	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
 	ttk.Button(buttonsFrame, text = "Volver", command = cmdBack).grid(row = 0, column = 0, sticky = tk.EW)
 	ttk.Button(buttonsFrame, text = "Iniciar", command = cmdTrack).grid(row = 0, column = 1, sticky = tk.EW)
-	ttk.Button(buttonsFrame, text = "Continuar", command = cmdNext).grid(row = 0, column = 2, sticky = tk.EW)
+	applyButton = ttk.Button(buttonsFrame, text = "Continuar", command = cmdNext)
+	applyButton.bind("<Button-1>", lambda event: PopupMenu(event, ApplyMenu))
+	applyButton.grid(row = 0, column = 2, sticky = tk.EW)
+def PopupMenu(event, ApplyMenu):
+	ApplyMenu.post(event.x_root, event.y_root)
+
+def ResultSetting(root, ItemList):
+	if len(TrackedStars[0].trackedPos) > 0:
+		STCore.ResultsConfigurator.Awake(root, ItemList, TrackedStars)
+	else:
+		tkMessageBox.showerror("Error", "No hay estrellas restreadas.")
 
 def Apply(root, ItemList):
-	if len(TrackedStars) > 0:
-		Destroy()
-		STCore.Results.Awake(root, ItemList, TrackedStars)
+	if len(TrackedStars[0].trackedPos) > 0:
+		if (STCore.ResultsConfigurator.SettingsObject is None):
+			STCore.ResultsConfigurator.Awake(root, ItemList, TrackedStars)
+		else:
+			Destroy()
+			STCore.Results.Awake(root, ItemList, TrackedStars)
 	else:
 		tkMessageBox.showerror("Error", "No hay estrellas restreadas.")
 
@@ -210,7 +234,7 @@ def UpdateCanvasOverlay(stars, ImgIndex):
 		col = "w"
 		if len(trackPos) == 0:
 			continue
-		if TrackedStars[stIndex].lastSeen != -1:
+		if ImgIndex in TrackedStars[stIndex].lostPoints:
 			col = "r"
 		if STCore.Settings._SHOW_TRACKEDPOS_.get() == 1:
 			points = TrackedStars[stIndex].trackedPos[max(ImgIndex - 4, 0):ImgIndex + 1]
@@ -306,15 +330,18 @@ def OnMouseDrag(event):
 		sel[0].set_y(y0+dy)
 		text[0].set_x(x0 + dx + TrackedStars[SelectedTrack].star.radius)
 		text[0].set_y(y0 - TrackedStars[SelectedTrack].star.radius + 6 +dy)
-		TrackedStars[SelectedTrack].trackedPos[CurrentFile][1] = int(y0 + dy)
-		TrackedStars[SelectedTrack].trackedPos[CurrentFile][0] = int(x0 + dx)
+		TrackedStars[SelectedTrack].trackedPos[CurrentFile][1] = int(y0 + dy + TrackedStars[SelectedTrack].star.radius)
+		TrackedStars[SelectedTrack].trackedPos[CurrentFile][0] = int(x0 + dx+ TrackedStars[SelectedTrack].star.radius)
 	poly = filter(lambda obj: obj.aname == "Poly"+str(SelectedTrack), ImgAxis.artists)[0]
 	poly.set_xy(TrackedStars[SelectedTrack].trackedPos[max(CurrentFile - 4, 0):CurrentFile + 1])
 	ImgCanvas.draw()
 
 def OnMouseRelase(event, stars, ItemList):
 	global MousePress, SelectedTrack
+	if CurrentFile in TrackedStars[SelectedTrack].lostPoints:
+		TrackedStars[SelectedTrack].lostPoints.remove(CurrentFile)
 	UpdateSidebar(ItemList[CurrentFile].data, stars)
+	UpdateCanvasOverlay(stars, CurrentFile)
 	MousePress = None
 	SelectedTrack = -1
 	ImgCanvas.draw()
