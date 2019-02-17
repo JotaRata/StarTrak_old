@@ -14,11 +14,12 @@ from STCore.item.Star import StarItem
 from STCore import SetStar, Tracker
 import STCore.DataManager
 from time import time
+import STCore.Settings
 #region Messages and Events
 
 def OnImageClick(event):
 	loc = (int(event.ydata), int(event.xdata))
-	SetStar.Awake(ViewerFrame, Data, Brightness, Stars, OnStarChange, location = loc)
+	SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, location = loc)
 
 def OnStarChange():
 	UpdateStarList()
@@ -45,7 +46,7 @@ def UpdateStarList():
 #Las funciones lambda no se pueden llamar dentro de un loop for o while,
 ## para eso hay que crear una funcion que retorne un lambda
 def __helperCreateWindow(index, stName, stLoc, stRadius, stBound, stType,stThr):
-	return lambda: SetStar.Awake(ViewerFrame, Data, Brightness, Stars, OnStarChange, index, stName, stLoc, stRadius, stBound, stType, stThr)
+	return lambda: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, index, stName, stLoc, stRadius, stBound, stType, stThr)
 def __helperPop (list, index):
 	return lambda: (list.pop(index), OnStarChange(), __helperTrackedChanged())
 def __helperTrackedChanged():
@@ -72,32 +73,29 @@ def UpdateCanvasOverlay():
 		text.aname = "Text"+str(Stars.index(s))
 	ImageCanvas.draw()
 
-def UpdateImage(val):
-	global Brightness
-	if val == -1:
-		val = Brightness
-	try:
-		Brightness = float(val)
-		Image.norm.vmax = Brightness
+def UpdateImage():
+		global Levels
+		if _LEVEL_MIN_.get() >_LEVEL_MAX_.get():
+			_LEVEL_MIN_.set(_LEVEL_MAX_.get())
+		Image.norm.vmax = _LEVEL_MAX_.get()
+		Image.norm.vmin = _LEVEL_MIN_.get() + 0.01
 		Image.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
 		Image.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
-		STCore.DataManager.Brightness = Brightness
+		STCore.DataManager.Levels = (_LEVEL_MAX_.get(), _LEVEL_MIN_.get())
+		Levels = (_LEVEL_MAX_.get(), _LEVEL_MIN_.get())
 		ImageCanvas.draw_idle()
-		if SliderLabel is not None:
-			SliderLabel.config(text = "Brillo máximo: "+str(int(Brightness)))
-	except:
-		pass
+
 #endregion
 
 #region Create Funcions
 def CreateCanvas(app, ImageClick):
 	global ImageCanvas, Image, ImageFrame, ImageAxis
-	ImageFrame = tk.Frame(app, width = 700, height = 400, bg = "white")
+	ImageFrame = tk.Frame(app, width = 700, height = 350, bg = "white")
 	ImageFrame.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)	
 
-	ImageFigure = figure.Figure(figsize = (7,4), dpi = 100)
+	ImageFigure = figure.Figure(figsize = (7,3.6), dpi = 100)
 	ImageAxis = ImageFigure.add_subplot(111)
-	Image = ImageAxis.imshow(Data, vmin = min(Data), vmax = max(Data), cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
+	Image = ImageAxis.imshow(Data, vmin = Levels[1], vmax = Levels[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
 	if STCore.Settings._SHOW_GRID_.get() == 1:
 		ImageAxis.grid()
 	ImageCanvas = FigureCanvasTkAgg(ImageFigure,master=ImageFrame)
@@ -110,13 +108,6 @@ def CreateCanvas(app, ImageClick):
 	ImageCanvas.mpl_connect("motion_notify_event", OnMouseDrag) 
 	ImageCanvas.mpl_connect("button_release_event", OnMouseRelase) 
 
-def CreateSlider(UpdateImage):
-	global SliderLabel
-	SliderWdg = ttk.Scale(ImageFrame, from_=min(Data), to=max(Data), orient=tk.HORIZONTAL, command = UpdateImage)
-	SliderWdg.set(STCore.DataManager.Brightness)
-	SliderWdg.pack(fill = tk.X, anchor = tk.S, side = tk.BOTTOM)
-	SliderLabel = tk.Label(ImageFrame, text = "Brillo máximo: "+str(max(Data)))
-	SliderLabel.pack(fill = tk.X, anchor = tk.S, side = tk.BOTTOM)
 
 def CreateSidebar(app, root, items):
 	global Sidebar, SidebarList
@@ -130,7 +121,7 @@ def CreateSidebar(app, root, items):
 	loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
 	
 	cmdBack = lambda : 	(Destroy(), STCore.ImageSelector.Awake(root, []))
-	cmdCreate = lambda : 	SetStar.Awake(app, Data, Brightness, Stars, OnStarChange, location = loc)
+	cmdCreate = lambda : 	SetStar.Awake(app, Data, Stars, OnStarChange, location = loc)
 	cmdTrack = lambda : Apply(root, items)
 	
 	buttonsFrame = tk.Frame(Sidebar)
@@ -144,7 +135,7 @@ def CreateSidebar(app, root, items):
 #region Global Variables
 ViewerFrame = None
 Data = None
-Brightness = 0
+Levels = (0,0)
 Stars = []
 ImageCanvas = None
 Image = None 
@@ -164,17 +155,31 @@ MousePressTime = -1
 #region Main Body
 
 def Awake(root, items):
-	global ViewerFrame, Data, Brightness, Stars, ImageCanvas, Image, ImageFrame, ImageAxis, Sidebar, SidebarList, SliderLabel
+	global ViewerFrame, Data, Stars, ImageCanvas, Image, ImageFrame, ImageAxis, Sidebar, SidebarList, SliderLabel, _LEVEL_MAX_, _LEVEL_MIN_, Levels
 	STCore.DataManager.CurrentWindow = 2
 	ViewerFrame = tk.Frame(root)
 	ViewerFrame.pack( fill = tk.BOTH, expand = 1)
 	tk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
 	Data =  items[0].data
-	if (STCore.DataManager.Brightness == -1):
-		Brightness = max(Data)
-		STCore.DataManager.Brightness = Brightness
+	Levels = STCore.DataManager.Levels
+	if not isinstance(Levels, tuple):
+		print "Viewer: not tuple!", type(Levels)
+		Levels = (max(Data), min(Data))
+		STCore.DataManager.Levels = Levels
+	_LEVEL_MIN_ = tk.IntVar(value = Levels[1])
+	_LEVEL_MAX_ = tk.IntVar(value = Levels[0])
+	_LEVEL_MIN_.trace("w", lambda a,b,c: UpdateImage())
+	_LEVEL_MAX_.trace("w", lambda a,b,c: UpdateImage())
 	CreateCanvas(ViewerFrame, OnImageClick)
-	CreateSlider(UpdateImage)
+
+	levelFrame = tk.LabelFrame(ImageFrame, text = "Niveles:")
+	levelFrame.pack(fill = tk.X, anchor = tk.S, side = tk.BOTTOM)
+	tk.Label(levelFrame, text = "Maximo:").grid(row = 0,column = 0)
+	ttk.Scale(levelFrame, from_=min(Data), to=max(Data), orient=tk.HORIZONTAL, variable = _LEVEL_MAX_).grid(row = 0, column = 1, columnspan = 10, sticky = tk.EW)
+	tk.Label(levelFrame, text = "Minimo:").grid(row = 1,column = 0)
+	ttk.Scale(levelFrame, from_=min(Data), to=max(Data), orient=tk.HORIZONTAL, variable = _LEVEL_MIN_).grid(row = 1, column = 1, columnspan = 10, sticky = tk.EW)
+	for x in range(10):
+		tk.Grid.columnconfigure(levelFrame, x, weight=1)
 	CreateSidebar(ViewerFrame, root, items)
 	OnStarChange()
 
@@ -185,7 +190,7 @@ def Apply(root, items):
 	import tkMessageBox
 	if len(Stars) > 0:
 		Destroy()
-		Tracker.Awake(root, Stars, items, Brightness)
+		Tracker.Awake(root, Stars, items)
 	else:
 		tkMessageBox.showerror("Error", "Debe tener al menos una estrella para comenzar el analisis")
 		return

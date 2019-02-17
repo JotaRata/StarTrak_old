@@ -15,6 +15,7 @@ from STCore.utils.backgroundEstimator import GetBackground
 import STCore.Results
 import STCore.DataManager
 import STCore.ResultsConfigurator
+import STCore.Composite
 from threading import Thread, Lock
 from time import sleep, time
 from functools import partial
@@ -40,7 +41,7 @@ SelectedTrack = -1
 MousePress = None
 CurrentFile = 0
 #endregion
-def Awake(root, stars, ItemList, brightness):
+def Awake(root, stars, ItemList):
 	global TrackerFrame, TitleLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile
 	STCore.DataManager.CurrentWindow = 3
 	TrackerFrame = tk.Frame(root)
@@ -53,12 +54,13 @@ def Awake(root, stars, ItemList, brightness):
 	tk.Button(TitleFrame, text = ">", command = lambda: NextFile(ItemList, stars)).pack(side = tk.RIGHT)
 	ImgFrame = tk.Frame(TrackerFrame)
 	ImgFrame.pack(side = tk.LEFT, fill = tk.BOTH, expand = 1)
-	CreateCanvas(ItemList,stars, brightness)
+	CreateCanvas(ItemList,stars)
 	Img.set_array(ItemList[CurrentFile].data)
 	CurrentFile = 0
 	if (len(TrackedStars) > 0 and DataChanged):
 		tkMessageBox.showwarning("Aviso", "La lista de estrellas ha sido modificada\nNo se podrán usar los datos de rastreo anteriores.")
 		TrackedStars = []
+		STCore.Results.MagData = None
 		OnFinishTrack()
 	brightestStarValue = 0
 	for s in stars:
@@ -122,7 +124,7 @@ def CreateSidebar(root, ItemList, stars):
 	ApplyMenu.add_command(label="Analizar", command=cmdNext)
 	if STCore.ResultsConfigurator.SettingsObject is not None:
 		ApplyMenu.add_command(label="Configurar analisiss", command=lambda: ResultSetting(root, ItemList))
-	ApplyMenu.add_command(label="Componer imagen", command=cmdNext)
+	ApplyMenu.add_command(label="Componer imagen", command=lambda : (Destroy(), CompositeNow(root, ItemList)))
 
 	buttonsFrame = tk.Frame(Sidebar, width = 400)
 	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
@@ -134,6 +136,14 @@ def CreateSidebar(root, ItemList, stars):
 def PopupMenu(event, ApplyMenu):
 	ApplyMenu.post(event.x_root, event.y_root)
 
+def CompositeNow(root, ItemList):
+	if len(TrackedStars[0].trackedPos) == 0:
+		tkMessageBox.showerror("Error", "No hay estrellas restreadas.")
+		return
+	if len(TrackedStars) < 2:
+		tkMessageBox.showerror("Error", "Se necesitan al menos dos estrellaspara iniciar una composicion.")
+		return
+	STCore.Composite.Awake(root, ItemList, TrackedStars)
 def ResultSetting(root, ItemList):
 	if len(TrackedStars[0].trackedPos) > 0:
 		STCore.ResultsConfigurator.Awake(root, ItemList, TrackedStars)
@@ -178,12 +188,17 @@ def UpdateSidebar(data, stars):
 		ImageLabel.grid(row = 0, column = 2, columnspan = 1, rowspan = 3, padx = 20)
 		index += 1
 
-def CreateCanvas(ItemList, stars, brightness):
+def CreateCanvas(ItemList, stars):
 	global ImgCanvas, ImgFrame, Img, ImgAxis
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
 	data = ItemList[CurrentFile].data
 	ImgAxis = fig.add_subplot(111)
-	Img = ImgAxis.imshow(data, vmin = numpy.min(data), vmax = brightness, cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
+	levels = STCore.DataManager.Levels
+	if  not isinstance(levels, tuple):
+		#print "Tracker: not tuple!"
+		levels = (numpy.max(data), numpy.min(data))
+		STCore.DataManager.Levels = STCore.ImageView.Levels = levels
+	Img = ImgAxis.imshow(data, vmin = levels[1], vmax = levels[0], cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
 	ImgCanvas = FigureCanvasTkAgg(fig,master=ImgFrame)
 	if STCore.Settings._SHOW_GRID_.get() == 1:
 		ImgAxis.grid()
@@ -194,10 +209,11 @@ def CreateCanvas(ItemList, stars, brightness):
 	wdg = ImgCanvas.get_tk_widget()
 	wdg.config(cursor = "fleur")
 	wdg.pack(fill=tk.BOTH, expand=1)
-	wdg.wait_visibility()
+	#wdg.wait_visibility()
 
 def OnFinishTrack():
 	STCore.DataManager.TrackItemList = TrackedStars
+	DataChanged = False
 
 def UpdateTrack(ItemList, stars, index = 0):
 	global TrackedStars, SidebarList, CurrentFile
@@ -237,10 +253,13 @@ def UpdateCanvasOverlay(stars, ImgIndex):
 		if ImgIndex in TrackedStars[stIndex].lostPoints:
 			col = "r"
 		if STCore.Settings._SHOW_TRACKEDPOS_.get() == 1:
-			points = TrackedStars[stIndex].trackedPos[max(ImgIndex - 4, 0):ImgIndex + 1]
-			poly = Polygon(points , closed = False, fill = False, edgecolor = "w", linewidth = 2)
-			poly.aname = "Poly"+str(stIndex)
-			ImgAxis.add_artist(poly)
+			try:
+				points = TrackedStars[stIndex].trackedPos[max(ImgIndex - 4, 0):ImgIndex + 1]
+				poly = Polygon(points , closed = False, fill = False, edgecolor = "w", linewidth = 2)
+				poly.aname = "Poly"+str(stIndex)
+				ImgAxis.add_artist(poly)
+			except:
+				pass
 		rect_pos = (trackPos[0] - s.radius, trackPos[1] - s.radius)
 		rect = Rectangle(rect_pos, s.radius *2, s.radius *2, edgecolor = col, facecolor='none')
 		rect.aname = "Rect"+str(stIndex)

@@ -75,7 +75,7 @@ def SaveSettings():
 	with open(WorkingPath+'/Settings.ini', 'w') as configfile:
 		 config.write(configfile)
 	if STCore.DataManager.CurrentWindow == 2:
-		STCore.ImageView.UpdateImage(-1)
+		STCore.ImageView.UpdateImage()
 	if STCore.DataManager.CurrentWindow == 3:
 		STCore.Tracker.UpdateImage()
 	Window.destroy()

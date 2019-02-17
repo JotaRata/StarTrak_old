@@ -2,6 +2,7 @@ import Tkinter as tk
 import ttk
 from STCore.item.ResultSettings import ResultSetting
 import STCore.Tracker, STCore.Results, STCore.DataManager
+import numpy
 #region variables
 ConfiguratorFrame = None
 SettingsObject = None
@@ -36,19 +37,28 @@ def Load():
 def Apply(root, ItemList, TrackedStars):
 	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_
 	SettingsObject.sortingMode = _SORTINGMODE_.get()
-	SettingsObject.delLostTracks = _DELTRACKS_.get()
-	SettingsObject.delError = _DELERROR_.get()
-	SettingsObject.refStar = _REFSTAR_.get()
-	SettingsObject.refValue = float(_REFVALUE_.get())
 	SettingsObject.tickNumber = _XTICKS_.get()
 	STCore.DataManager.ResultSetting = SettingsObject
 	if STCore.DataManager.CurrentWindow == 3:
 		STCore.Tracker.Destroy()
+		SettingsObject.delLostTracks = _DELTRACKS_.get()
+		SettingsObject.delError = _DELERROR_.get()
+		SettingsObject.refStar = _REFSTAR_.get()
+		SettingsObject.refValue = float(_REFVALUE_.get())
+		STCore.Results.Awake(root, ItemList, TrackedStars)
 	if STCore.DataManager.CurrentWindow == 4:
-		STCore.Results.Destroy()
-	STCore.Results.Awake(root, ItemList, TrackedStars)
+		ticks = STCore.ResultsConfigurator.SettingsObject.tickNumber
+		XAxis, Xlabel = STCore.Results.GetXTicks(ItemList)
+		for i in range(len(TrackedStars)):
+			X = numpy.c_[XAxis,STCore.Results.MagData[i]]
+			STCore.Results.Plots[i].set_offsets(X)
+			STCore.Results.PlotAxis.set_xticks(XAxis[0::max(1, len(ItemList) / ticks)])
+			STCore.Results.PlotAxis.set_xticklabels(Xlabel[0::max(1, len(ItemList) / ticks)])
+			xmin=X[:,0].min(); xmax=X[:,0].max()
+			STCore.Results.PlotAxis.set_xlim(xmin-0.1*(xmax-xmin),xmax+0.1*(xmax-xmin))
+		STCore.Results.PlotCanvas.draw()
 
-def Awake(root, ItemList, TrackedStars):
+def Awake(root, ItemList, TrackedStars, mini = False):
 	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_
 	ConfiguratorFrame = tk.Toplevel(root)
 	ConfiguratorFrame.wm_title(string = "Configurar analisis")
@@ -65,18 +75,20 @@ def Awake(root, ItemList, TrackedStars):
 	tk.Label(MainPanel, text = "Por nombre").grid(row = 2, column = 1, sticky= tk.W)
 	tk.Label(MainPanel, text =" ").grid(row = 3, column = 0)
 
-	ttk.Checkbutton(MainPanel, variable = _DELTRACKS_).grid(row = 4, column = 0, sticky= tk.W)
-	tk.Label(MainPanel, text ="Eliminar datos de rastreo perdidos").grid(row = 4, column = 1, sticky= tk.W)
-	ttk.Checkbutton(MainPanel, variable = _DELERROR_).grid(row = 5, column = 0, sticky= tk.W)
-	tk.Label(MainPanel, text ="Eliminar datos distantes").grid(row = 5, column = 1, sticky= tk.W)
+	if not mini:
+		ttk.Checkbutton(MainPanel, variable = _DELTRACKS_).grid(row = 4, column = 0, sticky= tk.W)
+		tk.Label(MainPanel, text ="Eliminar datos de rastreo perdidos").grid(row = 4, column = 1, sticky= tk.W)
+		ttk.Checkbutton(MainPanel, variable = _DELERROR_).grid(row = 5, column = 0, sticky= tk.W)
+		tk.Label(MainPanel, text ="Eliminar datos distantes").grid(row = 5, column = 1, sticky= tk.W)
 
 	tk.Label(MainPanel, text ="Numero de etiquetas").grid(row = 6, column = 1, sticky= tk.W)
 	tk.Spinbox(MainPanel, from_ = 1, to = len(ItemList), width = 3, textvariable = _XTICKS_).grid(row = 6, column = 0, sticky= tk.W)
-	tk.Label(MainPanel, text ="Estrella de referencia").grid(row = 7, column = 0, columnspan = 2, sticky= tk.W, pady = 20)
-	RefFrame = tk.LabelFrame(MainPanel)
-	RefFrame.grid(row = 8, column = 0, columnspan = 3, rowspan = 6, sticky = tk.NSEW)
-	_REFSTAR_.trace("w",lambda a,b,c: UpdateReferences(RefFrame, TrackedStars))
-	UpdateReferences(RefFrame, TrackedStars)
+	if not mini:
+		tk.Label(MainPanel, text ="Estrella de referencia").grid(row = 7, column = 0, columnspan = 2, sticky= tk.W, pady = 20)
+		RefFrame = tk.LabelFrame(MainPanel)
+		RefFrame.grid(row = 8, column = 0, columnspan = 3, rowspan = 6, sticky = tk.NSEW)
+		_REFSTAR_.trace("w",lambda a,b,c: UpdateReferences(RefFrame, TrackedStars))
+		UpdateReferences(RefFrame, TrackedStars)
 
 	Sidebar = tk.Frame(ConfiguratorFrame)
 	Sidebar.pack(side = tk.RIGHT, fill = tk.Y, anchor = tk.N)

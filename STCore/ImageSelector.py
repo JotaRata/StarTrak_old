@@ -41,7 +41,7 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	item = FileItem()
 	item.path = str(path)
 	item.data, header = fits.getdata(item.path, header = True)
-	item.date = strftime('%H:%M:%S', localtime(getmtime(item.path)))
+	item.date = getmtime(item.path)
 	#print strftime('%H/%M/%S', localtime(item.date))
 	#item.timee = header['NOTE'].split()[3]
 	item.active = 1
@@ -76,7 +76,7 @@ def Awake(root, paths = []):
 			if ItemList[ind].data is None:
 				if isfile(ItemList[ind].path):
 					ItemList[ind].data = fits.getdata(ItemList[ind].path)
-					ItemList[ind].date = strftime('%H:%M:%S', localtime(getmtime(ItemList[ind].path)))
+					ItemList[ind].date = getmtime(ItemList[ind].path)
 					Progress.set(100*float(ind)/len(ItemList))
 					LoadWindow[0].update()
 				else:
@@ -89,8 +89,8 @@ def Awake(root, paths = []):
 	else:
 		LoadFiles(paths, root)
 	
-	buttonFrame = tk.Frame(SelectorFrame)
-	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE)
+	buttonFrame = tk.Frame(SelectorFrame, width = 400)
+	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH)
 	ttk.Button(buttonFrame, text="Limpiar todo", command = lambda: ClearList(root)).grid(row=2, column=0, sticky = tk.EW, pady=5)
 	ttk.Button(buttonFrame, text="Agregar archivo", command = lambda: AddFiles(root)).grid(row=1, column=0, sticky = tk.EW, pady=5)
 	ttk.Button(buttonFrame, text="Continuar", command = lambda: Apply(root)).grid(row=0, column=0, sticky = tk.EW, pady=5)
@@ -148,6 +148,7 @@ def SetFilteredList():
 	FilteredList = list(filter(lambda item: item.active == 1, ItemList))
 
 def Apply(root):
+	SetFilteredList()
 	if len(FilteredList) == 0:
 		tkMessageBox.showerror("Error", "Debe seleccionar al menos un archivo")
 		return
@@ -167,9 +168,12 @@ def ClearList(root):
 	for i in ItemList:
 		del i
 	ItemList = []
-	ScrollView.config(scrollregion=(0,0, root.winfo_width(), 1))
-	for child in ImagesFrame.winfo_children():
-		child.destroy()
+	try:
+		ScrollView.config(scrollregion=(0,0, root.winfo_width(), 1))
+		for child in ImagesFrame.winfo_children():
+			child.destroy()
+	except:
+		pass
 
 def AddFiles(root):
 	paths = tkFileDialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])

@@ -10,11 +10,14 @@ from STCore.utils.Exporter import *
 import math
 from os.path import basename
 import STCore.ResultsConfigurator as Config
-from time import sleep
+from time import sleep, localtime, gmtime, strftime, time
 from multiprocessing import Pool
 #region  Variables
 ResultsFrame = None
-
+PlotAxis = None
+Plots = None
+MagData = None
+PlotCanvas = None
 #endregion
 
 
@@ -26,7 +29,7 @@ def Awake(root, ItemList, TrackedStars):
 	canvas = CreateCanvas(root, ResultsFrame, ItemList, TrackedStars)
 	Sidebar = tk.Frame(ResultsFrame, width = 400)
 	Sidebar.pack(side = tk.RIGHT, fill = tk.Y)
-	cmdBack = lambda: (Destroy(), STCore.Tracker.Awake(root, STCore.ImageView.Stars, ItemList, STCore.ImageView.Brightness))
+	cmdBack = lambda: (Destroy(), STCore.Tracker.Awake(root, STCore.ImageView.Stars, ItemList))
 	
 	Exportmenu = tk.Menu(root, tearoff=0)
 	Exportmenu.add_command(label="Exportar grafico", command=lambda: ExportImage(canvas[1]))
@@ -38,15 +41,20 @@ def Awake(root, ItemList, TrackedStars):
 	exportbutton.bind("<Button-1>", lambda event: PopupMenu(event, Exportmenu))
 	exportbutton.grid(row = 0, column = 0)
 
-	ttk.Button(Sidebar, text = "Volver", command = cmdBack).grid(row = 1, column = 0)
-	ttk.Button(Sidebar, text = "Configurar", command = lambda: STCore.ResultsConfigurator.Awake(root, ItemList, TrackedStars)).grid(row = 2, column = 0)
+	ttk.Button(Sidebar, text = "Volver", command = cmdBack).grid(row = 0, column = 1)
+	ttk.Button(Sidebar, text = "Configurar", command = lambda: STCore.ResultsConfigurator.Awake(root, ItemList, TrackedStars, mini = True)).grid(row = 0, column =2)
 def PopupMenu(event, Menu):
 	Menu.post(event.x_root, event.y_root)
 
 def GetTimeLabel(ItemList):
 	t=[]
+	prevDay = 0
 	for i in range(len(ItemList)):
-		t.append(ItemList[i].date)
+		date =  strftime('%H:%M:%S',gmtime(ItemList[i].date))
+		if ItemList[i].date - ItemList[prevDay].date > 43200 or i == 0:
+			prevDay = i
+			date = strftime('%H:%M:%S\n%d/%m/%Y\n(UTC)',gmtime(ItemList[i].date))
+		t.append(date)
 	return t
 def GetNameLabel(ItemList):
 	t=[]
@@ -69,21 +77,15 @@ def GetConstant(data, TrackedStars, index, StarIndex, Ref):
 
 def GetDateValue(ItemList):
 	t=[]
+	epoch = time()
 	for i in range(len(ItemList)):
-		ls = list(ItemList[i].date.split(":"))
-		t.append(int(ls[0])*3600 + int(ls[1])*60 + int(ls[2]))
+		#ls = list(ItemList[i].date.split(":"))
+		t.append(ItemList[i].date - epoch)
 	return t
 def GetNameValue(ItemList):
 	t = range(len(ItemList))
 	return t
-
-def CreateCanvas(root, app, ItemList, TrackedStars):
-	viewer = tk.Frame(app, width = 700, height = 400, bg = "white")
-	viewer.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)
-	fig = figure.Figure(figsize = (7,4), dpi = 100)
-	ax = fig.add_subplot(111)
-	progress = tk.DoubleVar()
-	LoadBar = CreateLoadBar(root, progress)
+def GetXTicks(ItemList):
 	XAxis = []
 	Xlabel = []
 	if Config.SettingsObject.sortingMode == 0:
@@ -92,6 +94,18 @@ def CreateCanvas(root, app, ItemList, TrackedStars):
 	else:
 		XAxis = GetNameValue(ItemList)
 		Xlabel = GetNameLabel(ItemList)
+	return XAxis, Xlabel
+
+def CreateCanvas(root, app, ItemList, TrackedStars):
+	global PlotAxis, Plots, MagData, PlotCanvas
+	viewer = tk.Frame(app, width = 700, height = 400, bg = "white")
+	viewer.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)
+	fig = figure.Figure(figsize = (7,4), dpi = 100)
+	PlotAxis = fig.add_subplot(111)
+	progress = tk.DoubleVar()
+	LoadBar = CreateLoadBar(root, progress)
+
+	XAxis, Xlabel = GetXTicks(ItemList)
 	progress.set(20)
 	sleep(0.01)
 	#Xlabel= []
@@ -99,29 +113,34 @@ def CreateCanvas(root, app, ItemList, TrackedStars):
 												  max(Config.SettingsObject.refStar, 0), Config.SettingsObject.refValue)
 	#for item in ItemList:
 	#	Xlabel.append(basename(item.path))
-	MagData = numpy.empty((0 ,len(ItemList)))
-	i = 0
-	while i < len(TrackedStars):
-		YAxis = GetTrackedValue(ItemList, TrackedStars, i, Constant, BackgroundFlux, StarFlux)
-		MagData = numpy.append(MagData, numpy.atleast_2d(numpy.array(YAxis)), 0)
-		Plot = ax.scatter(XAxis, YAxis, label = TrackedStars[i].star.name)
-		progress.set(20+80*float(i)/len(TrackedStars))
-		LoadBar[0].update()
-		sleep(0.01)
-		i += 1
-	print MagData.shape
+	Plots = range(len(TrackedStars))
+	if (MagData is None):
+		MagData = numpy.empty((0 ,len(ItemList)))
+		i = 0
+		while i < len(TrackedStars):
+			YAxis = GetTrackedValue(ItemList, TrackedStars, i, Constant, BackgroundFlux, StarFlux)
+			MagData = numpy.append(MagData, numpy.atleast_2d(numpy.array(YAxis)), 0)
+			progress.set(20+80*float(i)/len(TrackedStars))
+			LoadBar[0].update()
+			sleep(0.01)
+			i += 1
+	for a in range(len(Plots)):
+		Plots[a] = PlotAxis.scatter(XAxis, MagData[a], label = TrackedStars[a].star.name)
+	STCore.DataManager.ResultData = MagData
+	#print MagData.shape
 	LoadBar[0].destroy()
-	ax.legend()
+	PlotAxis.legend()
 	ticks = STCore.ResultsConfigurator.SettingsObject.tickNumber
-	ax.set_xticks(XAxis[0::max(1, len(ItemList) / ticks)])
-	ax.set_xticklabels(Xlabel[0::max(1, len(ItemList) / ticks)])
-	for tick in ax.get_xticklabels():
-		tick.set_rotation(30)
-	ax.invert_yaxis()	
-	ax.grid(axis = "y")
+	PlotAxis.set_xticks(XAxis[0::max(1, len(ItemList) / ticks)])
+	PlotAxis.set_xticklabels(Xlabel[0::max(1, len(ItemList) / ticks)])
+	for tick in PlotAxis.get_xticklabels():
+		tick.set_rotation(0)
+	PlotAxis.invert_yaxis()	
+	PlotAxis.grid(axis = "y")
 	PlotCanvas = FigureCanvasTkAgg(fig,master=viewer)
 	PlotCanvas.draw()
 	PlotCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
 	return PlotCanvas, fig, MagData
 
 def CreateLoadBar(root, progress, title = "Cargando.."):
@@ -142,6 +161,7 @@ def GetTrackedValue(ItemList, TrackedStars, Trackindex, Constant, BackgroundFlux
 	index = 0
 	Track = TrackedStars[Trackindex]
 	radius = Track.star.radius
+	prevFlux = 0
 	while index < len(ItemList):
 		pos = list(reversed(Track.trackedPos[index]))
 		data = ItemList[index].data
@@ -149,17 +169,25 @@ def GetTrackedValue(ItemList, TrackedStars, Trackindex, Constant, BackgroundFlux
 		crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 		Backdata = GetBackground(data)
 		StarFlux = numpy.sum(crop)
+		if index == 0:
+			prevFlux = StarFlux
 		BackgroundFlux = Backdata[0] * 4 * (radius **2)
 		mag = Constant - 2.5 * numpy.log10(StarFlux - BackgroundFlux)
 		if STCore.ResultsConfigurator.SettingsObject.delLostTracks == 1 and index in Track.lostPoints:
 			mag = numpy.nan
+		print abs(numpy.sqrt(StarFlux) - numpy.sqrt(prevFlux))
+		if STCore.ResultsConfigurator.SettingsObject.delError == 1 and abs(numpy.sqrt(StarFlux) - numpy.sqrt(prevFlux)) > numpy.sqrt(Track.star.threshold)*0.5:
+			mag = numpy.nan
+		prevFlux = StarFlux
 		values.append(mag)
 		index += 1
 	returnValue = values   # para usar return en un proceso
 	return values
 
 def Destroy():
+	global MagData
 	ResultsFrame.destroy()
+	MagData = None
 
 def GetMaxima(crop, value):
 	return numpy.max(crop)

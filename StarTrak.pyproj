@@ -21,6 +21,9 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="STCore\Composite.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="STCore\utils\Exporter.py">
       <SubType>Code</SubType>
     </Compile>

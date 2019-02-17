@@ -16,7 +16,7 @@ ImageViewer = None
 BrightLabel = None
 #endregion
 
-def Awake(root, Data, Brightness, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20),radius = 20, bounds = 80, Type = 0, threshold = 100):
+def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20),radius = 20, bounds = 80, Type = 0, threshold = 100):
 	global Window, Image, ImageCanvas, leftPanel, rightPanel, ImageViewer, BrightLabel
 	Window = tk.Toplevel(root)
 	Window.wm_title(string = "Configurar Estrella")
@@ -73,7 +73,7 @@ def Awake(root, Data, Brightness, Stars, OnStarChange, starIndex = -1, name = "N
 	ThreSpinBox.grid(row = 6, column = 3, columnspan = 1, sticky = tk.EW)
 	BrightLabel = tk.Label(trackFrame, text = "Máximo brillo: ")
 	BrightLabel.grid(row = 7, column = 2, sticky = tk.W)
-	DrawCanvas(location, radius, Data, Brightness)
+	DrawCanvas(location, radius, Data)
 	tk.Label(trackFrame, text = str(numpy.max(Image.get_array()))).grid(row = 7, column = 3, sticky = tk.W)
 	
 	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()))
@@ -96,7 +96,7 @@ def GetMaxima(data, xloc, yloc, radius):
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 	return numpy.max(crop)
 
-def DrawCanvas(stLoc, radius, data, brightness):
+def DrawCanvas(stLoc, radius, data):
 	global Image, ImageCanvas, rig
 	ImageFigure = matplotlib.figure.Figure(figsize = (2,2), dpi = 100)
 	ImageAxis = ImageFigure.add_subplot(111)
@@ -104,8 +104,8 @@ def DrawCanvas(stLoc, radius, data, brightness):
 
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
-
-	Image = ImageAxis.imshow(crop, vmin = numpy.min(data), vmax = brightness, cmap="gray")
+	levels = STCore.DataManager.Levels
+	Image = ImageAxis.imshow(crop, vmin = levels[1], vmax = levels[0], cmap="gray")
 	ImageCanvas = FigureCanvasTkAgg(ImageFigure,master=ImageViewer)
 	ImageCanvas.draw()
 	ImageCanvas.get_tk_widget().grid(sticky = tk.NSEW)
