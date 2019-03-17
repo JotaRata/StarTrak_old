@@ -144,7 +144,7 @@ Sidebar = None
 SidebarList = None
 SliderLabel = None
 ColorMaps = {"Escala de grises" : "gray", "Temperatura" : "seismic", "Arcoiris" : "rainbow", "Negativo" : "binary"}
-Modes = {"Linear" : Normalize(), "Raiz cuadrada": PowerNorm(gamma = 0.5), "Logartitmico" : LogNorm()}
+Modes = {"Linear" : Normalize(), "Raiz cuadrada": PowerNorm(gamma = 0.5), "Logaritmico" : LogNorm()}
 
 SelectedStar = -1
 MousePress = None

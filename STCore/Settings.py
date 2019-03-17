@@ -8,7 +8,7 @@ import STCore.DataManager
 #region Variables
 SettingsFrame = None
 Window = None
-VisModes = ("Linear", "Raiz cuadrada", "Logartitmico")
+VisModes = ("Linear", "Raiz cuadrada", "Logaritmico")
 VisColors = ("Escala de grises", "Temperatura", "Arcoiris", "Negativo")
 ThrNumber = ("1", "2", "3", "4")
 WorkingPath = ""

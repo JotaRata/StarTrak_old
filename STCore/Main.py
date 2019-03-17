@@ -96,6 +96,7 @@ def Reset():
 	STCore.ImageSelector.ItemList = []
 	STCore.ImageView.ClearStars()
 	STCore.Tracker.TrackedStars = []
+	STCore.Tracker.CurrentFile = 0
 	STCore.ImageView.Levels = -1
 	STCore.Results.MagData = None
 	if STCore.DataManager.CurrentWindow == 0:

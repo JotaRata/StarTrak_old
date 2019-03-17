@@ -41,7 +41,7 @@ MousePress = None
 CurrentFile = 0
 #endregion
 def Awake(root, stars, ItemList):
-	global TrackerFrame, TitleLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile
+	global TrackerFrame, TitleLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile, DataChanged
 	STCore.DataManager.CurrentWindow = 3
 	TrackerFrame = tk.Frame(root)
 	TrackerFrame.pack(fill = tk.BOTH, expand = 1)
@@ -56,7 +56,7 @@ def Awake(root, stars, ItemList):
 	CreateCanvas(ItemList,stars)
 	Img.set_array(ItemList[CurrentFile].data)
 	CurrentFile = 0
-	if (len(TrackedStars) > 0 and DataChanged):
+	if (len(TrackedStars) > 0 and DataChanged == True):
 		tkMessageBox.showwarning("Aviso", "La lista de estrellas ha sido modificada\nNo se podrán usar los datos de rastreo anteriores.")
 		TrackedStars = []
 		STCore.Results.MagData = None
@@ -211,6 +211,7 @@ def CreateCanvas(ItemList, stars):
 	#wdg.wait_visibility()
 
 def OnFinishTrack():
+	global DataChanged
 	STCore.DataManager.TrackItemList = TrackedStars
 	DataChanged = False
 

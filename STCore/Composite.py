@@ -84,7 +84,7 @@ def CreateCanvas(ItemList, TrackedStars):
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
 	data = Composite(ItemList, TrackedStars)
 	ImgAxis = fig.add_subplot(111)
-	Img = ImgAxis.imshow(data, cmap = "gray", vmax = numpy.max(data)/float(len(ItemList))) #, cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
+	Img = ImgAxis.imshow(data, cmap = "gray") #, cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
 	ImgCanvas = FigureCanvasTkAgg(fig,master=CompositeFrame)
 	if STCore.Settings._SHOW_GRID_.get() == 1:
 		ImgAxis.grid()
@@ -100,13 +100,13 @@ def Composite(ItemList, TrackedStars):
 	i = 1
 	track0 = TrackedStars[0]
 	track1 = TrackedStars[1]
-	#rot = numpy.arctan2(-(numpy.array(track1.trackedPos[0])[1] - numpy.array(track0.trackedPos[0])[1]) , (numpy.array(track1.trackedPos[0])[0] - numpy.array(track0.trackedPos[0])[0]))
+	rot = numpy.arctan2(-(numpy.array(track1.trackedPos[0])[1] - numpy.array(track0.trackedPos[0])[1]) , (numpy.array(track1.trackedPos[0])[0] - numpy.array(track0.trackedPos[0])[0]))
 	while i < len(ItemList):
 		deltaPos = numpy.array(track0.trackedPos[i]) - numpy.array(track0.trackedPos[0])
-		#newRot = numpy.arctan2(-(numpy.array(track1.trackedPos[i])[1] - numpy.array(track0.trackedPos[i])[1]) , (numpy.array(track1.trackedPos[i])[0] - numpy.array(track0.trackedPos[i])[0]))
-		#deltaRot = (numpy.degrees(newRot) - numpy.degrees(rot))
+		newRot = numpy.arctan2(-(numpy.array(track1.trackedPos[i])[1] - numpy.array(track0.trackedPos[i])[1]) , (numpy.array(track1.trackedPos[i])[0] - numpy.array(track0.trackedPos[i])[0]))
+		deltaRot = (numpy.degrees(newRot) - numpy.degrees(rot))
 		newdata = Normalize(ItemList[i].data)
-		#newdata = scipy.ndimage.rotate(newdata, - deltaRot)
+		newdata = scipy.ndimage.rotate(newdata, - deltaRot, reshape =False)
 		#newdata = scipy.ndimage.shift(newdata, -numpy.array([numpy.sin(numpy.radians(deltaRot)), numpy.cos(numpy.radians(deltaRot))]))
 		newdata = scipy.ndimage.shift(newdata, -numpy.flip(numpy.array(deltaPos)))
 		newdata.resize(data.shape)
