@@ -55,7 +55,7 @@ def Awake(root, ItemList, TrackedStars):
 	#Exportmenu.add_command(label="Exportar grafico", command=lambda: ExportImage(canvas[1]))
 	#Exportmenu.add_command(label="Exportar datos", command=lambda: ExportData(TrackedStars, canvas[2], GetTimeLabel(ItemList)))
 	#Exportmenu.add_command(label="Exportar PDF", command=lambda: ExportPDF(canvas[1], canvas[2], TrackedStars))
-	exportbutton = ttk.Button(Sidebar, text = "Exportar", command =lambda: ExportImage(canvas[1]))
+	exportbutton = ttk.Button(Sidebar, text = "Exportar", command = lambda: Export(ItemList, canvas[2]))
 	#exportbutton.bind("<Button-1>", lambda event: PopupMenu(event, Exportmenu))
 	exportbutton.grid(row = 0, column = 0)
 	levelFrame = tk.LabelFrame(Sidebar, text = "Niveles:")
@@ -71,6 +71,13 @@ def Awake(root, ItemList, TrackedStars):
 	ttk.OptionMenu(Sidebar, _COLOR_,_COLOR_.get(), *STCore.Settings.VisColors).grid(row = 3, column = 1, sticky = tk.E)
 	ttk.Button(Sidebar, text = "Volver", command = cmdBack).grid(row = 0, column = 1)
 	#ttk.Button(Sidebar, text = "Configurar", command = lambda: STCore.ResultsConfigurator.Awake(root, ItemList, TrackedStars)).grid(row = 2, column = 0)
+
+def Export(ItemList, data):
+	lmin = _LEVEL_MIN_.get()/float(len(ItemList)) + 0.01
+	lmax =  _LEVEL_MAX_.get()/float(len(ItemList))
+	imMin = numpy.min(ItemList[0].data)
+	imMax = numpy.max(ItemList[0].data)
+	ExportImageExt(data, _MODE_.get(), _COLOR_.get(), lmin, lmax, imMin, imMax)
 
 def CreateCanvas(ItemList, TrackedStars):
 	global CompositeFrame, Img, ImgCanvas

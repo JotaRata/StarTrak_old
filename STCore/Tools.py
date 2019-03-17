@@ -68,7 +68,7 @@ def OpenSettingsCommand(root):
 def hello():
 	print "Coming soon.."
 def Help():
-	webbrowser.open("file://"+STCore.DataManager.WorkingPath+"/STCore/help/help.html")
+	webbrowser.open("file://"+STCore.DataManager.WorkingPath+"/help/help.html")
 def About():
 	top = tk.Toplevel()
 	top.wm_title(string = "Acerca de")

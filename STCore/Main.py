@@ -4,8 +4,10 @@ import tkMessageBox
 import ttk
 import sys
 from os.path import dirname, abspath, basename, isfile
-sys.path.append(dirname(dirname(abspath(__file__))))
-
+try:
+	sys.path.append(dirname(dirname(abspath(__file__))))
+except NameError:  # We are the main py2exe script, not a module
+	sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
 import STCore.ImageSelector
 import STCore.Tools
 import STCore.DataManager
@@ -126,14 +128,14 @@ def Reset():
 if __name__ == "__main__":
 	Window = tk.Tk()
 	STCore.DataManager.Awake()
-	STCore.Settings.WorkingPath = dirname(dirname(abspath(__file__)))
-	STCore.DataManager.WorkingPath = dirname(dirname(abspath(__file__)))
+	STCore.Settings.WorkingPath = dirname(abspath(__file__))
+	STCore.DataManager.WorkingPath = dirname(abspath(__file__))
 	STCore.DataManager.LoadRecent()
 	STCore.DataManager.TkWindowRef = Window
 	StartFrame = None
 	Window.wm_title(string = "StarTrak v1.0.0")
 	Window.geometry("1080x480")
-	Window.iconbitmap("STCore/icon.ico")
+	Window.iconbitmap("icon.ico")
 	STCore.Settings.LoadSettings()
 	Awake(Window)
 	STCore.Tools.Awake(Window)

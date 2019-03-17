@@ -2,9 +2,30 @@
 import tkFileDialog
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import figure
+from os.path import splitext, isfile
+from os import remove
+import pyfits as fits
 def ExportImage(figure):
 	path = tkFileDialog.asksaveasfilename(confirmoverwrite = True, filetypes=[("Portable Network Graphics", "*.png"), ("JPEG Image", "*.jpg")], defaultextension = "*.png")
 	figure.savefig(str(path))
+
+def ExportImageExt(data, mode, color, lmin, lmax, imMin, imMax):
+	path = tkFileDialog.asksaveasfilename(confirmoverwrite = True, filetypes=[("FiTS Image", "*.fit"), ("Portable Network Graphics", "*.png"), ("JPEG Image", "*.jpg")], defaultextension = "*.fit")
+	if splitext(str(path))[1] == ".fit":
+		if (isfile(str(path))):
+			remove(str(path))		# La funcion PyFITS.HDUList.writeto no permite sobreescritura	
+		hdu = fits.PrimaryHDU((data * imMax + imMin).astype(int))
+		hdulist = fits.HDUList([hdu])
+		hdulist.writeto(path)
+	else:
+		tableFig = figure.Figure(figsize = (7, 4), dpi= 100)
+		tableAx = tableFig.add_subplot(111)
+		Img = tableax.imshow(data)
+		Img.norm.vmax = lmax
+		Img.norm.vmin = lmin
+		Img.set_cmap(STCore.ImageView.ColorMaps[color])
+		Img.set_norm(STCore.ImageView.Modes[mode])
+		tableFig.savefig(str(path))
 
 def ExportData(TrackedStars, MagData, TimeLabel):
 	path = tkFileDialog.asksaveasfilename(confirmoverwrite = True, filetypes=[("Archivo de texto", "*.txt")], defaultextension = "*.txt")

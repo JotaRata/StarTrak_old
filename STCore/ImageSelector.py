@@ -3,7 +3,7 @@
 import Tkinter as tk
 import ttk
 from PIL import Image, ImageTk
-from astropy.io import fits
+import pyfits as fits
 from os.path import basename, getmtime, isfile
 from time import sleep, strftime, localtime
 import tkFileDialog
@@ -29,13 +29,18 @@ def LoadFiles(paths, root):
 	LoadWindow = CreateLoadBar(root, Progress)
 	LoadWindow[0].update()
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
-	sortedP = sorted(paths, key=lambda f: int(filter(str.isdigit, str(f))))
+	
+	sortedP = sorted(paths, key=lambda f: Sort(f))
 	map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
 	loadIndex = 0
 	
 	LoadWindow[0].destroy()
 	ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
-
+def Sort(path):
+	if any(char.isdigit() for char in path):
+		return int(filter(str.isdigit, str(path)))
+	else:
+		return str(path)
 def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	global loadIndex
 	item = FileItem()

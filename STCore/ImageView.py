@@ -1,6 +1,5 @@
 # coding=utf-8
 
-from astropy.io import fits
 from  numpy import min, max
 from matplotlib import use, figure
 use("TkAgg")
