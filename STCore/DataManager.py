@@ -4,7 +4,7 @@ from os.path import isfile
 WorkingPath = ""
 def Awake():
 	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow
-	global TkWindowRef, ResultSetting, Levels, RecentFiles, ResultData
+	global TkWindowRef, ResultSetting, Levels, RecentFiles, ResultData, RuntimeEnabled
 	CurrentFilePath = ""
 	FileItemList = []
 	StarItemList = []
@@ -15,9 +15,10 @@ def Awake():
 	Levels = -1
 	RecentFiles = []
 	ResultData = None
+	RuntimeEnabled = False
 
 def Reset():
-	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels, ResultData
+	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels, ResultData, RuntimeEnabled
 	Main.Reset()
 	CurrentFilePath = ""
 	FileItemList = []
@@ -27,6 +28,7 @@ def Reset():
 	ResultSetting = None
 	Levels = -1
 	ResultData = None
+	RuntimeEnabled = False
 
 def PrintData():
 	print CurrentFilePath
@@ -48,6 +50,7 @@ def LoadRecent():
 	else:
 		SaveRecent()
 def SaveData(filepath):
+	global CurrentFilePath
 	CurrentFilePath = filepath
 	with open(filepath, "wb") as out:
 		pickle.dump(FileItemList, out, pickle.HIGHEST_PROTOCOL)

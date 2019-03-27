@@ -12,6 +12,7 @@ import STCore.ImageSelector
 import STCore.Tools
 import STCore.DataManager
 import STCore.Settings
+import STCore.RuntimeAnalysis
 def Awake(root):
 	global StartFrame
 	STCore.DataManager.CurrentWindow = 0
@@ -20,10 +21,11 @@ def Awake(root):
 	STCore.Tracker.DataChanged = False
 	StartFrame.pack(expand = 1, fill = tk.BOTH)
 	tk.Label(StartFrame, text = "Bienvenido a StarTrak",font="-weight bold").pack()
-	tk.Label(StartFrame, text = "Por favor seleccione las imagenes que quiera analizar").pack(anchor = tk.CENTER)
-	ttk.Button(StartFrame, text = "   Seleccionar Imagenes   ", command = lambda:LoadFiles(root)).pack(anchor = tk.CENTER)
-	tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
-	ttk.Button(StartFrame, text = "   Abrir archivo   ", command = STCore.Tools.OpenFileCommand).pack(anchor = tk.CENTER)
+	tk.Label(StartFrame, text = "Por favor seleccione la accion que quiera realizar").pack(anchor = tk.CENTER)
+	ttk.Button(StartFrame, text = "   Seleccionar Imagenes   ", command = lambda:LoadFiles(root), width = 40).pack(anchor = tk.CENTER)
+	#tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
+	ttk.Button(StartFrame, text = "   Abrir archivo   ", command = STCore.Tools.OpenFileCommand, width = 40).pack(anchor = tk.CENTER)
+	ttk.Button(StartFrame, text = "   Analisis en tiempo real   ", command = lambda: (Destroy(), STCore.RuntimeAnalysis.Awake(root)), width = 40).pack(anchor = tk.CENTER)
 	if STCore.Settings._RECENT_FILES_.get() == 1:
 		recentlabel = tk.LabelFrame(StartFrame, text = "Archivos recientes:")
 		recentlabel.pack(anchor = tk.CENTER)
@@ -53,9 +55,9 @@ def Destroy():
 
 def WindowName():
 	if len(STCore.DataManager.CurrentFilePath) > 0:
-		Window.wm_title(string = "StarTrak v1.0.0 - "+ basename(STCore.DataManager.CurrentFilePath))
+		Window.wm_title(string = "StarTrak v1.1.0 - "+ basename(STCore.DataManager.CurrentFilePath))
 	else:
-		Window.wm_title(string = "StarTrak v1.0.0")
+		Window.wm_title(string = "StarTrak v1.1.0")
 def LoadData(window):
 	win = Window
 	STCore.ImageSelector.ItemList = STCore.DataManager.FileItemList
@@ -65,6 +67,13 @@ def LoadData(window):
 	STCore.ResultsConfigurator.SettingsObject = STCore.DataManager.ResultSetting
 	STCore.ImageView.Levels = STCore.DataManager.Levels
 	STCore.Results.MagData = STCore.DataManager.ResultData
+	STCore.DataManager.RuntimeEnabled = False
+	STCore.Results.Constant = 0
+	STCore.Results.BackgroundFlux = 0
+	STCore.RuntimeAnalysis.directoryPath = ""
+	STCore.RuntimeAnalysis.dirState = []
+	STCore.RuntimeAnalysis.filesList = []
+	STCore.RuntimeAnalysis.startFile = ""
 	if window == 0:
 		# No hacer nada #
 		return
@@ -99,6 +108,14 @@ def Reset():
 	STCore.Tracker.CurrentFile = 0
 	STCore.ImageView.Levels = -1
 	STCore.Results.MagData = None
+	STCore.DataManager.RuntimeEnabled = False
+	STCore.Results.Constant = 0
+	STCore.Results.BackgroundFlux = 0
+	STCore.RuntimeAnalysis.directoryPath = ""
+	STCore.RuntimeAnalysis.dirState = []
+	STCore.RuntimeAnalysis.filesList = []
+	STCore.RuntimeAnalysis.startFile = ""
+	STCore.Tracker.DataChanged = False
 	if STCore.DataManager.CurrentWindow == 0:
 		# No hacer nada #
 		return
@@ -134,7 +151,7 @@ if __name__ == "__main__":
 	STCore.DataManager.LoadRecent()
 	STCore.DataManager.TkWindowRef = Window
 	StartFrame = None
-	Window.wm_title(string = "StarTrak v1.0.0")
+	Window.wm_title(string = "StarTrak v1.1.0")
 	Window.geometry("1080x480")
 	Window.iconbitmap("icon.ico")
 	STCore.Settings.LoadSettings()

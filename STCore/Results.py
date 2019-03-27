@@ -18,6 +18,8 @@ PlotAxis = None
 Plots = None
 MagData = None
 PlotCanvas = None
+Constant = None
+BackgroundFlux = None
 #endregion
 
 
@@ -81,6 +83,7 @@ def GetDateValue(ItemList):
 	for i in range(len(ItemList)):
 		#ls = list(ItemList[i].date.split(":"))
 		t.append(ItemList[i].date - epoch)
+		print ItemList[i].date - epoch
 	return t
 def GetNameValue(ItemList):
 	t = range(len(ItemList))
@@ -96,8 +99,41 @@ def GetXTicks(ItemList):
 		Xlabel = GetNameLabel(ItemList)
 	return XAxis, Xlabel
 
+def AddPoint(point, stIndex):
+	old_off = Plots[stIndex].get_offsets()
+	new_off = numpy.concatenate((old_off,numpy.array(point, ndmin=2)))
+	Plots[stIndex].set_offsets(new_off)
+	Plots[stIndex].axes.figure.canvas.draw_idle()
+
+def UpdateScale():
+	global MagData
+	Xmin, Xmax = 0, 1
+	Ymin, Ymax = 0, 1
+	added_points = []
+	for p in Plots:
+		new_off = p.get_offsets()
+		xmin=new_off[:,0].min()
+		xmax=max(new_off[:,0].max(), xmin + 3600)
+		ymin=new_off[:,1].min()
+		ymax=new_off[:,1].max()
+		Xmax = xmax
+		Xmin = xmin
+		added_points.append(new_off[-1, 1])
+		if ymax > Ymax:	Ymax = ymax
+		if ymin < Ymin:	Ymin = ymin
+	print Xmin, Xmax
+	print Ymin, Ymax
+	PlotAxis.set_xlim(Xmin-0.1*(Xmax-Xmin),Xmax+0.1*(Xmax-Xmin))
+	PlotAxis.set_ylim(Ymin-0.1*(Ymax-Ymin),Ymax+0.1*(Ymax-Ymin))
+	PlotAxis.invert_yaxis()	
+	PlotAxis.grid(axis = "y")
+	PlotAxis.figure.canvas.draw_idle()
+	print "added_points",added_points, numpy.swapaxes(numpy.array([added_points]), 0, 1).shape
+	print "Magdata", MagData, MagData.shape
+	MagData = numpy.append(MagData,numpy.swapaxes(numpy.array([added_points]), 0, 1), 1)
+
 def CreateCanvas(root, app, ItemList, TrackedStars):
-	global PlotAxis, Plots, MagData, PlotCanvas
+	global PlotAxis, Plots, MagData, PlotCanvas, Constant, BackgroundFlux
 	viewer = tk.Frame(app, width = 700, height = 400, bg = "white")
 	viewer.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
@@ -118,7 +154,7 @@ def CreateCanvas(root, app, ItemList, TrackedStars):
 		MagData = numpy.empty((0 ,len(ItemList)))
 		i = 0
 		while i < len(TrackedStars):
-			YAxis = GetTrackedValue(ItemList, TrackedStars, i, Constant, BackgroundFlux, StarFlux)
+			YAxis = GetTrackedValues(ItemList, TrackedStars, i, Constant, BackgroundFlux, StarFlux)
 			MagData = numpy.append(MagData, numpy.atleast_2d(numpy.array(YAxis)), 0)
 			progress.set(20+80*float(i)/len(TrackedStars))
 			LoadBar[0].update()
@@ -156,29 +192,36 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	bar.pack(fill = tk.X)
 	return popup, label, bar
 
-def GetTrackedValue(ItemList, TrackedStars, Trackindex, Constant, BackgroundFlux, returnValue):
+def GetValue(ItemList, Track, Constant, BackgroundFlux, FileIndex):
+	global prevFlux
+	radius = Track.star.radius
+	pos = list(reversed(Track.trackedPos[FileIndex]))
+	data = ItemList[FileIndex].data
+	clipLoc = numpy.clip(pos, radius, (data.shape[0] - radius, data.shape[1] - radius))
+	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
+	Backdata = GetBackground(data)
+	StarFlux = numpy.sum(crop)
+	if FileIndex == 0:
+		prevFlux = StarFlux
+	BackgroundFlux = Backdata[0] * 4 * (radius **2)
+	mag = Constant - 2.5 * numpy.log10(StarFlux - BackgroundFlux)
+	if STCore.ResultsConfigurator.SettingsObject.delLostTracks == 1 and FileIndex in Track.lostPoints:
+		mag = numpy.nan
+	print abs(numpy.sqrt(StarFlux) - numpy.sqrt(prevFlux))
+	if STCore.ResultsConfigurator.SettingsObject.delError == 1 and abs(numpy.sqrt(StarFlux) - numpy.sqrt(prevFlux)) > numpy.sqrt(Track.star.threshold)*0.5:
+		mag = numpy.nan
+	prevFlux = StarFlux
+	return mag
+
+def GetTrackedValues(ItemList, TrackedStars, Trackindex, Constant, BackgroundFlux, returnValue):
+	global prevFlux
 	values=[]
 	index = 0
 	Track = TrackedStars[Trackindex]
 	radius = Track.star.radius
 	prevFlux = 0
 	while index < len(ItemList):
-		pos = list(reversed(Track.trackedPos[index]))
-		data = ItemList[index].data
-		clipLoc = numpy.clip(pos, radius, (data.shape[0] - radius, data.shape[1] - radius))
-		crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
-		Backdata = GetBackground(data)
-		StarFlux = numpy.sum(crop)
-		if index == 0:
-			prevFlux = StarFlux
-		BackgroundFlux = Backdata[0] * 4 * (radius **2)
-		mag = Constant - 2.5 * numpy.log10(StarFlux - BackgroundFlux)
-		if STCore.ResultsConfigurator.SettingsObject.delLostTracks == 1 and index in Track.lostPoints:
-			mag = numpy.nan
-		print abs(numpy.sqrt(StarFlux) - numpy.sqrt(prevFlux))
-		if STCore.ResultsConfigurator.SettingsObject.delError == 1 and abs(numpy.sqrt(StarFlux) - numpy.sqrt(prevFlux)) > numpy.sqrt(Track.star.threshold)*0.5:
-			mag = numpy.nan
-		prevFlux = StarFlux
+		mag = GetValue(ItemList, Track, Constant, BackgroundFlux, index)
 		values.append(mag)
 		index += 1
 	returnValue = values   # para usar return en un proceso

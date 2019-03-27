@@ -40,12 +40,17 @@ def Apply(root, ItemList, TrackedStars):
 	SettingsObject.tickNumber = _XTICKS_.get()
 	STCore.DataManager.ResultSetting = SettingsObject
 	if STCore.DataManager.CurrentWindow == 3:
-		STCore.Tracker.Destroy()
+		if STCore.DataManager.RuntimeEnabled == False:
+			STCore.Tracker.Destroy()
 		SettingsObject.delLostTracks = _DELTRACKS_.get()
 		SettingsObject.delError = _DELERROR_.get()
 		SettingsObject.refStar = _REFSTAR_.get()
 		SettingsObject.refValue = float(_REFVALUE_.get())
-		STCore.Results.Awake(root, ItemList, TrackedStars)
+		if STCore.DataManager.RuntimeEnabled == False:
+			STCore.Results.Awake(root, ItemList, TrackedStars)
+		else:
+			PlotWindow = tk.Toplevel(root)
+			STCore.Results.Awake(PlotWindow, ItemList, TrackedStars)
 	if STCore.DataManager.CurrentWindow == 4:
 		ticks = STCore.ResultsConfigurator.SettingsObject.tickNumber
 		XAxis, Xlabel = STCore.Results.GetXTicks(ItemList)

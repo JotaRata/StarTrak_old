@@ -14,6 +14,7 @@ from STCore import SetStar, Tracker
 import STCore.DataManager
 from time import time
 import STCore.Settings
+import STCore.RuntimeAnalysis
 #region Messages and Events
 
 def OnImageClick(event):
@@ -37,7 +38,7 @@ def UpdateStarList():
 		ListFrame = tk.Frame(SidebarList)
 		ListFrame.pack(fill = tk.X, expand = 1, anchor = tk.N, pady = 5)
 
-		cmd = __helperCreateWindow(index, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = s.threshold)
+		cmd = __helperCreateWindow(index, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold / s.value)
 		cmd2= __helperPop(Stars, index)
 		ttk.Button(ListFrame, text = s.name, width = 10, command = cmd).pack(side = tk.LEFT, fill = tk.X, expand = 1)
 		ttk.Button(ListFrame, text = "X", width = 1, command = cmd2).pack(side = tk.RIGHT)
@@ -190,6 +191,8 @@ def Apply(root, items):
 	if len(Stars) > 0:
 		Destroy()
 		Tracker.Awake(root, Stars, items)
+		if STCore.DataManager.RuntimeEnabled == True:
+			STCore.RuntimeAnalysis.StartRuntime(root)
 	else:
 		tkMessageBox.showerror("Error", "Debe tener al menos una estrella para comenzar el analisis")
 		return

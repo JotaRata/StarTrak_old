@@ -24,9 +24,9 @@ prog = None
 def UpdateImage(ItemList):
 	
 		if _LEVEL_MIN_.get() >_LEVEL_MAX_.get():
-			_LEVEL_MIN_.set(_LEVEL_MAX_.get()) + 0.01
-		Img.norm.vmax = _LEVEL_MAX_.get()/float(len(ItemList))
-		Img.norm.vmin = _LEVEL_MIN_.get()/float(len(ItemList)) + 0.01
+			_LEVEL_MIN_.set(float(_LEVEL_MAX_.get())) + 0.01
+		Img.norm.vmax = float(_LEVEL_MAX_.get())
+		Img.norm.vmin = float(_LEVEL_MIN_.get()) + 0.01
 		Img.set_cmap(STCore.ImageView.ColorMaps[_COLOR_.get()])
 		Img.set_norm(STCore.ImageView.Modes[_MODE_.get()])
 		ImgCanvas.draw_idle()
@@ -43,8 +43,8 @@ def Awake(root, ItemList, TrackedStars):
 	Sidebar = tk.Frame(CompositeFrame, width = 400)
 	Sidebar.pack(side = tk.RIGHT, fill = tk.BOTH, anchor = tk.N)
 	cmdBack = lambda: (Destroy(), STCore.Tracker.Awake(root, STCore.ImageView.Stars, ItemList))
-	_LEVEL_MIN_ = tk.IntVar(value = numpy.min(canvas[2]))
-	_LEVEL_MAX_ = tk.IntVar(value = numpy.max(canvas[2]))
+	_LEVEL_MIN_ = tk.DoubleVar(value = numpy.min(canvas[2]))
+	_LEVEL_MAX_ = tk.DoubleVar(value = numpy.max(canvas[2]))
 	_LEVEL_MIN_.trace("w", lambda a,b,c: UpdateImage(ItemList))
 	_LEVEL_MAX_.trace("w", lambda a,b,c: UpdateImage(ItemList))
 	_MODE_ = STCore.Settings._VISUAL_MODE_
@@ -105,8 +105,17 @@ def Composite(ItemList, TrackedStars):
 		deltaPos = numpy.array(track0.trackedPos[i]) - numpy.array(track0.trackedPos[0])
 		newRot = numpy.arctan2(-(numpy.array(track1.trackedPos[i])[1] - numpy.array(track0.trackedPos[i])[1]) , (numpy.array(track1.trackedPos[i])[0] - numpy.array(track0.trackedPos[i])[0]))
 		deltaRot = (numpy.degrees(newRot) - numpy.degrees(rot))
+		deltaRot = numpy.radians(deltaRot)
 		newdata = Normalize(ItemList[i].data)
-		newdata = scipy.ndimage.rotate(newdata, - deltaRot, reshape =False)
+		centerPos =  numpy.flip(numpy.array(track0.trackedPos[i]))
+		translation_matrix = numpy.array([[1, 0, -centerPos[0]], [0, 1, -centerPos[1]], [0, 0, 1]])
+		rotation_matrix = numpy.array([[numpy.cos(-deltaRot), numpy.sin(-deltaRot), 0], [-numpy.sin(-deltaRot), numpy.cos(-deltaRot), 0], [0, 0, 1]])
+		transform_matrix = numpy.linalg.inv(translation_matrix).dot(rotation_matrix).dot(translation_matrix)
+
+		newdata = scipy.ndimage.affine_transform(newdata, transform_matrix)
+		#newdata = scipy.ndimage.shift(newdata, -centerPos)
+		#newdata = scipy.ndimage.rotate(newdata, - deltaRot, reshape =False)	# Transofrmacion de Rotacion en un punto
+		#newdata = scipy.ndimage.shift(newdata, centerPos)					#  M = T**(-1) * R * T
 		#newdata = scipy.ndimage.shift(newdata, -numpy.array([numpy.sin(numpy.radians(deltaRot)), numpy.cos(numpy.radians(deltaRot))]))
 		newdata = scipy.ndimage.shift(newdata, -numpy.flip(numpy.array(deltaPos)))
 		newdata.resize(data.shape)

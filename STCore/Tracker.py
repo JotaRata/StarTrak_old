@@ -123,15 +123,16 @@ def CreateSidebar(root, ItemList, stars):
 	ApplyMenu.add_command(label="Analizar", command=cmdNext)
 	if STCore.ResultsConfigurator.SettingsObject is not None:
 		ApplyMenu.add_command(label="Configurar analisiss", command=lambda: ResultSetting(root, ItemList))
-	ApplyMenu.add_command(label="Componer imagen", command=lambda : (Destroy(), CompositeNow(root, ItemList)))
+	ApplyMenu.add_command(label="Componer imagen", command=lambda : CompositeNow(root, ItemList))
 
 	buttonsFrame = tk.Frame(Sidebar, width = 400)
 	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
 	ttk.Button(buttonsFrame, text = "Volver", command = cmdBack).grid(row = 0, column = 0, sticky = tk.EW)
-	ttk.Button(buttonsFrame, text = "Iniciar", command = cmdTrack).grid(row = 0, column = 1, sticky = tk.EW)
-	applyButton = ttk.Button(buttonsFrame, text = "Continuar", command = cmdNext)
-	applyButton.bind("<Button-1>", lambda event: PopupMenu(event, ApplyMenu))
-	applyButton.grid(row = 0, column = 2, sticky = tk.EW)
+	if STCore.DataManager.RuntimeEnabled == False:
+		ttk.Button(buttonsFrame, text = "Iniciar", command = cmdTrack).grid(row = 0, column = 1, sticky = tk.EW)
+		applyButton = ttk.Button(buttonsFrame, text = "Continuar", command = cmdNext)
+		applyButton.bind("<Button-1>", lambda event: PopupMenu(event, ApplyMenu))
+		applyButton.grid(row = 0, column = 2, sticky = tk.EW)
 def PopupMenu(event, ApplyMenu):
 	ApplyMenu.post(event.x_root, event.y_root)
 
@@ -140,8 +141,9 @@ def CompositeNow(root, ItemList):
 		tkMessageBox.showerror("Error", "No hay estrellas restreadas.")
 		return
 	if len(TrackedStars) < 2:
-		tkMessageBox.showerror("Error", "Se necesitan al menos dos estrellaspara iniciar una composicion.")
+		tkMessageBox.showerror("Error", "Se necesitan al menos dos estrellas para iniciar una composicion.")
 		return
+	Destroy()
 	STCore.Composite.Awake(root, ItemList, TrackedStars)
 def ResultSetting(root, ItemList):
 	if len(TrackedStars[0].trackedPos) > 0:
@@ -188,8 +190,10 @@ def UpdateSidebar(data, stars):
 		index += 1
 
 def CreateCanvas(ItemList, stars):
-	global ImgCanvas, ImgFrame, Img, ImgAxis
+	global ImgCanvas, ImgFrame, Img, ImgAxis, CurrentFile
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
+	if CurrentFile > len(ItemList):
+		CurrentFile = 0
 	data = ItemList[CurrentFile].data
 	ImgAxis = fig.add_subplot(111)
 	levels = STCore.DataManager.Levels
@@ -215,9 +219,9 @@ def OnFinishTrack():
 	STCore.DataManager.TrackItemList = TrackedStars
 	DataChanged = False
 
-def UpdateTrack(ItemList, stars, index = 0):
+def UpdateTrack(ItemList, stars, index = 0, auto = True):
 	global TrackedStars, SidebarList, CurrentFile
-	if index >= len(ItemList):
+	if index >= len(ItemList) and auto:
 		OnFinishTrack()
 		for ts in TrackedStars:
 			ts.PrintData()
@@ -235,7 +239,8 @@ def UpdateTrack(ItemList, stars, index = 0):
 	#updsThread.join()
 	#UpdateSidebar(ItemList[index].data, stars)
 	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[index].path))
-	TrackerFrame.after(50, lambda: UpdateTrack(ItemList, stars, index + 1))
+	if auto:
+		TrackerFrame.after(50, lambda: UpdateTrack(ItemList, stars, index + 1))
 
 def UpdateCanvasOverlay(stars, ImgIndex):
 	for a in reversed(ImgAxis.artists):

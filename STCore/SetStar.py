@@ -16,7 +16,7 @@ ImageViewer = None
 BrightLabel = None
 #endregion
 
-def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20),radius = 20, bounds = 80, Type = 0, threshold = 100):
+def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20),radius = 20, bounds = 80, Type = 0, threshold = 50):
 	global Window, Image, ImageCanvas, leftPanel, rightPanel, ImageViewer, BrightLabel
 	Window = tk.Toplevel(root)
 	Window.wm_title(string = "Configurar Estrella")
@@ -59,7 +59,7 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 	RadiusSpinBox = tk.Spinbox(locFrame, from_ = 0, to = min(Data.shape), textvariable = StarRadius, width = 10, increment = 5)
 	
 	BoundSpinBox = tk.Spinbox(trackFrame, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10, increment = 10)
-	ThreSpinBox = tk.Spinbox(trackFrame, from_ = 0, to = numpy.max(Data), textvariable = StarThreshold, width = 10, increment = 100)
+	ThreSpinBox = tk.Scale(trackFrame, from_ = 0, to = 100, variable = StarThreshold, orient=tk.HORIZONTAL)
 	
 	XLocSpinBox.grid(row = 3, column = 3)
 	YLocSpinBox.grid(row = 3, column = 4, padx = 20)
@@ -70,7 +70,7 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 	tk.Label(trackFrame, text = "Radio de búsqueda:").grid(row = 5, column = 2, sticky = tk.W)
 	BoundSpinBox.grid(row = 5, column = 3, columnspan = 1, sticky = tk.EW)
 	tk.Label(trackFrame, text = "Tolerancia de busqueda:").grid(row = 6, column = 2, sticky = tk.W)
-	ThreSpinBox.grid(row = 6, column = 3, columnspan = 1, sticky = tk.EW)
+	ThreSpinBox.grid(row = 6, column = 3, columnspan = 2, sticky = tk.EW)
 	BrightLabel = tk.Label(trackFrame, text = "Máximo brillo: ")
 	BrightLabel.grid(row = 7, column = 2, sticky = tk.W)
 	DrawCanvas(location, radius, Data)
@@ -128,7 +128,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.bounds = bounds
 	st.radius = radius
 	st.value = value
-	st.threshold = threshold
+	st.threshold = (threshold * 0.01) * value
 	if starIndex == -1:
 		stars.append(st)
 		STCore.Tracker.DataChanged = True
