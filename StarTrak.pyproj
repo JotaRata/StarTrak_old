@@ -85,9 +85,7 @@
     <InterpreterReference Include="Global|PythonCore|2.7" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="C:\Users\Jota\Documents\GitHub\StarTrak\STCore\" />
     <Folder Include="STCore\" />
-    <Folder Include="C:\Users\Jota\Documents\GitHub\StarTrak\STCore\item\" />
     <Folder Include="STCore\item\" />
     <Folder Include="STCore\utils\" />
   </ItemGroup>

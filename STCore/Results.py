@@ -113,7 +113,7 @@ def UpdateScale():
 	for p in Plots:
 		new_off = p.get_offsets()
 		xmin=new_off[:,0].min()
-		xmax=max(new_off[:,0].max(), xmin + 3600)
+		xmax=max(new_off[:,0].max(), xmin + 600)
 		ymin=new_off[:,1].min()
 		ymax=new_off[:,1].max()
 		Xmax = xmax

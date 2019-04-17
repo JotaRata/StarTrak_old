@@ -41,7 +41,7 @@ def Awake(root, ItemList, TrackedStars):
 	canvas = CreateCanvas(ItemList, TrackedStars)
 	loadBar[0].destroy()
 	Sidebar = tk.Frame(CompositeFrame, width = 400)
-	Sidebar.pack(side = tk.RIGHT, fill = tk.BOTH, anchor = tk.N)
+	Sidebar.pack(side = tk.RIGHT, fill = tk.BOTH, anchor = tk.N, expand = 1)
 	cmdBack = lambda: (Destroy(), STCore.Tracker.Awake(root, STCore.ImageView.Stars, ItemList))
 	_LEVEL_MIN_ = tk.DoubleVar(value = numpy.min(canvas[2]))
 	_LEVEL_MAX_ = tk.DoubleVar(value = numpy.max(canvas[2]))
@@ -60,10 +60,12 @@ def Awake(root, ItemList, TrackedStars):
 	exportbutton.grid(row = 0, column = 0)
 	levelFrame = tk.LabelFrame(Sidebar, text = "Niveles:")
 	levelFrame.grid(row = 1,column = 0, columnspan = 2, sticky = tk.EW)
+	for c in range(3):
+		tk.Grid.columnconfigure(Sidebar, c, weight=1)
 	tk.Label(levelFrame, text = "Maximo:").grid(row = 0,column = 0)
-	ttk.Scale(levelFrame, from_=numpy.min(canvas[2]), to=numpy.max(canvas[2]), orient=tk.HORIZONTAL, variable = _LEVEL_MAX_).grid(row = 0, column = 1, columnspan = 2)
+	ttk.Scale(levelFrame, from_=numpy.min(canvas[2]), to=numpy.max(canvas[2]), orient=tk.HORIZONTAL, variable = _LEVEL_MAX_, length = 500).grid(row = 0, column = 1, columnspan = 2, sticky = tk.EW)
 	tk.Label(levelFrame, text = "Minimo:").grid(row = 1,column = 0)
-	ttk.Scale(levelFrame, from_=numpy.min(canvas[2]), to=numpy.max(canvas[2]), orient=tk.HORIZONTAL, variable = _LEVEL_MIN_).grid(row = 1, column = 1, columnspan = 2)
+	ttk.Scale(levelFrame, from_=numpy.min(canvas[2]), to=numpy.max(canvas[2]), orient=tk.HORIZONTAL, variable = _LEVEL_MIN_, length = 500).grid(row = 1, column = 1, columnspan = 2, sticky = tk.EW)
 
 	tk.Label(Sidebar, text = "Modo de Imagen:").grid(row = 2, column = 0, sticky = tk.W)
 	ttk.OptionMenu(Sidebar, _MODE_,_MODE_.get(), *STCore.Settings.VisModes).grid(row = 2, column = 1, sticky = tk.E)

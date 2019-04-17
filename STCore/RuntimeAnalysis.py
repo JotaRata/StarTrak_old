@@ -9,6 +9,7 @@ from os.path import  getmtime
 from STCore.item.File import FileItem
 import os, time
 import Tkinter as tk
+import __main__
 #region Variables
 directoryPath = ""
 startFile = ""
@@ -19,12 +20,16 @@ def Awake(root):
 	global dirState
 	if LoadFile(root):
 		STCore.DataManager.RuntimeEnabled = True
+		__main__.Destroy()
 		STCore.ImageView.Awake(root, filesList)
 		dirState = dict ([(f, None) for f in os.listdir (directoryPath)])
 
 def LoadFile(root):
 	global startFile, directoryPath
 	startFile = str(tkFileDialog.askopenfilename(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")]))
+	if len(startFile) == 0:
+		print "Cancelled Analysis"
+		return False
 	directoryPath = dirname(startFile)
 	filesList.append(CreateFileItem(startFile))
 	return len(startFile) > 0
@@ -69,9 +74,13 @@ def WatchDir(root):
 		added = [f for f in after if not f in dirState]
 		removed = [f for f in dirState if not f in after]
 		if added:
-		   for a in added: 
-			   UpdateFileList(os.path.join(directoryPath, str(a)))
-			   time.sleep(0.01)
+		   for a in added:
+			try:
+				UpdateFileList(os.path.join(directoryPath, str(a)))
+				time.sleep(0.01)
+			except:
+					print "No se pudo abrir el archivo: ", str(a)
+					pass
 		if removed: print "Removed: ", ", ".join (removed)
 		dirState = after
 		root.after(1000, lambda: WatchDir(root))

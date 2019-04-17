@@ -66,7 +66,7 @@ def Awake(root, paths = []):
 	SelectorFrame = tk.Frame(root)
 	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
 	tk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
-	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width(), len(paths)*220/4))
+	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-50, len(paths)*220/4), width = root.winfo_width()-80)
 	ScrollBar = ttk.Scrollbar(SelectorFrame, command=ScrollView.yview)
 	ScrollView.config(yscrollcommand=ScrollBar.set)  
 	ScrollView.pack(expand = 1, fill = tk.BOTH, anchor = tk.NW, side = tk.LEFT)
@@ -87,15 +87,17 @@ def Awake(root, paths = []):
 				else:
 					tkMessageBox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ ItemList[ind].path)
 					break	
-			ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
-			CreateFileGrid(ind, ItemList[ind], root)
+			ScrollView.config(scrollregion=(0,0, root.winfo_width()-50, len(ItemList)*240/4))
+			CreateFileGrid(ind, ItemList[ind], ScrollView)
 			ind += 1
 		LoadWindow[0].destroy()
 	else:
 		LoadFiles(paths, root)
 	
-	buttonFrame = tk.Frame(SelectorFrame, width = 400)
-	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH)
+	buttonFrame = tk.Frame(SelectorFrame, width = 50)
+	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH, expand = 1)
+	for c in range(1):
+		tk.Grid.columnconfigure(buttonFrame, c, weight=1)
 	ttk.Button(buttonFrame, text="Limpiar todo", command = lambda: ClearList(root)).grid(row=2, column=0, sticky = tk.EW, pady=5)
 	ttk.Button(buttonFrame, text="Agregar archivo", command = lambda: AddFiles(root)).grid(row=1, column=0, sticky = tk.EW, pady=5)
 	ttk.Button(buttonFrame, text="Continuar", command = lambda: Apply(root)).grid(row=0, column=0, sticky = tk.EW, pady=5)

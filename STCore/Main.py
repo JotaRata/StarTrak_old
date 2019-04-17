@@ -25,7 +25,7 @@ def Awake(root):
 	ttk.Button(StartFrame, text = "   Seleccionar Imagenes   ", command = lambda:LoadFiles(root), width = 40).pack(anchor = tk.CENTER)
 	#tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
 	ttk.Button(StartFrame, text = "   Abrir archivo   ", command = STCore.Tools.OpenFileCommand, width = 40).pack(anchor = tk.CENTER)
-	ttk.Button(StartFrame, text = "   Analisis en tiempo real   ", command = lambda: (Destroy(), STCore.RuntimeAnalysis.Awake(root)), width = 40).pack(anchor = tk.CENTER)
+	ttk.Button(StartFrame, text = "   Analisis en tiempo real   ", command = lambda: (STCore.RuntimeAnalysis.Awake(root)), width = 40).pack(anchor = tk.CENTER)
 	if STCore.Settings._RECENT_FILES_.get() == 1:
 		recentlabel = tk.LabelFrame(StartFrame, text = "Archivos recientes:")
 		recentlabel.pack(anchor = tk.CENTER)
@@ -148,12 +148,13 @@ if __name__ == "__main__":
 	STCore.DataManager.Awake()
 	STCore.Settings.WorkingPath = dirname(abspath(__file__))
 	STCore.DataManager.WorkingPath = dirname(abspath(__file__))
+	#print STCore.DataManager.WorkingPath
 	STCore.DataManager.LoadRecent()
 	STCore.DataManager.TkWindowRef = Window
 	StartFrame = None
 	Window.wm_title(string = "StarTrak v1.1.0")
 	Window.geometry("1080x480")
-	Window.iconbitmap("icon.ico")
+	Window.iconbitmap(STCore.DataManager.WorkingPath+"/icon.ico")
 	STCore.Settings.LoadSettings()
 	Awake(Window)
 	STCore.Tools.Awake(Window)
