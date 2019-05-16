@@ -15,6 +15,7 @@ import STCore.DataManager
 from time import time
 import STCore.Settings
 import STCore.RuntimeAnalysis
+import gc
 #region Messages and Events
 
 def OnImageClick(event):
@@ -185,12 +186,12 @@ def Awake(root, items):
 
 def Destroy():
 	ViewerFrame.destroy()
+	gc.collect()
 
 def Apply(root, items):
 	import tkMessageBox
 	if len(Stars) > 0:
 		Destroy()
-		STCore.Tracker.TrackedStars = []
 		Tracker.Awake(root, Stars, items)
 		if STCore.DataManager.RuntimeEnabled == True:
 			STCore.RuntimeAnalysis.StartRuntime(root)

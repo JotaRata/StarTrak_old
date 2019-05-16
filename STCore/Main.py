@@ -4,6 +4,7 @@ import tkMessageBox
 import ttk
 import sys
 from os.path import dirname, abspath, basename, isfile
+import gc
 try:
 	sys.path.append(dirname(dirname(abspath(__file__))))
 except NameError:  # We are the main py2exe script, not a module
@@ -17,6 +18,7 @@ def Awake(root):
 	global StartFrame
 	STCore.DataManager.CurrentWindow = 0
 	WindowName()
+	gc.collect()
 	StartFrame = tk.Frame(root, width = 1100, height = 400)
 	STCore.Tracker.DataChanged = False
 	StartFrame.pack(expand = 1, fill = tk.BOTH)
