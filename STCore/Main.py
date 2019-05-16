@@ -153,7 +153,7 @@ if __name__ == "__main__":
 	STCore.DataManager.TkWindowRef = Window
 	StartFrame = None
 	Window.wm_title(string = "StarTrak v1.1.0")
-	Window.geometry("1080x480")
+	Window.geometry("1280x640")
 	Window.iconbitmap(STCore.DataManager.WorkingPath+"/icon.ico")
 	STCore.Settings.LoadSettings()
 	Awake(Window)

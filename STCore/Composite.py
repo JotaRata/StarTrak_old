@@ -9,6 +9,7 @@ import STCore.Settings
 from matplotlib.colors import LogNorm
 from STCore.utils.Exporter import *
 import STCore.DataManager
+from time import time, sleep
 #region Variables
 CompositeFrame = None
 CompositeData = None
@@ -24,7 +25,7 @@ prog = None
 def UpdateImage(ItemList):
 	
 		if _LEVEL_MIN_.get() >_LEVEL_MAX_.get():
-			_LEVEL_MIN_.set(float(_LEVEL_MAX_.get())) + 0.01
+			_LEVEL_MIN_.set(float(_LEVEL_MAX_.get()) + 0.01)
 		Img.norm.vmax = float(_LEVEL_MAX_.get())
 		Img.norm.vmin = float(_LEVEL_MIN_.get()) + 0.01
 		Img.set_cmap(STCore.ImageView.ColorMaps[_COLOR_.get()])
@@ -106,24 +107,28 @@ def Composite(ItemList, TrackedStars):
 	while i < len(ItemList):
 		deltaPos = numpy.array(track0.trackedPos[i]) - numpy.array(track0.trackedPos[0])
 		newRot = numpy.arctan2(-(numpy.array(track1.trackedPos[i])[1] - numpy.array(track0.trackedPos[i])[1]) , (numpy.array(track1.trackedPos[i])[0] - numpy.array(track0.trackedPos[i])[0]))
-		deltaRot = (numpy.degrees(newRot) - numpy.degrees(rot))
-		deltaRot = numpy.radians(deltaRot)
+		deltaRot = newRot - rot
+		#deltaRot = numpy.radians(deltaRot)
 		newdata = Normalize(ItemList[i].data)
 		centerPos =  numpy.flip(numpy.array(track0.trackedPos[i]))
+		deltaPos = -numpy.flip(numpy.array(deltaPos))
+		#st = time()
 		translation_matrix = numpy.array([[1, 0, -centerPos[0]], [0, 1, -centerPos[1]], [0, 0, 1]])
+		translation_matrix_2 = numpy.array([[1, 0, -deltaPos[0]], [0, 1, -deltaPos[1]], [0, 0, 1]])
 		rotation_matrix = numpy.array([[numpy.cos(-deltaRot), numpy.sin(-deltaRot), 0], [-numpy.sin(-deltaRot), numpy.cos(-deltaRot), 0], [0, 0, 1]])
-		transform_matrix = numpy.linalg.inv(translation_matrix).dot(rotation_matrix).dot(translation_matrix)
-
-		newdata = scipy.ndimage.affine_transform(newdata, transform_matrix)
+		transform_matrix = translation_matrix_2.dot(numpy.linalg.inv(translation_matrix)).dot(rotation_matrix).dot(translation_matrix)
+		newdata = scipy.ndimage.affine_transform(newdata, transform_matrix, order = 1, prefilter = False)
+		#print "elapsed: ", time() -st
 		#newdata = scipy.ndimage.shift(newdata, -centerPos)
 		#newdata = scipy.ndimage.rotate(newdata, - deltaRot, reshape =False)	# Transofrmacion de Rotacion en un punto
 		#newdata = scipy.ndimage.shift(newdata, centerPos)					#  M = T**(-1) * R * T
 		#newdata = scipy.ndimage.shift(newdata, -numpy.array([numpy.sin(numpy.radians(deltaRot)), numpy.cos(numpy.radians(deltaRot))]))
-		newdata = scipy.ndimage.shift(newdata, -numpy.flip(numpy.array(deltaPos)))
+		#newdata = scipy.ndimage.shift(newdata, -numpy.flip(numpy.array(deltaPos)))
 		newdata.resize(data.shape)
 		data = data + newdata
-		prog.set(float(i)/len(ItemList))
+		prog.set(100*float(i)/len(ItemList))
 		loadBar[0].update()
+		sleep(0.001)
 		i += 1
 	return data
 

@@ -29,18 +29,20 @@ def LoadFiles(paths, root):
 	LoadWindow = CreateLoadBar(root, Progress)
 	LoadWindow[0].update()
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
-	
 	sortedP = sorted(paths, key=lambda f: Sort(f))
+	n = 0
 	map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
 	loadIndex = 0
 	
 	LoadWindow[0].destroy()
-	ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
+	ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(ItemList)*240/4))
+
 def Sort(path):
 	if any(char.isdigit() for char in path):
 		return int(filter(str.isdigit, str(path)))
 	else:
 		return str(path)
+
 def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	global loadIndex
 	item = FileItem()
@@ -66,20 +68,30 @@ def Awake(root, paths = []):
 	SelectorFrame = tk.Frame(root)
 	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
 	tk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
-	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-50, len(paths)*220/4), width = root.winfo_width()-80)
+	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-50, len(paths)*220/4), width = root.winfo_width()-180)
 	ScrollBar = ttk.Scrollbar(SelectorFrame, command=ScrollView.yview)
 	ScrollView.config(yscrollcommand=ScrollBar.set)  
 	ScrollView.pack(expand = 1, fill = tk.BOTH, anchor = tk.NW, side = tk.LEFT)
 	ScrollBar.pack(side = tk.LEFT,fill=tk.Y) 
 	ImagesFrame = tk.Frame()
-	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 120)
+	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 180)
+	buttonFrame = tk.Frame(SelectorFrame, width = 50)
+	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH, expand = 1)
+	for c in range(1):
+		tk.Grid.columnconfigure(buttonFrame, c, weight=1)
+	CleanButton = ttk.Button(buttonFrame, text="Limpiar todo", command = lambda: ClearList(root), state = tk.DISABLED)
+	CleanButton.grid(row=2, column=0, sticky = tk.EW, pady=5)
+	AddButton = ttk.Button(buttonFrame, text="Agregar archivo", command = lambda: AddFiles(root), state = tk.DISABLED)
+	AddButton.grid(row=1, column=0, sticky = tk.EW, pady=5)
+	ApplyButton = ttk.Button(buttonFrame, text="Continuar", command = lambda: Apply(root), state = tk.DISABLED)
+	ApplyButton.grid(row=0, column=0, sticky = tk.EW, pady=5)
 	if len(ItemList) != 0 and len(paths) == 0:
 		ind = 0
 		Progress = tk.DoubleVar()
 		LoadWindow = CreateLoadBar(root, Progress, title = "Cargando "+basename(STCore.DataManager.CurrentFilePath))
 		while ind < len(ItemList):
 			if ItemList[ind].data is None:
-				if isfile(ItemList[ind].path):
+				if ItemList[ind].Exists():
 					ItemList[ind].data = fits.getdata(ItemList[ind].path)
 					ItemList[ind].date = getmtime(ItemList[ind].path)
 					Progress.set(100*float(ind)/len(ItemList))
@@ -87,25 +99,19 @@ def Awake(root, paths = []):
 				else:
 					tkMessageBox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ ItemList[ind].path)
 					break	
-			ScrollView.config(scrollregion=(0,0, root.winfo_width()-50, len(ItemList)*240/4))
-			CreateFileGrid(ind, ItemList[ind], ScrollView)
+			ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(ItemList)*240/4))
+			CreateFileGrid(ind, ItemList[ind], root)
 			ind += 1
 		LoadWindow[0].destroy()
 	else:
 		LoadFiles(paths, root)
-	
-	buttonFrame = tk.Frame(SelectorFrame, width = 50)
-	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH, expand = 1)
-	for c in range(1):
-		tk.Grid.columnconfigure(buttonFrame, c, weight=1)
-	ttk.Button(buttonFrame, text="Limpiar todo", command = lambda: ClearList(root)).grid(row=2, column=0, sticky = tk.EW, pady=5)
-	ttk.Button(buttonFrame, text="Agregar archivo", command = lambda: AddFiles(root)).grid(row=1, column=0, sticky = tk.EW, pady=5)
-	ttk.Button(buttonFrame, text="Continuar", command = lambda: Apply(root)).grid(row=0, column=0, sticky = tk.EW, pady=5)
-
+	CleanButton.config(state = tk.NORMAL)
+	ApplyButton.config(state = tk.NORMAL)
+	AddButton.config(state = tk.NORMAL)
 
 def GridPlace(root, index, size):
 	maxrows = root.winfo_height()/size
-	maxcols = root.winfo_width()/size
+	maxcols = (root.winfo_width()-180)/size
 	col = index
 	row = 0
 	while col >= maxcols:

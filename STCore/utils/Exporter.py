@@ -1,9 +1,11 @@
 
 import tkFileDialog
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import figure
 from os.path import splitext, isfile
 from os import remove
+import STCore.ImageView
 import pyfits as fits
 def ExportImage(figure):
 	path = tkFileDialog.asksaveasfilename(confirmoverwrite = True, filetypes=[("Portable Network Graphics", "*.png"), ("JPEG Image", "*.jpg")], defaultextension = "*.png")
@@ -18,9 +20,10 @@ def ExportImageExt(data, mode, color, lmin, lmax, imMin, imMax):
 		hdulist = fits.HDUList([hdu])
 		hdulist.writeto(path)
 	else:
-		tableFig = figure.Figure(figsize = (7, 4), dpi= 100)
+		tableFig = figure.Figure(figsize = (7, 4), dpi= 200)
 		tableAx = tableFig.add_subplot(111)
-		Img = tableax.imshow(data)
+		Img = tableAx.imshow(data)
+		canvas = FigureCanvasAgg(tableFig)
 		Img.norm.vmax = lmax
 		Img.norm.vmin = lmin
 		Img.set_cmap(STCore.ImageView.ColorMaps[color])
@@ -56,7 +59,7 @@ def ExportPDF(fig, MagData, TrackedStars):
 		tableFig = figure.Figure(figsize = (7, 4), dpi= 100)
 		tableAx = tableFig.add_subplot(111)
 		tableAx.set_axis_off()
-		tableAx.table(cellText=MagData.transpose().round(decimals = 2),colLabels=collabel,loc='center')
+		tableAx.table(cellText=MagData.round(decimals = 2),colLabels=collabel,loc='center')
 		with PdfPages(str(path)) as pp:
 			
 			pp.savefig(fig)

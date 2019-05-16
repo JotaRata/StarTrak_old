@@ -6,6 +6,7 @@ import numpy
 #region variables
 ConfiguratorFrame = None
 SettingsObject = None
+PlotWindow = None
 
 _SORTINGMODE_ = None
 _DELTRACKS_ = None
@@ -35,7 +36,7 @@ def Load():
 	_XTICKS_ = tk.IntVar(value = SettingsObject.tickNumber)
 
 def Apply(root, ItemList, TrackedStars):
-	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_
+	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_, PlotWindow
 	SettingsObject.sortingMode = _SORTINGMODE_.get()
 	SettingsObject.tickNumber = _XTICKS_.get()
 	STCore.DataManager.ResultSetting = SettingsObject
@@ -49,13 +50,20 @@ def Apply(root, ItemList, TrackedStars):
 		if STCore.DataManager.RuntimeEnabled == False:
 			STCore.Results.Awake(root, ItemList, TrackedStars)
 		else:
-			PlotWindow = tk.Toplevel(root)
-			STCore.Results.Awake(PlotWindow, ItemList, TrackedStars)
+			STCore.Results.Reset()
+			if PlotWindow == None or not tk.Toplevel.winfo_exists(PlotWindow):
+				PlotWindow = tk.Toplevel(root)
+				STCore.Results.Awake(PlotWindow, ItemList, TrackedStars)
+			else:
+				PlotWindow.destroy()
+				PlotWindow = tk.Toplevel(root)
+				STCore.Results.Awake(PlotWindow, ItemList, TrackedStars)
+
 	if STCore.DataManager.CurrentWindow == 4:
 		ticks = STCore.ResultsConfigurator.SettingsObject.tickNumber
 		XAxis, Xlabel = STCore.Results.GetXTicks(ItemList)
 		for i in range(len(TrackedStars)):
-			X = numpy.c_[XAxis,STCore.Results.MagData[i]]
+			X = numpy.c_[XAxis,STCore.Results.MagData[:,i]]
 			STCore.Results.Plots[i].set_offsets(X)
 			STCore.Results.PlotAxis.set_xticks(XAxis[0::max(1, len(ItemList) / ticks)])
 			STCore.Results.PlotAxis.set_xticklabels(Xlabel[0::max(1, len(ItemList) / ticks)])

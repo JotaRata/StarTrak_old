@@ -135,4 +135,5 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	else:
 		stars[starIndex] = st
 	OnStarChange()
+	st.PrintData()
 	Window.destroy()

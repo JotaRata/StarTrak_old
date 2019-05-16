@@ -7,6 +7,7 @@ from os.path import dirname, abspath, basename, isfile
 import pyfits as fits
 from os.path import  getmtime
 from STCore.item.File import FileItem
+from STCore.utils.backgroundEstimator import GetBackgroundMean
 import os, time
 import Tkinter as tk
 import __main__
@@ -42,13 +43,15 @@ def CreateFileItem(path):
 	return item
 
 def UpdateFileList(path):
-	filesList.append(CreateFileItem(path))
+	item = CreateFileItem(path)
+	filesList.append(item)
 	STCore.Tracker.CurrentFile += 1
 	STCore.Tracker.UpdateTrack(filesList, STCore.ImageView.Stars, STCore.Tracker.CurrentFile, False)
 	stIndex = 0
 	temp = 0
+	data = item.data
 	while stIndex < len(STCore.Tracker.TrackedStars):
-		value = STCore.Results.GetValue(filesList, STCore.Tracker.TrackedStars[stIndex], STCore.Results.Constant, STCore.Results.BackgroundFlux, STCore.Tracker.CurrentFile)
+		value = STCore.Results.GetValue(data, STCore.Tracker.TrackedStars[stIndex], STCore.Results.Constant,  STCore.Tracker.CurrentFile, GetBackgroundMean(data))
 		X = GetXTick(STCore.Tracker.CurrentFile)
 		point = [X, value]
 		STCore.Results.AddPoint(point, stIndex)
@@ -62,7 +65,9 @@ def GetXTick(index):
 	else:
 		return index
 def StartRuntime(root):
+	global filesList
 	STCore.Tracker.CurrentFile = 0
+	filesList = list(filter(lambda item: item.Exists(), filesList))
 	STCore.Tracker.UpdateTrack(filesList, STCore.ImageView.Stars, STCore.Tracker.CurrentFile, False)
 	STCore.ResultsConfigurator.Awake(root, filesList, STCore.Tracker.TrackedStars)
 	WatchDir(root)
@@ -75,12 +80,12 @@ def WatchDir(root):
 		removed = [f for f in dirState if not f in after]
 		if added:
 		   for a in added:
-			try:
+		#	try:
 				UpdateFileList(os.path.join(directoryPath, str(a)))
 				time.sleep(0.01)
-			except:
-					print "No se pudo abrir el archivo: ", str(a)
-					pass
+		#	except:
+		#			print "No se pudo abrir el archivo: ", str(a)
+		#			pass
 		if removed: print "Removed: ", ", ".join (removed)
 		dirState = after
 		root.after(1000, lambda: WatchDir(root))

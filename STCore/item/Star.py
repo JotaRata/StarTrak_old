@@ -10,9 +10,8 @@ class StarItem(object):
 		self.radius = 0
 
 	def PrintData(self):
-		print "Nombre: ", self.name
-		print "Tipo: ", self.type
-		print "Ubicacion: ", self.location
-		print "Brillo: ", self.value
-		print "Radio: ", self.bounds
-
+		print "-------------- Datos de la estrella ---------------------"
+		print "Nombre: ", self.name, "\t\t\t Tipo: ", self.type
+		print "Ubicacion: ", self.location, "\t\t\t Brillo: ", self.value
+		print "Radio: ", self.bounds,"\t\t\t Tolerancia: ", self.threshold
+		print "----------------------------------------------------------"
