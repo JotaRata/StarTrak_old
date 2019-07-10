@@ -78,13 +78,17 @@ def SaveSettings():
 		STCore.ImageView.UpdateImage()
 	if STCore.DataManager.CurrentWindow == 3:
 		STCore.Tracker.UpdateImage()
-	Window.destroy()
+	CloseWindow()
 
 def Awake(root):
 	global Window,SettingsFrame
 	global _RECENT_FILES_, _PROCESS_NUMBER_, _SHOW_GRID_, _VISUAL_MODE_, _VISUAL_COLOR_, _TRACK_PREDICTION_, _SHOW_TRACKEDPOS_
+	if Window is not None:
+		return
 	Window = tk.Toplevel(root)
 	Window.wm_title(string = "Configuración")
+	Window.protocol("WM_DELETE_WINDOW", CloseWindow)
+	Window.attributes('-topmost', 'true')
 	Window.resizable(False, False)
 	SettingsFrame = tk.Frame(Window)
 	SettingsFrame.pack(fill = tk.BOTH, expand = 1, side = tk.LEFT)
@@ -114,5 +118,10 @@ def Awake(root):
 
 	BottomPanel = tk.Frame(Window)
 	BottomPanel.pack(side = tk.RIGHT, fill = tk.Y)
-	ttk.Button(BottomPanel, text = "Cancelar", command = Window.destroy).grid(row = 1, column = 0)
+	ttk.Button(BottomPanel, text = "Cancelar", command = CloseWindow).grid(row = 1, column = 0)
 	ttk.Button(BottomPanel, text = "Aceptar", command = SaveSettings).grid(row = 0, column = 0)
+
+def CloseWindow():
+	global Window
+	Window.destroy()
+	Window = None

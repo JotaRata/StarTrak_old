@@ -6,6 +6,7 @@ import tkFileDialog
 from os.path import dirname, abspath, basename, isfile
 import pyfits as fits
 from os.path import  getmtime
+from time import sleep, strftime, localtime, strptime,gmtime, mktime
 from STCore.item.File import FileItem
 from STCore.utils.backgroundEstimator import GetBackgroundMean
 import os, time
@@ -24,9 +25,10 @@ def Awake(root):
 		__main__.Destroy()
 		STCore.ImageView.Awake(root, filesList)
 		dirState = dict ([(f, None) for f in os.listdir (directoryPath)])
+		STCore.DataManager.RuntimeDirectory = directoryPath
 
 def LoadFile(root):
-	global startFile, directoryPath
+	global startFile, directoryPath, filesList
 	startFile = str(tkFileDialog.askopenfilename(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")]))
 	if len(startFile) == 0:
 		print "Cancelled Analysis"
@@ -38,54 +40,68 @@ def LoadFile(root):
 def CreateFileItem(path):
 	item = FileItem()
 	item.path = str(path)
-	item.data, header = fits.getdata(item.path, header = True)
-	item.date = getmtime(item.path)
+	item.data, hdr = fits.getdata(item.path, header = True)
+	try:
+		item.date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
+	except:
+		print "File has no Header!   -   using system time instead.."
+		item.date = gmtime(getmtime(item.path))
+		pass
+	print hdr["NOTE"]
 	return item
 
-def UpdateFileList(path):
+def UpdateFileList(root, path):
 	item = CreateFileItem(path)
 	filesList.append(item)
 	STCore.Tracker.CurrentFile += 1
-	STCore.Tracker.UpdateTrack(filesList, STCore.ImageView.Stars, STCore.Tracker.CurrentFile, False)
+	STCore.Tracker.UpdateTrack(root, filesList, STCore.ImageView.Stars, STCore.Tracker.CurrentFile, False)
 	stIndex = 0
 	temp = 0
 	data = item.data
+	if STCore.DataManager.CurrentWindow == 3:
+		return
 	while stIndex < len(STCore.Tracker.TrackedStars):
 		value = STCore.Results.GetValue(data, STCore.Tracker.TrackedStars[stIndex], STCore.Results.Constant,  STCore.Tracker.CurrentFile, GetBackgroundMean(data))
 		X = GetXTick(STCore.Tracker.CurrentFile)
-		point = [X, value]
+		point = [X, -value +  STCore.Results.Constant]
 		STCore.Results.AddPoint(point, stIndex)
 		stIndex += 1
-	STCore.Results.UpdateScale()
+	STCore.Results.UpdateScale(True)
+	STCore.DataManager.FileItemList = filesList
 
 def GetXTick(index):
-	epoch = time.time()
+	epoch = mktime(filesList[0].date)
 	if STCore.ResultsConfigurator.SettingsObject.sortingMode == 0:
-		return filesList[index].date - epoch
+		return mktime(filesList[index].date) - epoch
 	else:
 		return index
 def StartRuntime(root):
 	global filesList
-	STCore.Tracker.CurrentFile = 0
 	filesList = list(filter(lambda item: item.Exists(), filesList))
-	STCore.Tracker.UpdateTrack(filesList, STCore.ImageView.Stars, STCore.Tracker.CurrentFile, False)
+	STCore.Tracker.UpdateTrack(root, filesList, STCore.ImageView.Stars, STCore.Tracker.CurrentFile, False)
 	STCore.ResultsConfigurator.Awake(root, filesList, STCore.Tracker.TrackedStars)
 	WatchDir(root)
 
+def StopRuntime():
+	 STCore.DataManager.RuntimeEnabled = False
+	
 def WatchDir(root):
 	global directoryPath, dirState
+	if STCore.DataManager.CurrentWindow == 2:
+		return
 	if STCore.DataManager.RuntimeEnabled == True:
 		after = dict ([(f, None) for f in os.listdir (directoryPath)])
 		added = [f for f in after if not f in dirState]
 		removed = [f for f in dirState if not f in after]
 		if added:
 		   for a in added:
-		#	try:
-				UpdateFileList(os.path.join(directoryPath, str(a)))
-				time.sleep(0.01)
-		#	except:
-		#			print "No se pudo abrir el archivo: ", str(a)
-		#			pass
+			try:
+				UpdateFileList(root, os.path.join(directoryPath, str(a)))
+				time.sleep(0.001)
+			except Exception as e:
+					print "No se pudo abrir el archivo: ", str(a)
+					print e
+					pass
 		if removed: print "Removed: ", ", ".join (removed)
 		dirState = after
-		root.after(1000, lambda: WatchDir(root))
+		root.after(100, lambda: WatchDir(root))

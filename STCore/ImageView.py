@@ -16,6 +16,8 @@ from time import time
 import STCore.Settings
 import STCore.RuntimeAnalysis
 import gc
+from PIL import Image, ImageTk
+import STCore.utils.Icons as icons
 #region Messages and Events
 
 def OnImageClick(event):
@@ -35,6 +37,7 @@ def UpdateStarList():
 	for child in SidebarList.winfo_children():
 		child.destroy()
 	index = 0
+	icon = icons.Icons["delete"]
 	for s in Stars:
 		ListFrame = tk.Frame(SidebarList)
 		ListFrame.pack(fill = tk.X, expand = 1, anchor = tk.N, pady = 5)
@@ -42,7 +45,9 @@ def UpdateStarList():
 		cmd = __helperCreateWindow(index, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold / s.value)
 		cmd2= __helperPop(Stars, index)
 		ttk.Button(ListFrame, text = s.name, width = 10, command = cmd).pack(side = tk.LEFT, fill = tk.X, expand = 1)
-		ttk.Button(ListFrame, text = "X", width = 1, command = cmd2).pack(side = tk.RIGHT)
+		deleteButton = ttk.Button(ListFrame, image = icon, width = 1, command = cmd2)
+		deleteButton.image = icon   #se necesita una referencia
+		deleteButton.pack(side = tk.RIGHT)
 		index += 1
 #Las funciones lambda no se pueden llamar dentro de un loop for o while,
 ## para eso hay que crear una funcion que retorne un lambda
@@ -78,10 +83,10 @@ def UpdateImage():
 		global Levels
 		if _LEVEL_MIN_.get() >_LEVEL_MAX_.get():
 			_LEVEL_MIN_.set(_LEVEL_MAX_.get())
-		Image.norm.vmax = _LEVEL_MAX_.get()
-		Image.norm.vmin = _LEVEL_MIN_.get() + 0.01
-		Image.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
-		Image.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
+		ImagePlot.norm.vmax = _LEVEL_MAX_.get()
+		ImagePlot.norm.vmin = _LEVEL_MIN_.get() + 0.01
+		ImagePlot.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
+		ImagePlot.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
 		STCore.DataManager.Levels = (_LEVEL_MAX_.get(), _LEVEL_MIN_.get())
 		Levels = (_LEVEL_MAX_.get(), _LEVEL_MIN_.get())
 		ImageCanvas.draw_idle()
@@ -90,13 +95,14 @@ def UpdateImage():
 
 #region Create Funcions
 def CreateCanvas(app, ImageClick):
-	global ImageCanvas, Image, ImageFrame, ImageAxis
+	global ImageCanvas, ImagePlot, ImageFrame, ImageAxis
 	ImageFrame = tk.Frame(app, width = 700, height = 350, bg = "white")
 	ImageFrame.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)	
 
 	ImageFigure = figure.Figure(figsize = (7,3.6), dpi = 100)
 	ImageAxis = ImageFigure.add_subplot(111)
-	Image = ImageAxis.imshow(Data, vmin = Levels[1], vmax = Levels[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
+	ImageFigure.subplots_adjust(0.0,0.05,1,1)
+	ImagePlot = ImageAxis.imshow(Data, vmin = Levels[1], vmax = Levels[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
 	if STCore.Settings._SHOW_GRID_.get() == 1:
 		ImageAxis.grid()
 	ImageCanvas = FigureCanvasTkAgg(ImageFigure,master=ImageFrame)
@@ -114,8 +120,8 @@ def CreateSidebar(app, root, items):
 	global Sidebar, SidebarList
 	import STCore.ImageSelector
 
-	Sidebar = tk.LabelFrame(app, relief=tk.RIDGE, width = 400, height = 400, text = "Opciones de Análisis")
-	Sidebar.pack(side = tk.RIGHT, expand = True, fill = tk.BOTH, anchor = tk.NE)
+	Sidebar = tk.LabelFrame(app, relief=tk.RIDGE, width = 200, height = 400, text = "Opciones de Análisis")
+	Sidebar.pack(side = tk.RIGHT, expand = 0, fill = tk.BOTH, anchor = tk.NE)
 
 	SidebarList = tk.Frame(Sidebar)
 	SidebarList.pack(expand = 1, fill = tk.X, anchor = tk.NW)
@@ -127,9 +133,12 @@ def CreateSidebar(app, root, items):
 	
 	buttonsFrame = tk.Frame(Sidebar)
 	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
-	ttk.Button(buttonsFrame, text = "Volver", command = cmdBack).grid(row = 0, column = 0, sticky = tk.EW)
-	ttk.Button(buttonsFrame, text = "Agregar estrella", command = cmdCreate).grid(row = 0, column = 1, sticky = tk.EW)
-	ttk.Button(buttonsFrame, text = "Continuar", command = cmdTrack).grid(row = 0, column = 2, sticky = tk.EW)
+	PrevButton = ttk.Button(buttonsFrame, text = " Volver", image = icons.Icons["prev"], command = cmdBack, compound="left")
+	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
+	AddButton = ttk.Button(buttonsFrame, text = "Agregar estrella", command = cmdCreate, image = icons.Icons["add"], compound="left")
+	AddButton.grid(row = 0, column = 1, sticky = tk.EW)
+	NextButton = ttk.Button(buttonsFrame, text = "Continuar", command = cmdTrack, image = icons.Icons["next"], compound = "right")
+	NextButton.grid(row = 0, column = 2, sticky = tk.EW)
 
 #endregion
 
@@ -139,7 +148,7 @@ Data = None
 Levels = (0,0)
 Stars = []
 ImageCanvas = None
-Image = None 
+ImagePlot = None 
 ImageFrame = None 
 ImageAxis = None
 Sidebar = None 
@@ -156,7 +165,7 @@ MousePressTime = -1
 #region Main Body
 
 def Awake(root, items):
-	global ViewerFrame, Data, Stars, ImageCanvas, Image, ImageFrame, ImageAxis, Sidebar, SidebarList, SliderLabel, _LEVEL_MAX_, _LEVEL_MIN_, Levels
+	global ViewerFrame, Data, Stars, ImageCanvas, ImagePlot, ImageFrame, ImageAxis, Sidebar, SidebarList, SliderLabel, _LEVEL_MAX_, _LEVEL_MIN_, Levels
 	STCore.DataManager.CurrentWindow = 2
 	ViewerFrame = tk.Frame(root)
 	ViewerFrame.pack( fill = tk.BOTH, expand = 1)
@@ -240,10 +249,11 @@ def OnMouseRelase(event):
 	global MousePress, SelectedStar
 	UpdateStarList()
 	MousePress = None
+	if SelectedStar != -1:
+		OnStarChange()
 	SelectedStar = -1
 	if time() - MousePressTime < 0.2:
 		OnImageClick(event)
-		print "timed"
 	for a in ImageAxis.artists:
 		setp(a, linewidth = 1)
 	ImageCanvas.draw()

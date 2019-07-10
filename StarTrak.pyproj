@@ -77,6 +77,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="STCore\utils\backgroundEstimator.py" />
+    <Compile Include="STCore\utils\Icons.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="STCore\utils\thicc.py" />
     <Compile Include="STCore\utils\__init__.py" />
     <Compile Include="STCore\__init__.py" />
@@ -86,8 +89,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="STCore\" />
+    <Folder Include="STCore\icons\" />
     <Folder Include="STCore\item\" />
     <Folder Include="STCore\utils\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="STCore\icons\delete.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

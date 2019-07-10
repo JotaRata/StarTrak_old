@@ -10,6 +10,7 @@ from matplotlib.colors import LogNorm
 from STCore.utils.Exporter import *
 import STCore.DataManager
 from time import time, sleep
+import STCore.utils.Icons as icons
 #region Variables
 CompositeFrame = None
 CompositeData = None
@@ -56,23 +57,24 @@ def Awake(root, ItemList, TrackedStars):
 	#Exportmenu.add_command(label="Exportar grafico", command=lambda: ExportImage(canvas[1]))
 	#Exportmenu.add_command(label="Exportar datos", command=lambda: ExportData(TrackedStars, canvas[2], GetTimeLabel(ItemList)))
 	#Exportmenu.add_command(label="Exportar PDF", command=lambda: ExportPDF(canvas[1], canvas[2], TrackedStars))
-	exportbutton = ttk.Button(Sidebar, text = "Exportar", command = lambda: Export(ItemList, canvas[2]))
-	#exportbutton.bind("<Button-1>", lambda event: PopupMenu(event, Exportmenu))
-	exportbutton.grid(row = 0, column = 0)
-	levelFrame = tk.LabelFrame(Sidebar, text = "Niveles:")
-	levelFrame.grid(row = 1,column = 0, columnspan = 2, sticky = tk.EW)
+	buttonFrame = tk.LabelFrame(Sidebar)
+	buttonFrame.grid(row = 0,column = 0, columnspan = 2, sticky = tk.EW)
+	exportbutton = ttk.Button(buttonFrame, text = " Exportar",image = icons.Icons["export"], compound = "left", command = lambda: Export(ItemList, canvas[2]))
+	exportbutton.grid(row = 0, column = 1)
+	ttk.Button(buttonFrame, text = " Volver",image = icons.Icons["prev"], compound = "left", command = cmdBack).grid(row = 0, column = 0)
 	for c in range(3):
 		tk.Grid.columnconfigure(Sidebar, c, weight=1)
+	levelFrame = tk.LabelFrame(Sidebar, text = "Niveles:")
+	levelFrame.grid(row = 1,column = 0, columnspan = 2, sticky = tk.EW)
 	tk.Label(levelFrame, text = "Maximo:").grid(row = 0,column = 0)
-	ttk.Scale(levelFrame, from_=numpy.min(canvas[2]), to=numpy.max(canvas[2]), orient=tk.HORIZONTAL, variable = _LEVEL_MAX_, length = 500).grid(row = 0, column = 1, columnspan = 2, sticky = tk.EW)
+	ttk.Scale(levelFrame, from_=numpy.min(canvas[2]), to=numpy.max(canvas[2]), orient=tk.HORIZONTAL, variable = _LEVEL_MAX_, length = 300).grid(row = 0, column = 1, columnspan = 1, sticky = tk.EW)
 	tk.Label(levelFrame, text = "Minimo:").grid(row = 1,column = 0)
-	ttk.Scale(levelFrame, from_=numpy.min(canvas[2]), to=numpy.max(canvas[2]), orient=tk.HORIZONTAL, variable = _LEVEL_MIN_, length = 500).grid(row = 1, column = 1, columnspan = 2, sticky = tk.EW)
+	ttk.Scale(levelFrame, from_=numpy.min(canvas[2]), to=numpy.max(canvas[2]), orient=tk.HORIZONTAL, variable = _LEVEL_MIN_, length = 300).grid(row = 1, column = 1, columnspan = 1, sticky = tk.EW)
 
 	tk.Label(Sidebar, text = "Modo de Imagen:").grid(row = 2, column = 0, sticky = tk.W)
 	ttk.OptionMenu(Sidebar, _MODE_,_MODE_.get(), *STCore.Settings.VisModes).grid(row = 2, column = 1, sticky = tk.E)
 	tk.Label(Sidebar, text = "Mapa de color:").grid(row = 3, column = 0, sticky = tk.W)
 	ttk.OptionMenu(Sidebar, _COLOR_,_COLOR_.get(), *STCore.Settings.VisColors).grid(row = 3, column = 1, sticky = tk.E)
-	ttk.Button(Sidebar, text = "Volver", command = cmdBack).grid(row = 0, column = 1)
 	#ttk.Button(Sidebar, text = "Configurar", command = lambda: STCore.ResultsConfigurator.Awake(root, ItemList, TrackedStars)).grid(row = 2, column = 0)
 
 def Export(ItemList, data):
@@ -87,6 +89,8 @@ def CreateCanvas(ItemList, TrackedStars):
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
 	data = Composite(ItemList, TrackedStars)
 	ImgAxis = fig.add_subplot(111)
+	fig.subplots_adjust(0.01,0,0.99,1)
+	ImgAxis.set_axis_off()
 	Img = ImgAxis.imshow(data, cmap = "gray") #, cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
 	ImgCanvas = FigureCanvasTkAgg(fig,master=CompositeFrame)
 	if STCore.Settings._SHOW_GRID_.get() == 1:

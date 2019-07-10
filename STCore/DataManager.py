@@ -4,7 +4,7 @@ from os.path import isfile
 WorkingPath = ""
 def Awake():
 	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow
-	global TkWindowRef, ResultSetting, Levels, RecentFiles, ResultData, RuntimeEnabled
+	global TkWindowRef, ResultSetting, Levels, RecentFiles, ResultData, RuntimeEnabled, ResultConstant, RuntimeDirectory
 	CurrentFilePath = ""
 	FileItemList = []
 	StarItemList = []
@@ -15,10 +15,11 @@ def Awake():
 	Levels = -1
 	RecentFiles = []
 	ResultData = None
+	ResultConstant = None
 	RuntimeEnabled = False
-
+	RuntimeDirectory = ""
 def Reset():
-	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels, ResultData, RuntimeEnabled
+	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels, ResultData, RuntimeEnabled, ResultConstant, RuntimeDirectory
 	Main.Reset()
 	CurrentFilePath = ""
 	FileItemList = []
@@ -28,7 +29,9 @@ def Reset():
 	ResultSetting = None
 	Levels = -1
 	ResultData = None
+	ResultConstant = None
 	RuntimeEnabled = False
+	RuntimeDirectory = None
 
 def PrintData():
 	print CurrentFilePath
@@ -60,10 +63,13 @@ def SaveData(filepath):
 		pickle.dump(ResultSetting, out, pickle.HIGHEST_PROTOCOL)
 		pickle.dump(Levels, out, pickle.HIGHEST_PROTOCOL)
 		pickle.dump(ResultData, out, pickle.HIGHEST_PROTOCOL)
+		pickle.dump(ResultConstant, out, pickle.HIGHEST_PROTOCOL)
+		pickle.dump(RuntimeEnabled, out, pickle.HIGHEST_PROTOCOL)
+		pickle.dump(RuntimeDirectory, out, pickle.HIGHEST_PROTOCOL)
 	Main.WindowName()
 
 def LoadData(filepath):
-	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels, ResultData
+	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels, ResultData, ResultConstant, RuntimeEnabled, RuntimeDirectory
 	Reset()
 	CurrentFilePath = filepath
 	with open(filepath, "rb") as inp:
@@ -75,6 +81,9 @@ def LoadData(filepath):
 			ResultSetting = pickle.load(inp)
 			Levels = pickle.load(inp)
 			ResultData = pickle.load(inp)
+			ResultConstant = pickle.load(inp)
+			RuntimeEnabled = pickle.load(inp)
+			RuntimeDirectory = pickle.load(inp)
 		except:
 			pass
 	Main.WindowName()

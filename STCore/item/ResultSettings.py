@@ -7,4 +7,5 @@ class ResultSetting(object):
 		self.delError = 0
 		self.refStar = -1
 		self.refValue = 0
-		self.tickNumber = 1
+		self.tickNumber = 5
+		self.timeLenght = 3600

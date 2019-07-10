@@ -5,7 +5,7 @@ import ttk
 from PIL import Image, ImageTk
 import pyfits as fits
 from os.path import basename, getmtime, isfile
-from time import sleep, strftime, localtime
+from time import sleep, strftime, localtime, strptime,gmtime
 import tkFileDialog
 import tkMessageBox
 from STCore.item.File import FileItem
@@ -13,6 +13,7 @@ import STCore.ImageView
 import STCore.DataManager
 import numpy
 from functools import partial
+import STCore.utils.Icons as icons
 #region Variables
 SelectorFrame = None
 ImagesFrame = None
@@ -47,8 +48,14 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	global loadIndex
 	item = FileItem()
 	item.path = str(path)
-	item.data = fits.getdata(item.path).astype(uint8)
-	item.date = getmtime(item.path)
+	item.data, hdr = fits.getdata(item.path, header = True)
+	#item.date = fits.header['NOTE'].split()[3]
+	try:
+		item.date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
+	except:
+		print "File has no Header!   -   using system time instead.."
+		item.date = gmtime(getmtime(item.path))
+		pass
 	#print strftime('%H/%M/%S', localtime(item.date))
 	#item.timee = header['NOTE'].split()[3]
 	item.active = 1
@@ -68,22 +75,25 @@ def Awake(root, paths = []):
 	SelectorFrame = tk.Frame(root)
 	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
 	tk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
-	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-50, len(paths)*220/4), width = root.winfo_width()-180)
+	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-80, len(paths)*220/4), width = root.winfo_width()-180)
 	ScrollBar = ttk.Scrollbar(SelectorFrame, command=ScrollView.yview)
 	ScrollView.config(yscrollcommand=ScrollBar.set)  
-	ScrollView.pack(expand = 1, fill = tk.BOTH, anchor = tk.NW, side = tk.LEFT)
+	ScrollView.pack(expand = 0, fill = tk.BOTH, anchor = tk.NW, side = tk.LEFT)
 	ScrollBar.pack(side = tk.LEFT,fill=tk.Y) 
 	ImagesFrame = tk.Frame()
 	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 180)
-	buttonFrame = tk.Frame(SelectorFrame, width = 50)
+	buttonFrame = tk.Frame(SelectorFrame, width = 80)
 	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH, expand = 1)
 	for c in range(1):
 		tk.Grid.columnconfigure(buttonFrame, c, weight=1)
-	CleanButton = ttk.Button(buttonFrame, text="Limpiar todo", command = lambda: ClearList(root), state = tk.DISABLED)
+	style = ttk.Style()
+	style.configure("Left.TButton", anchor = tk.E)
+	CleanButton = ttk.Button(buttonFrame, text="Limpiar todo     ", command = lambda: ClearList(root), state = tk.DISABLED,  image = icons.Icons["delete"], compound = "right",style = "Left.TButton")
+	CleanButton.image = icons.Icons["delete"]
 	CleanButton.grid(row=2, column=0, sticky = tk.EW, pady=5)
-	AddButton = ttk.Button(buttonFrame, text="Agregar archivo", command = lambda: AddFiles(root), state = tk.DISABLED)
+	AddButton = ttk.Button(buttonFrame, text=  "Agregar archivo  ", command = lambda: AddFiles(root), state = tk.DISABLED, image = icons.Icons["multi"], compound = "right",style = "Left.TButton")
 	AddButton.grid(row=1, column=0, sticky = tk.EW, pady=5)
-	ApplyButton = ttk.Button(buttonFrame, text="Continuar", command = lambda: Apply(root), state = tk.DISABLED)
+	ApplyButton = ttk.Button(buttonFrame, text="Continuar        ", command = lambda: Apply(root), state = tk.DISABLED, image = icons.Icons["next"], compound = "right",style = "Left.TButton")
 	ApplyButton.grid(row=0, column=0, sticky = tk.EW, pady=5)
 	if len(ItemList) != 0 and len(paths) == 0:
 		ind = 0
@@ -92,8 +102,13 @@ def Awake(root, paths = []):
 		while ind < len(ItemList):
 			if ItemList[ind].data is None:
 				if ItemList[ind].Exists():
-					ItemList[ind].data = fits.getdata(ItemList[ind].path)
-					ItemList[ind].date = getmtime(ItemList[ind].path)
+					ItemList[ind].data, hdr = fits.getdata(ItemList[ind].path, header = True)
+					try:
+						ItemList[ind].date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
+					except:
+						print "File has no Header!   -   using system time instead.."
+						ItemList[ind].date = gmtime(getmtime(ItemList[ind].path))
+						pass
 					Progress.set(100*float(ind)/len(ItemList))
 					LoadWindow[0].update()
 				else:
@@ -123,6 +138,7 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	popup = tk.Toplevel()
 	popup.geometry("300x60+%d+%d" % (root.winfo_width()/2,  root.winfo_height()/2) )
 	popup.wm_title(string = title)
+	popup.attributes('-topmost', 'true')
 	popup.overrideredirect(1)
 	pframe = tk.LabelFrame(popup)
 	pframe.pack(fill = tk.BOTH, expand = 1)

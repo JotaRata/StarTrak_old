@@ -6,6 +6,8 @@ import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from STCore.item.Star import StarItem
 import STCore.Tracker
+import STCore.utils.Icons as icons
+from STCore.utils.backgroundEstimator import GetBackgroundMean
 #region Variables
 Window = None
 leftPanel = None
@@ -14,12 +16,19 @@ Image = None
 ImageCanvas = None
 ImageViewer = None
 BrightLabel = None
+ConfIcon = None
+MousePress = None
+XLoc= YLoc = None
 #endregion
 
 def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20),radius = 20, bounds = 80, Type = 0, threshold = 50):
-	global Window, Image, ImageCanvas, leftPanel, rightPanel, ImageViewer, BrightLabel
+	global Window, Image, ImageCanvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
+	if Window is not None:
+		return
 	Window = tk.Toplevel(root)
 	Window.wm_title(string = "Configurar Estrella")
+	Window.protocol("WM_DELETE_WINDOW", CloseWindow)
+	Window.attributes('-topmost', 'true')
 	Window.resizable(False, False)
 	leftPanel = tk.Frame(Window)
 	leftPanel.grid(row = 0,column = 0, sticky=tk.NS)
@@ -71,12 +80,15 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 	BoundSpinBox.grid(row = 5, column = 3, columnspan = 1, sticky = tk.EW)
 	tk.Label(trackFrame, text = "Tolerancia de busqueda:").grid(row = 6, column = 2, sticky = tk.W)
 	ThreSpinBox.grid(row = 6, column = 3, columnspan = 2, sticky = tk.EW)
-	BrightLabel = tk.Label(trackFrame, text = "Máximo brillo: ")
-	BrightLabel.grid(row = 7, column = 2, sticky = tk.W)
-	DrawCanvas(location, radius, Data)
-	tk.Label(trackFrame, text = str(numpy.max(Image.get_array()))).grid(row = 7, column = 3, sticky = tk.W)
 	
-	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()))
+	DrawCanvas(location, radius, Data)
+	mean = float(GetBackgroundMean(Data))
+	confidence = int(min((numpy.max(Image.get_array()))/ mean - 1, 1.0)*100)
+	BrightLabel = tk.Label(trackFrame, text = "Confidencia: " + str(confidence)+"%",font="-weight bold", width = 18, anchor = "w")
+	ConfIcon = tk.Label(trackFrame, image = icons.Icons["conf"+str(numpy.clip((confidence+30)/30, 1, 3))])
+	ConfIcon.grid(row = 7, column = 3)
+	BrightLabel.grid(row = 7, column = 2, sticky = tk.W)
+	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), mean)
 	XLoc.trace("w",cmd)
 	YLoc.trace("w",cmd)
 	StarRadius.trace("w",cmd)
@@ -87,8 +99,10 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 						 Stars, OnStarChange, starIndex)
 	controlButtons = tk.Frame(rightPanel)
 	controlButtons.grid(row =3)
-	ttk.Button(controlButtons, text = "Aceptar", command = applycmd).grid(row = 0, column = 1)
-	ttk.Button(controlButtons, text = "Cancelar", command = Window.destroy).grid(row = 0, column = 0)
+	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = applycmd, image = icons.Icons["check"], compound = "right")
+	ApplyButton.grid(row = 0, column = 1)
+	CancelButton = ttk.Button(controlButtons, text = "Cancelar", command = CloseWindow, image = icons.Icons["delete"], compound = "left")
+	CancelButton.grid(row = 0, column = 0)
 
 def GetMaxima(data, xloc, yloc, radius):
 	stLoc = (yloc, xloc)
@@ -101,22 +115,29 @@ def DrawCanvas(stLoc, radius, data):
 	ImageFigure = matplotlib.figure.Figure(figsize = (2,2), dpi = 100)
 	ImageAxis = ImageFigure.add_subplot(111)
 	ImageAxis.set_axis_off()
-
+	ImageFigure.subplots_adjust(0,0,1,1)
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 	levels = STCore.DataManager.Levels
-	Image = ImageAxis.imshow(crop, vmin = levels[1], vmax = levels[0], cmap="gray")
+	Image = ImageAxis.imshow(crop, vmin = levels[1], vmax = levels[0], cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
 	ImageCanvas = FigureCanvasTkAgg(ImageFigure,master=ImageViewer)
 	ImageCanvas.draw()
-	ImageCanvas.get_tk_widget().grid(sticky = tk.NSEW)
+	wdg = ImageCanvas.get_tk_widget()
+	wdg.config(cursor = "fleur")
+	ImageCanvas.mpl_connect("button_press_event", OnMousePress) 
+	ImageCanvas.mpl_connect("motion_notify_event", OnMouseDrag) 
+	ImageCanvas.mpl_connect("button_release_event", OnMouseRelase) 
+	wdg.grid(sticky = tk.NSEW)
 
-def UpdateCanvas(data, stLoc, radius):
-	global Image, ImageCanvas, BrightLabel
+def UpdateCanvas(data, stLoc, radius, mean):
+	global Image, ImageCanvas, BrightLabel, ConfIcon
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 	Image.set_array(crop)
-	BrightLabel.config(text = "Maximo brillo: "+str(int(numpy.max(crop))))
+	confidence = int(min((numpy.max(crop))/ mean - 1, 1.0)*100)
+	BrightLabel.config(text = "Confidencia: "+str(confidence)+"%")
+	ConfIcon.config(image = icons.Icons["conf"+str(numpy.clip((confidence+30)/30, 1,3))])
 	ImageCanvas.draw()
 
 def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, starIndex):
@@ -136,4 +157,30 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 		stars[starIndex] = st
 	OnStarChange()
 	st.PrintData()
+	CloseWindow()
+	XLoc = YLoc = None
+
+def CloseWindow():
+	global Window, BrightLabel, ConfIcon
 	Window.destroy()
+	Window = None
+	BrightLabel = None
+	ConfIcon = None
+
+def OnMousePress(event):
+	global MousePress
+	MousePress = XLoc.get(), YLoc.get(), event.xdata, event.ydata
+
+def OnMouseDrag(event):
+	global XLoc, YLoc
+	global MousePress
+	if MousePress is None or event.inaxes is None: return
+	x0, y0, xpress, ypress = MousePress
+	dx = event.xdata - xpress
+	dy = event.ydata - ypress
+	XLoc.set(int(x0 - dx))
+	YLoc.set(int(y0 - dy))
+
+def OnMouseRelase(event):
+	global MousePress
+	MousePress = None

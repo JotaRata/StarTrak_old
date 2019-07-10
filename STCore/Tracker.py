@@ -11,6 +11,9 @@ import ttk
 from os.path import basename
 from STCore.item.Track import TrackItem
 from STCore.utils.backgroundEstimator import GetBackground
+from STCore.utils.backgroundEstimator import GetBackgroundMean
+import STCore.utils.Icons as icons
+
 import STCore.Results
 import STCore.DataManager
 import STCore.ResultsConfigurator
@@ -33,6 +36,7 @@ SidebarList = None
 BrightestStar = None
 TrackedStars = []
 DataChanged = False
+buttonsFrame = None
 lock = Lock()
 
 IsTracking = False
@@ -50,20 +54,25 @@ def Awake(root, stars, ItemList):
 	TitleFrame.pack(fill = tk.X)
 	TitleLabel = tk.Label(TitleFrame, text = "Analizando imagen..")
 	TitleLabel.pack(fill = tk.X)
-	tk.Button(TitleFrame, text = "<", command = lambda: PrevFile(ItemList, stars)).pack(side = tk.LEFT)
-	tk.Button(TitleFrame, text = ">", command = lambda: NextFile(ItemList, stars)).pack(side = tk.RIGHT)
+	tk.Button(TitleFrame, image = icons.Icons["prev"], command = lambda: PrevFile(ItemList, stars)).pack(side = tk.LEFT)
+	tk.Button(TitleFrame, image = icons.Icons["next"], command = lambda: NextFile(ItemList, stars)).pack(side = tk.RIGHT)
 	ImgFrame = tk.Frame(TrackerFrame)
 	ImgFrame.pack(side = tk.LEFT, fill = tk.BOTH, expand = 1)
 	CreateCanvas(ItemList,stars)
+	CreateSidebar(root, ItemList, stars)
 	Img.set_array(ItemList[CurrentFile].data)
 	CurrentFile = 0
-	CreateSidebar(root, ItemList, stars)
 	if len(TrackedStars) > 0:
 		if DataChanged == True:
 			tkMessageBox.showwarning("Aviso", "La lista de estrellas ha sido modificada\nNo se podrán usar los datos de rastreo anteriores.")
 			TrackedStars = []
 			STCore.Results.MagData = None
-		OnFinishTrack()
+			if STCore.DataManager.RuntimeEnabled == True:
+				StartTracking(root, STCore.RuntimeAnalysis.filesList, stars)
+			else:
+				OnFinishTrack()
+		else:
+			OnFinishTrack()
 	brightestStarValue = 0
 	for s in stars:
 		if s.value > brightestStarValue:
@@ -88,10 +97,15 @@ def UpdateImage():
 	Img.set_norm(STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
 	ImgCanvas.draw_idle()
 
-def StartTracking(ItemList, stars):
-	global TrackedStars, IsTracking, applyButton
-	if (len(TrackedStars[0].trackedPos) > 0 and tkMessageBox.askyesno("Confirmar sobreescritura", "Ya existen datos de rastreo, desea sobreescribirlos?")) or len(TrackedStars[0].trackedPos) == 0:
+def StartTracking(root, ItemList, stars):
+	global TrackedStars, IsTracking, applyButton, CurrentFile
+	if len(TrackedStars) > 0:
+		condition = (len(TrackedStars[0].trackedPos) > 0 and tkMessageBox.askyesno("Confirmar sobreescritura", "Ya existen datos de rastreo, desea sobreescribirlos?")) or len(TrackedStars[0].trackedPos) == 0
+	else:
+		condition = True
+	if condition:
 		TrackedStars =[]
+		CurrentFile = 0
 		for s in stars:
 			item = TrackItem()
 			item.star = s
@@ -99,22 +113,25 @@ def StartTracking(ItemList, stars):
 			item.currPos = s.location
 			item.trackedPos = []
 			TrackedStars.append(item)
-		applyButton.config(state = tk.DISABLED)
+		if STCore.DataManager.RuntimeEnabled == False:
+			applyButton.config(state = tk.DISABLED)
 		IsTracking = True
-		UpdateTrack(ItemList, stars)
+		UpdateTrack(root, ItemList, stars)
 
 def Destroy():
 	global TrackedStars, Img, ImgAxis
-	print len(TrackedStars)
+	if STCore.DataManager.RuntimeEnabled == True:
+			if STCore.ResultsConfigurator.CheckWindowClear() == False:
+				STCore.ResultsConfigurator.PlotWindow.destroy()
 	TrackerFrame.destroy()
 	Img = None
 	ImgAxis = None
 
 def CreateSidebar(root, ItemList, stars):
 	import STCore.ImageView
-	global TrackerFrame, SidebarList, Sidebar, applyButton, TrackButton
-	Sidebar = tk.LabelFrame(TrackerFrame, width = 400, text = "Detalles de análisis")
-	Sidebar.pack(side = tk.RIGHT, expand = True, fill = tk.BOTH, anchor = tk.NE)
+	global TrackerFrame, SidebarList, Sidebar, applyButton, TrackButton, buttonsFrame
+	Sidebar = tk.LabelFrame(TrackerFrame, width = 200, text = "Detalles de análisis")
+	Sidebar.pack(side = tk.RIGHT, expand = 0, fill = tk.BOTH, anchor = tk.NE)
 	
 	SidebarList = tk.Frame(Sidebar)
 	SidebarList.pack(expand = 1, fill = tk.X, anchor = tk.NW)
@@ -128,24 +145,41 @@ def CreateSidebar(root, ItemList, stars):
 		ApplyMenu.add_command(label="Configurar analisiss", command=lambda: ResultSetting(root, ItemList))
 	ApplyMenu.add_command(label="Componer imagen", command=lambda : CompositeNow(root, ItemList))
 
-	buttonsFrame = tk.Frame(Sidebar, width = 400)
+	buttonsFrame = tk.Frame(Sidebar, width = 200)
 	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
-	ttk.Button(buttonsFrame, text = "Volver", command = cmdBack).grid(row = 0, column = 0, sticky = tk.EW)
+	PrevButton = ttk.Button(buttonsFrame, text = " Volver", command = cmdBack, image = icons.Icons["prev"], compound = "left")
+	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
 	if STCore.DataManager.RuntimeEnabled == False:
 		TrackButton = ttk.Button(buttonsFrame)
-		TrackButton.config(text = "Iniciar", command = lambda: (StartTracking(ItemList, stars), SwitchTrackButton(ItemList, stars)))
-		TrackButton.grid(row = 0, column = 1, sticky = tk.EW)
-
-	applyButton = ttk.Button(buttonsFrame, text = "Continuar", command = cmdNext, state = tk.DISABLED)
-	applyButton.bind("<Button-1>", lambda event: PopupMenu(event, ApplyMenu))
-	applyButton.grid(row = 0, column = 2, sticky = tk.EW)
-
-def SwitchTrackButton(ItemList, stars):
-	global TrackButton, IsTracking
-	if not IsTracking:
-		TrackButton.config(text = "Iniciar", command = lambda: (StartTracking(ItemList, stars), SwitchTrackButton(ItemList, stars)))
+		TrackButton.config(text = "Iniciar",image = icons.Icons["play"], compound = "left", command = lambda: (StartTracking(root, ItemList, stars), SwitchTrackButton(root, ItemList, stars)))	
+		applyButton = ttk.Button(buttonsFrame, text = "Continuar",image = icons.Icons["next"], compound = "right", command = cmdNext, state = tk.DISABLED)
+		applyButton.bind("<Button-1>", lambda event: PopupMenu(event, ApplyMenu))
+		applyButton.grid(row = 0, column = 2, sticky = tk.EW)
 	else:
-		TrackButton.config(text = "Detener", command = lambda: (StopTracking(), SwitchTrackButton(ItemList, stars)))
+		TrackButton = ttk.Button(buttonsFrame)
+		TrackButton.config(text = "Detener Analisis", image = icons.Icons["stop"], compound = "left", command = lambda: (StopTracking(), SwitchTrackButton(root, ItemList, stars, True)))
+		RestartButton = ttk.Button(buttonsFrame, text = "Reiniciar", image = icons.Icons["restart"], compound = "left", command = lambda: StartTracking(root, STCore.RuntimeAnalysis.filesList, stars))
+		RestartButton.grid(row = 0, column = 2, sticky = tk.EW)
+	TrackButton.grid(row = 0, column = 1, sticky = tk.EW)
+
+def OnRuntimeWindowClosed(root):
+	if STCore.DataManager.RuntimeEnabled == False:
+		return
+	CreateButton = ttk.Button(buttonsFrame, text = "Mostrar Grafico", image = icons.Icons["plot"], compound = "left")
+	cmd = lambda: (CreateButton.destroy(), STCore.ResultsConfigurator.Awake(root, STCore.RuntimeAnalysis.filesList, TrackedStars))
+	STCore.DataManager.CurrentWindow = 3
+	CreateButton.grid(row = 0, column = 3, sticky = tk.EW)
+	CreateButton.config(command = cmd)
+
+def SwitchTrackButton(root, ItemList, stars, RuntimeEnd = False):
+	global TrackButton, IsTracking
+	if RuntimeEnd == True:
+		TrackButton.config(text = "Componer Imagen", command = lambda: CompositeNow(root, ItemList), state = tk.NORMAL, image = icons.Icons["image"], compound = "left")
+		return;
+	if not IsTracking:
+		TrackButton.config(text = "Iniciar", image = icons.Icons["play"],command = lambda: (StartTracking(root, ItemList, stars), SwitchTrackButton(root, ItemList, stars)))
+	else:
+		TrackButton.config(text = "Detener",image = icons.Icons["stop"], command = lambda: (StopTracking(), SwitchTrackButton(root, ItemList, stars)))
 def PopupMenu(event, ApplyMenu):
 	ApplyMenu.post(event.x_root, event.y_root)
 
@@ -181,34 +215,43 @@ def UpdateSidebar(data, stars):
 		child.destroy()
 	for track in TrackedStars:
 		frame = tk.Frame(SidebarList)
+		col = "black"
+		if CurrentFile in track.lostPoints:
+			col = "red"
+		frame.config(highlightbackground = col, borderwidth = 2, highlightthickness = 2)
+		tk.Grid.columnconfigure(frame, 2, weight=0)
 		frame.pack(fill = tk.X, anchor = tk.N)
 		tk.Label(frame, text = track.star.name,font="-weight bold").grid(row = 0, column = 0,sticky = tk.W, columnspan = 2)
-		tk.Label(frame, text = "Pos: " + str(track.currPos), width = 12).grid(row = 1, column = 0,sticky = tk.W)
-		tk.Label(frame, text = "Brillo: " + str(track.currValue), width = 9).grid(row = 1, column = 1,sticky = tk.W)
-		tk.Label(frame, text = "Rastreados: " + str(len(track.trackedPos) - len(track.lostPoints)), width = 15).grid(row = 2, column = 0,sticky = tk.W)
-		tk.Label(frame, text = "Perdidos: " + str(len(track.lostPoints)), width = 15).grid(row = 2, column = 1,sticky = tk.W)
-		clipLoc = (track.currPos[1], track.currPos[0])
+		if len(track.trackedPos) > 0:
+			tk.Label(frame, text = "Posicion: " + str(track.trackedPos[CurrentFile]), width = 18).grid(row = 1, column = 0,sticky = tk.W)
+			tk.Label(frame, text = "Confianza: " + str(int(100*numpy.clip(1 - numpy.abs(-GetMaxima(data, track, CurrentFile) + track.star.value)/float(track.star.threshold),0,1.0)))+"%", width = 18).grid(row = 1, column = 1,sticky = tk.W)
+			tk.Label(frame, text = "Rastreados: " + str(len(track.trackedPos) - len(track.lostPoints)), width = 15).grid(row = 2, column = 0,sticky = tk.W)
+			tk.Label(frame, text = "Perdidos: " + str(len(track.lostPoints)), width = 15).grid(row = 2, column = 1,sticky = tk.W)
+		clipLoc = (track.currPos[1], track.currPos[0]) 
 		if len(track.trackedPos) > 0:
 			clipLoc = numpy.clip(track.trackedPos[CurrentFile], stars[index].radius, (data.shape[1] - stars[index].radius, data.shape[0] - stars[index].radius))
 		crop = data[clipLoc[1]-stars[index].radius : clipLoc[1]+stars[index].radius,clipLoc[0]-stars[index].radius : clipLoc[0]+stars[index].radius].astype(float)
-		minv = numpy.min(crop)
-		maxv = numpy.max(crop)
+		minv = STCore.DataManager.Levels[1]
+		maxv = STCore.DataManager.Levels[0]
 		noisy = numpy.clip(255 * (crop - minv) / (maxv - minv), 0 , 255).astype(numpy.uint8)	
 		Pic = Image.fromarray(noisy, mode='L')
 		Pic = Pic.resize((50, 50))
 		Img = ImageTk.PhotoImage(Pic)
 		ImageLabel = tk.Label(frame, image = Img, width = 50, height = 50)
 		ImageLabel.image = Img
-		ImageLabel.grid(row = 0, column = 2, columnspan = 1, rowspan = 3, padx = 20)
+		ImageLabel.grid(row = 0, column = 3, columnspan = 1, rowspan = 3, padx = 20)
 		index += 1
 
 def CreateCanvas(ItemList, stars):
 	global ImgCanvas, ImgFrame, Img, ImgAxis, CurrentFile
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
-	if CurrentFile > len(ItemList):
+	if CurrentFile >= len(ItemList):
 		CurrentFile = 0
+
 	data = ItemList[CurrentFile].data
 	ImgAxis = fig.add_subplot(111)
+	ImgAxis.set_axis_off()
+	fig.subplots_adjust(0.01,0.01,0.99,1)
 	levels = STCore.DataManager.Levels
 	if  not isinstance(levels, tuple):
 		#print "Tracker: not tuple!"
@@ -233,19 +276,23 @@ def OnFinishTrack():
 	DataChanged = False
 	if len(TrackedStars) > 0:
 		if len(TrackedStars[0].trackedPos) > 0:
-			applyButton.config(state = tk.NORMAL)
-			TrackButton.config(state = tk.NORMAL)
+			if STCore.DataManager.RuntimeEnabled == False:
+				applyButton.config(state = tk.NORMAL)
+				TrackButton.config(state = tk.NORMAL, image = icons.Icons["play"])
 	IsTracking = False
 
 def StopTracking():
 	global IsTracking
 	if IsTracking:
 		IsTracking = False
-def UpdateTrack(ItemList, stars, index = 0, auto = True):
+	if STCore.DataManager.RuntimeEnabled == True:
+		STCore.RuntimeAnalysis.StopRuntime()
+def UpdateTrack(root, ItemList, stars, index = 0, auto = True):
 	global TrackedStars, SidebarList, CurrentFile, IsTracking, TrackButton
 	if (index >= len(ItemList) or IsTracking == False) and auto:
 		OnFinishTrack()
-		TrackButton.config(text = "Iniciar", command = lambda: (StartTracking(ItemList, stars), SwitchTrackButton(ItemList, stars)))
+		if STCore.DataManager.RuntimeEnabled == False:
+			TrackButton.config(text = "Iniciar", command = lambda: (StartTracking(root, ItemList, stars), SwitchTrackButton(root, ItemList, stars)))
 		for ts in TrackedStars:
 			ts.PrintData()
 		return
@@ -263,7 +310,7 @@ def UpdateTrack(ItemList, stars, index = 0, auto = True):
 	#UpdateSidebar(ItemList[index].data, stars)
 	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[index].path))
 	if auto:
-		TrackerFrame.after(50, lambda: UpdateTrack(ItemList, stars, index + 1))
+		TrackerFrame.after(50, lambda: UpdateTrack(root, ItemList, stars, index + 1))
 
 def UpdateCanvasOverlay(stars, ImgIndex):
 	for a in reversed(ImgAxis.artists):
@@ -326,8 +373,8 @@ def Track(index, ItemList, stars):
 			TrackedStars[starIndex].lastPos = TrackedStars[starIndex].currPos
 			TrackedStars[starIndex].lastValue = TrackedStars[starIndex].currValue 
 			TrackedStars[starIndex].currPos = MeanPos.tolist()
-			TrackedStars[starIndex].currValue = GetMaxima(data, int(MeanPos[0]), int(MeanPos[1]), s.radius, s.value)
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].currPos)))
+			TrackedStars[starIndex].currValue = GetMaxima(data, TrackedStars[starIndex], index)
 			if TrackedStars[starIndex].lastSeen != -1:
 				TrackedStars[starIndex].lastSeen = -1
 		else:
@@ -340,7 +387,11 @@ def Track(index, ItemList, stars):
 		#starIndex += 1
 	
 # Copiado de SetStar
-def GetMaxima(data, xloc, yloc, radius, value):
+def GetMaxima(data, track, fileIndex):
+	xloc = track.trackedPos[fileIndex][1]
+	yloc = track.trackedPos[fileIndex][0]
+	radius = track.star.radius
+	value = track.star.value
 	clipLoc = numpy.clip((xloc,yloc), radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius].flatten()
 	return crop[numpy.abs(-crop + value).argmin()]
@@ -379,6 +430,7 @@ def OnMouseDrag(event):
 		text[0].set_y(y0 - TrackedStars[SelectedTrack].star.radius + 6 +dy)
 		TrackedStars[SelectedTrack].trackedPos[CurrentFile][1] = int(y0 + dy + TrackedStars[SelectedTrack].star.radius)
 		TrackedStars[SelectedTrack].trackedPos[CurrentFile][0] = int(x0 + dx+ TrackedStars[SelectedTrack].star.radius)
+		TrackedStars[SelectedTrack].currPos = list(reversed(TrackedStars[SelectedTrack].trackedPos[CurrentFile]))
 	poly = filter(lambda obj: obj.aname == "Poly"+str(SelectedTrack), ImgAxis.artists)[0]
 	poly.set_xy(TrackedStars[SelectedTrack].trackedPos[max(CurrentFile - 4, 0):CurrentFile + 1])
 	ImgCanvas.draw()
@@ -387,7 +439,16 @@ def OnMouseRelase(event, stars, ItemList):
 	global MousePress, SelectedTrack
 	if CurrentFile in TrackedStars[SelectedTrack].lostPoints:
 		TrackedStars[SelectedTrack].lostPoints.remove(CurrentFile)
-	UpdateSidebar(ItemList[CurrentFile].data, stars)
+	if STCore.DataManager.RuntimeEnabled == True:
+		try:
+			data = STCore.RuntimeAnalysis.filesList[CurrentFile].data
+			UpdateSidebar(data, stars)
+			if STCore.Results.MagData is not None:
+				STCore.Results.MagData[CurrentFile, SelectedTrack] = STCore.Results.GetValue(data, TrackedStars[SelectedTrack], STCore.Results.Constant,  STCore.Tracker.CurrentFile, GetBackgroundMean(data))
+		except:
+			pass
+	else:
+		UpdateSidebar(ItemList[CurrentFile].data, stars)
 	UpdateCanvasOverlay(stars, CurrentFile)
 	MousePress = None
 	SelectedTrack = -1
@@ -399,7 +460,7 @@ def OnMouseRelase(event, stars, ItemList):
 
 def NextFile(ItemList, stars):
 	global CurrentFile
-	if CurrentFile + 1 > len(ItemList):
+	if CurrentFile + 1 >= len(ItemList):
 		return
 	CurrentFile += 1
 	UpdateSidebar(ItemList[CurrentFile].data, stars)

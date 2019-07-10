@@ -1,3 +1,4 @@
+# coding=utf-8
 import Tkinter as tk
 import tkFileDialog
 import tkMessageBox
@@ -14,8 +15,10 @@ import STCore.Tools
 import STCore.DataManager
 import STCore.Settings
 import STCore.RuntimeAnalysis
+import STCore.utils.Icons as icons
 def Awake(root):
 	global StartFrame
+	icons.Initialize()
 	STCore.DataManager.CurrentWindow = 0
 	WindowName()
 	gc.collect()
@@ -24,10 +27,14 @@ def Awake(root):
 	StartFrame.pack(expand = 1, fill = tk.BOTH)
 	tk.Label(StartFrame, text = "Bienvenido a StarTrak",font="-weight bold").pack()
 	tk.Label(StartFrame, text = "Por favor seleccione la accion que quiera realizar").pack(anchor = tk.CENTER)
-	ttk.Button(StartFrame, text = "   Seleccionar Imagenes   ", command = lambda:LoadFiles(root), width = 40).pack(anchor = tk.CENTER)
+	RunButton = tk.Button(StartFrame, text = "     Comenzar análisis     ",image = icons.Icons["run"], compound = "left",anchor="w", command = lambda: (STCore.RuntimeAnalysis.Awake(root)), width = 200)
+	RunButton.pack(anchor = tk.CENTER)
+	MultiButton = tk.Button(StartFrame, text = "     Seleccionar varias Imagenes     ",image = icons.Icons["multi"], compound = "left",anchor="w", command = lambda:LoadFiles(root), width = 200)
+	MultiButton.pack(anchor = tk.CENTER)
 	#tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
-	ttk.Button(StartFrame, text = "   Abrir archivo   ", command = STCore.Tools.OpenFileCommand, width = 40).pack(anchor = tk.CENTER)
-	ttk.Button(StartFrame, text = "   Analisis en tiempo real   ", command = lambda: (STCore.RuntimeAnalysis.Awake(root)), width = 40).pack(anchor = tk.CENTER)
+	OpenButton = tk.Button(StartFrame, text = "     Abrir archivo     ",image = icons.Icons["open"], compound = "left",anchor="w", command = STCore.Tools.OpenFileCommand, width = 200)
+	OpenButton.pack(anchor = tk.CENTER)
+
 	if STCore.Settings._RECENT_FILES_.get() == 1:
 		recentlabel = tk.LabelFrame(StartFrame, text = "Archivos recientes:")
 		recentlabel.pack(anchor = tk.CENTER)
@@ -69,13 +76,19 @@ def LoadData(window):
 	STCore.ResultsConfigurator.SettingsObject = STCore.DataManager.ResultSetting
 	STCore.ImageView.Levels = STCore.DataManager.Levels
 	STCore.Results.MagData = STCore.DataManager.ResultData
-	STCore.DataManager.RuntimeEnabled = False
+	STCore.DataManager.RuntimeEnabled =  STCore.DataManager.RuntimeEnabled
 	STCore.Results.Constant = 0
 	STCore.Results.BackgroundFlux = 0
-	STCore.RuntimeAnalysis.directoryPath = ""
-	STCore.RuntimeAnalysis.dirState = []
-	STCore.RuntimeAnalysis.filesList = []
-	STCore.RuntimeAnalysis.startFile = ""
+	if  STCore.DataManager.RuntimeEnabled == True:
+		STCore.RuntimeAnalysis.directoryPath = STCore.DataManager.RuntimeDirectory
+		STCore.RuntimeAnalysis.dirState = []
+		STCore.RuntimeAnalysis.filesList = STCore.DataManager.FileItemList
+		STCore.RuntimeAnalysis.startFile = ""
+	else:
+		STCore.RuntimeAnalysis.directoryPath = ""
+		STCore.RuntimeAnalysis.dirState = []
+		STCore.RuntimeAnalysis.filesList = []
+		STCore.RuntimeAnalysis.startFile = ""
 	if window == 0:
 		# No hacer nada #
 		return
@@ -87,6 +100,19 @@ def LoadData(window):
 		Destroy()
 		STCore.ImageSelector.Awake(win)
 		STCore.ImageSelector.Apply(win)
+		return
+	if (window == 2) and STCore.DataManager.RuntimeEnabled == True:
+		Destroy()
+		print "gone"
+		STCore.ImageView.Awake(win, STCore.DataManager.FileItemList)
+		STCore.RuntimeAnalysis.StartRuntime(win)
+		return
+
+	if (window == 4 or window == 3) and STCore.DataManager.RuntimeEnabled == True:
+		Destroy()
+		STCore.Tracker.CurrentFile = 0
+		STCore.Tracker.Awake(win, STCore.ImageView.Stars, STCore.DataManager.FileItemList)
+		STCore.RuntimeAnalysis.StartRuntime(win)
 		return
 	if window == 3 or window == 5:
 		Destroy()

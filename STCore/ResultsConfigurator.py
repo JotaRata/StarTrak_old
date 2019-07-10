@@ -14,73 +14,81 @@ _DELERROR_ = None
 _REFSTAR_ = None
 _REFVALUE_ = None
 _XTICKS_ = None
+_TIMELENGHT_ = None
 #endregion
 def Clear():
-	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_
+	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_, _TIMELENGHT_
 	_SORTINGMODE_ = None
 	_DELTRACKS_ = None
 	_DELERROR_ = None
 	_REFSTAR_ = None
 	_REFVALUE_ = None
 	_XTICKS_ = None
+	_TIMELENGHT_ = None
 def Load():
 	Clear()
-	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_
+	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_, _TIMELENGHT_
 	if SettingsObject is None:
 		SettingsObject = ResultSetting()
-	_SORTINGMODE_ = tk.IntVar(value = SettingsObject.sortingMode)
-	_DELTRACKS_ = tk.IntVar(value = SettingsObject.delLostTracks)
-	_DELERROR_ = tk.IntVar(value = SettingsObject.delError)
-	_REFSTAR_ = tk.IntVar(value = SettingsObject.refStar)
-	_REFVALUE_ = tk.StringVar(value = SettingsObject.refValue)
-	_XTICKS_ = tk.IntVar(value = SettingsObject.tickNumber)
+	try:
+		_SORTINGMODE_ = tk.IntVar(value = SettingsObject.sortingMode)
+		_DELTRACKS_ = tk.IntVar(value = SettingsObject.delLostTracks)
+		_DELERROR_ = tk.IntVar(value = SettingsObject.delError)
+		_REFSTAR_ = tk.IntVar(value = SettingsObject.refStar)
+		_REFVALUE_ = tk.StringVar(value = SettingsObject.refValue)
+		_XTICKS_ = tk.IntVar(value = SettingsObject.tickNumber)
+		_TIMELENGHT_ = tk.IntVar(value = SettingsObject.timeLenght/60)
+	except:
+		print "Inavelid or Outdated Result Setting Object, creating a new one from scratch.."
+		SettingsObject = None
+		Load()
+		pass
+def CheckWindowClear():
+	value = PlotWindow == None or not tk.Toplevel.winfo_exists(PlotWindow)
+	print "Result Window Cleared: ", value
+	return value
 
 def Apply(root, ItemList, TrackedStars):
-	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_, PlotWindow
+	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_, PlotWindow, _TIMELENGHT_
 	SettingsObject.sortingMode = _SORTINGMODE_.get()
 	SettingsObject.tickNumber = _XTICKS_.get()
 	STCore.DataManager.ResultSetting = SettingsObject
+	SettingsObject.delLostTracks = _DELTRACKS_.get()
+	SettingsObject.delError = _DELERROR_.get()
+	SettingsObject.refStar = _REFSTAR_.get()
+	SettingsObject.refValue = float(_REFVALUE_.get())
+	SettingsObject.timeLenght = (60*int(_TIMELENGHT_.get()))
 	if STCore.DataManager.CurrentWindow == 3:
 		if STCore.DataManager.RuntimeEnabled == False:
 			STCore.Tracker.Destroy()
-		SettingsObject.delLostTracks = _DELTRACKS_.get()
-		SettingsObject.delError = _DELERROR_.get()
-		SettingsObject.refStar = _REFSTAR_.get()
-		SettingsObject.refValue = float(_REFVALUE_.get())
-		if STCore.DataManager.RuntimeEnabled == False:
 			STCore.Results.Awake(root, ItemList, TrackedStars)
 		else:
 			STCore.Results.Reset()
-			if PlotWindow == None or not tk.Toplevel.winfo_exists(PlotWindow):
+			if CheckWindowClear() == True:
 				PlotWindow = tk.Toplevel(root)
 				STCore.Results.Awake(PlotWindow, ItemList, TrackedStars)
 			else:
 				PlotWindow.destroy()
 				PlotWindow = tk.Toplevel(root)
 				STCore.Results.Awake(PlotWindow, ItemList, TrackedStars)
-
+			PlotWindow.protocol("WM_DELETE_WINDOW", lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), PlotWindow.destroy()))
+		return;
 	if STCore.DataManager.CurrentWindow == 4:
-		ticks = STCore.ResultsConfigurator.SettingsObject.tickNumber
-		XAxis, Xlabel = STCore.Results.GetXTicks(ItemList)
-		for i in range(len(TrackedStars)):
-			X = numpy.c_[XAxis,STCore.Results.MagData[:,i]]
-			STCore.Results.Plots[i].set_offsets(X)
-			STCore.Results.PlotAxis.set_xticks(XAxis[0::max(1, len(ItemList) / ticks)])
-			STCore.Results.PlotAxis.set_xticklabels(Xlabel[0::max(1, len(ItemList) / ticks)])
-			xmin=X[:,0].min(); xmax=X[:,0].max()
-			STCore.Results.PlotAxis.set_xlim(xmin-0.1*(xmax-xmin),xmax+0.1*(xmax-xmin))
-		STCore.Results.PlotCanvas.draw()
-
-def Awake(root, ItemList, TrackedStars, mini = False):
+		STCore.Results.Constant = STCore.Results.GetConstant(ItemList[0].data, 0, 
+												  max(SettingsObject.refStar, 0), TrackedStars, SettingsObject.refValue)
+		STCore.Results.UpdateConstant(ItemList)
+		return;
+def Awake(root, ItemList, mini = False):
 	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_
 	ConfiguratorFrame = tk.Toplevel(root)
 	ConfiguratorFrame.wm_title(string = "Configurar analisis")
 	ConfiguratorFrame.resizable(False, False)
 	Load()
-
+	ConfiguratorFrame.protocol("WM_DELETE_WINDOW", lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), ConfiguratorFrame.destroy()))
+	ConfiguratorFrame.attributes('-topmost', 'true')
 	MainPanel = tk.LabelFrame(ConfiguratorFrame)
 	MainPanel.pack(side = tk.LEFT, fill = tk.Y, anchor = tk.N)
-
+	TrackedStars = STCore.Tracker.TrackedStars
 	tk.Label(MainPanel, text = "Ordenar datos por: ").grid(row = 0, column = 0, columnspan = 2, sticky = tk.W)
 	ttk.Radiobutton(MainPanel, variable = _SORTINGMODE_, value = 0).grid(row = 1, column = 0, sticky= tk.W)
 	tk.Label(MainPanel, text = "Por fecha").grid(row = 1, column = 1, sticky= tk.W)
@@ -95,17 +103,18 @@ def Awake(root, ItemList, TrackedStars, mini = False):
 		tk.Label(MainPanel, text ="Eliminar datos distantes").grid(row = 5, column = 1, sticky= tk.W)
 
 	tk.Label(MainPanel, text ="Numero de etiquetas").grid(row = 6, column = 1, sticky= tk.W)
-	tk.Spinbox(MainPanel, from_ = 1, to = len(ItemList), width = 3, textvariable = _XTICKS_).grid(row = 6, column = 0, sticky= tk.W)
-	if not mini:
-		tk.Label(MainPanel, text ="Estrella de referencia").grid(row = 7, column = 0, columnspan = 2, sticky= tk.W, pady = 20)
-		RefFrame = tk.LabelFrame(MainPanel)
-		RefFrame.grid(row = 8, column = 0, columnspan = 3, rowspan = 6, sticky = tk.NSEW)
-		_REFSTAR_.trace("w",lambda a,b,c: UpdateReferences(RefFrame, TrackedStars))
-		UpdateReferences(RefFrame, TrackedStars)
+	tk.Spinbox(MainPanel, from_ = 1, to = 15, width = 3, textvariable = _XTICKS_).grid(row = 6, column = 0, sticky= tk.W)
+	tk.Label(MainPanel, text ="Minutos de observacion").grid(row = 7, column = 1, sticky= tk.W)
+	tk.Spinbox(MainPanel, from_ = 1, to = 365*24*60, width = 3, textvariable = _TIMELENGHT_).grid(row = 7, column = 0, sticky= tk.W)
+	tk.Label(MainPanel, text ="Estrella de referencia").grid(row = 9, column = 0, columnspan = 2, sticky= tk.W, pady = 20)
+	RefFrame = tk.LabelFrame(MainPanel)
+	RefFrame.grid(row = 10, column = 0, columnspan = 3, rowspan = 6, sticky = tk.NSEW)
+	_REFSTAR_.trace("w",lambda a,b,c: UpdateReferences(RefFrame, TrackedStars))
+	UpdateReferences(RefFrame, TrackedStars)
 
 	Sidebar = tk.Frame(ConfiguratorFrame)
 	Sidebar.pack(side = tk.RIGHT, fill = tk.Y, anchor = tk.N)
-	ttk.Button(Sidebar, text = "Cancelar", command = ConfiguratorFrame.destroy).grid(row = 1, column = 0)
+	ttk.Button(Sidebar, text = "Cancelar", command =  lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), ConfiguratorFrame.destroy())).grid(row = 1, column = 0)
 	ttk.Button(Sidebar, text = "Analizar", command = lambda:(ConfiguratorFrame.destroy(), Apply(root, ItemList, TrackedStars))).grid(row = 0, column = 0)
 def UpdateReferences(RefFrame, TrackedStars):
 	for child in RefFrame.winfo_children():
