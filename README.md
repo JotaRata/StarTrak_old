@@ -55,7 +55,7 @@ Una vez seleccionados los archivos puede continuar a la sección de selección d
  
  **Barra lateral**:  Contiene un panel para ver y editar las estrellas, así como para agregar nuevas estrellas y moverse entre las diferentes pantallas.
  
- ![sidebar](STCore/help/Help_archivos/image012.png)
+ ![](STCore/help/Help_archivos/image012.jpg)
  
 Para modificar una estrella simplemente haga clic en el nombre que aparece en la lista. Para eliminar una estrella presione la “X” al lado del nombre
 También puede modificar la posición de una estrella arrastrando el cursor sobre ella en el Visor de imágenes.
