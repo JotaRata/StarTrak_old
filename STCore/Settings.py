@@ -1,7 +1,7 @@
 # coding=utf-8
-import Tkinter as tk
-import ttk
-import ConfigParser
+import tkinter as tk
+from tkinter import ttk
+import configparser
 from os.path import isfile
 from os import remove
 import STCore.DataManager
@@ -25,24 +25,24 @@ _SHOW_TRACKEDPOS_ = None
 
 def LoadSettings():
 	global _RECENT_FILES_, _PROCESS_NUMBER_, _SHOW_GRID_, _VISUAL_MODE_, _VISUAL_COLOR_, _TRACK_PREDICTION_, _SHOW_TRACKEDPOS_
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	if (isfile(WorkingPath+"/settings.ini")):
 		config.read(WorkingPath+"/settings.ini")
 	else:
-		print "Setting file not found, creating new file.."
+		print ("Setting file not found, creating new file..")
 		SaveSettingsDefault()
 		LoadSettings()
 		return
-	_RECENT_FILES_ = tk.IntVar(value = int(config.get("GENERAL","_SHOW_RECENT_FILES_", 1)))
-	_PROCESS_NUMBER_ = tk.StringVar(value = ThrNumber[int(config.get("GENERAL","_THREADS_NUMBER_", 3))])
-	_SHOW_GRID_ =   tk.IntVar(value = int(config.get("VISUALIZATION","_SHOW_GRID_", 0)))
-	_VISUAL_MODE_ = tk.StringVar(value = VisModes[int(config.get("VISUALIZATION","_SCALE_MODE_", 0))])
-	_VISUAL_COLOR_ = tk.StringVar(value = VisColors[int(config.get("VISUALIZATION","_COLOR_MODE_", 0))])
-	_TRACK_PREDICTION_ = tk.IntVar(value = int(config.get("TRACKING","_USE_PREDICTION_", 1)))
-	_SHOW_TRACKEDPOS_ = tk.IntVar(value = int(config.get("TRACKING","_SHOW_TRACKS_", 1)))
+	_RECENT_FILES_ = tk.IntVar(value = int(config.get("GENERAL","_SHOW_RECENT_FILES_")))
+	_PROCESS_NUMBER_ = tk.StringVar(value = ThrNumber[int(config.get("GENERAL","_THREADS_NUMBER_"))])
+	_SHOW_GRID_ =   tk.IntVar(value = int(config.get("VISUALIZATION","_SHOW_GRID_")))
+	_VISUAL_MODE_ = tk.StringVar(value = VisModes[int(config.get("VISUALIZATION","_SCALE_MODE_"))])
+	_VISUAL_COLOR_ = tk.StringVar(value = VisColors[int(config.get("VISUALIZATION","_COLOR_MODE_"))])
+	_TRACK_PREDICTION_ = tk.IntVar(value = int(config.get("TRACKING","_USE_PREDICTION_")))
+	_SHOW_TRACKEDPOS_ = tk.IntVar(value = int(config.get("TRACKING","_SHOW_TRACKS_")))
 
 def SaveSettingsDefault():
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	config.add_section("GENERAL")
 	config.set("GENERAL", "_SHOW_RECENT_FILES_", 1)
 	config.set("GENERAL", "_THREADS_NUMBER_", 3)
@@ -59,7 +59,7 @@ def SaveSettingsDefault():
 		 config.write(configfile)
 
 def SaveSettings():
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	config.add_section("GENERAL")
 	config.add_section("VISUALIZATION")
 	config.add_section("TRACKING")

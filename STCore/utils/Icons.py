@@ -1,5 +1,7 @@
 from PIL import Image, ImageTk
-import Tkinter as tk
+import tkinter as tk
+
+from astropy.units.equivalencies import with_H0
 
 
 Icons = {}
@@ -17,6 +19,6 @@ def Initialize():
 			icon.thumbnail(ThumbSize)
 			Icons.update({s : ImageTk.PhotoImage(icon)})
 		except:
-			print "El icono: "+s+" no existe."
+			print ("El icono: "+s+" no existe.")
 			pass
-	print len(iconList), " Icons loaded"
+	print (len(iconList), " Iconos cargados")

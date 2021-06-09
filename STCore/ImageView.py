@@ -7,8 +7,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle
 from matplotlib.colors import Normalize, PowerNorm, LogNorm
 from matplotlib.artist import setp
-import Tkinter as tk
-import ttk
+import tkinter as tk
+from tkinter import ttk
 from STCore.item.Star import StarItem
 from STCore import SetStar, Tracker
 import STCore.DataManager
@@ -16,7 +16,7 @@ from time import time
 import STCore.Settings
 import STCore.RuntimeAnalysis
 import gc
-from PIL import Image, ImageTk
+from PIL import Image
 import STCore.utils.Icons as icons
 #region Messages and Events
 
@@ -197,14 +197,14 @@ def Destroy():
 	gc.collect()
 
 def Apply(root, items):
-	import tkMessageBox
+	from tkinter import messagebox
 	if len(Stars) > 0:
 		Destroy()
 		Tracker.Awake(root, Stars, items)
 		if STCore.DataManager.RuntimeEnabled == True:
 			STCore.RuntimeAnalysis.StartRuntime(root)
 	else:
-		tkMessageBox.showerror("Error", "Debe tener al menos una estrella para comenzar el analisis")
+		messagebox.showerror("Error", "Debe tener al menos una estrella para comenzar el analisis")
 		return
 def ClearStars():
 	global Stars

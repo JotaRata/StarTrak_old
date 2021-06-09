@@ -1,8 +1,8 @@
 # coding=utf-8
 import numpy
 import matplotlib
-import Tkinter as tk
-import ttk
+import tkinter as tk
+from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from STCore.item.Star import StarItem
 import STCore.Tracker

@@ -1,14 +1,12 @@
 # coding=utf-8
 
-import Tkinter as tk
-import ttk
+import tkinter as tk
 from PIL import Image, ImageTk
 from astropy.io import fits
 #import pyfits as fits
 from os.path import basename, getmtime, isfile
 from time import sleep, strftime, localtime, strptime,gmtime
-import tkFileDialog
-import tkMessageBox
+from tkinter import filedialog, messagebox, ttk
 from STCore.item.File import FileItem
 import STCore.ImageView
 import STCore.DataManager
@@ -33,7 +31,8 @@ def LoadFiles(paths, root):
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
 	sortedP = sorted(paths, key=lambda f: Sort(f))
 	n = 0
-	map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
+	[SetFileItems(x, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root) for x in sortedP]
+	#map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
 	loadIndex = 0
 	
 	LoadWindow[0].destroy()
@@ -41,12 +40,13 @@ def LoadFiles(paths, root):
 
 def Sort(path):
 	if any(char.isdigit() for char in path):
-		return int(filter(str.isdigit, str(path)))
+		return int("".join(filter(str.isdigit, str(path))))
 	else:
 		return str(path)
 
 def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	global loadIndex
+	print (path)
 	item = FileItem()
 	item.path = str(path)
 	item.data, hdr = fits.getdata(item.path, header = True)
@@ -97,6 +97,8 @@ def Awake(root, paths = []):
 	AddButton.grid(row=1, column=0, sticky = tk.EW, pady=5)
 	ApplyButton = ttk.Button(buttonFrame, text="Continuar        ", command = lambda: Apply(root), state = tk.DISABLED, image = icons.Icons["next"], compound = "right",style = "Left.TButton")
 	ApplyButton.grid(row=0, column=0, sticky = tk.EW, pady=5)
+
+	# Saved File
 	if len(ItemList) != 0 and len(paths) == 0:
 		ind = 0
 		Progress = tk.DoubleVar()
@@ -114,7 +116,7 @@ def Awake(root, paths = []):
 					Progress.set(100*float(ind)/len(ItemList))
 					LoadWindow[0].update()
 				else:
-					tkMessageBox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ ItemList[ind].path)
+					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ ItemList[ind].path)
 					break	
 			ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(ItemList)*240/4))
 			CreateFileGrid(ind, ItemList[ind], root)
@@ -151,12 +153,13 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	return popup, label, bar
 
 def CreateFileGrid(index, item, root):
+	
 	GridFrame = tk.LabelFrame(ImagesFrame, width = 200, height = 200)
 	Row, Col = GridPlace(root, index, 250)
 	GridFrame.grid(row = Row, column = Col, sticky = tk.NSEW, padx = 20, pady = 20)
 	dat = item.data.astype(float)
-	minv = numpy.min(dat)
-	maxv = numpy.max(dat)
+	minv = numpy.percentile(dat, 5)
+	maxv = numpy.percentile(dat, 95)
 	thumb = numpy.clip(255*(dat - minv)/(maxv - minv), 0, 255).astype(numpy.uint8)
 	Pic = Image.fromarray(thumb)
 	Pic.thumbnail((200, 200))
@@ -166,7 +169,7 @@ def CreateFileGrid(index, item, root):
 	Ckeckbox = tk.Checkbutton(GridFrame, variable = isactive)
 	Ckeckbox.grid(row=0,column=1, sticky=tk.E)
 	isactive.trace("w", lambda a,b,c: SetActive(item, isactive, c))
-	ImageLabel = tk.Label(GridFrame, image = Img, width = 200, height = 200 * item.data.shape[0]/float(item.data.shape[1]))
+	ImageLabel = tk.Label(GridFrame, image =Img, width = 200, height = 200 * item.data.shape[0]/float(item.data.shape[1]))
 	ImageLabel.image = Img
 	ImageLabel.grid(row=1,column=0, columnspan=2)
 
@@ -181,7 +184,7 @@ def SetFilteredList():
 def Apply(root):
 	SetFilteredList()
 	if len(FilteredList) == 0:
-		tkMessageBox.showerror("Error", "Debe seleccionar al menos un archivo")
+		messagebox.showerror("Error", "Debe seleccionar al menos un archivo")
 		return
 	Destroy()
 	# Crea otra lista identica pero solo conteniendo los valores path y active  para liberar espacio al guardar #
@@ -207,8 +210,8 @@ def ClearList(root):
 		pass
 
 def AddFiles(root):
-	paths = tkFileDialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
-	paths = root.tk.splitlist(paths)
+	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
+	print (paths)
 	STCore.Tracker.DataChanged = True
 	LoadFiles(paths, root)
 

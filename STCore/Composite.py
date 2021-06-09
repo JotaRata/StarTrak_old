@@ -1,5 +1,5 @@
-import Tkinter as tk
-import ttk
+import tkinter as tk
+from tkinter import ttk
 import numpy
 import scipy.ndimage
 from matplotlib import use, figure

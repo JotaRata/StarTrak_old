@@ -1,5 +1,5 @@
-import Tkinter as tk
-import ttk
+import tkinter as tk
+from tkinter import ttk
 from STCore.item.ResultSettings import ResultSetting
 import STCore.Tracker, STCore.Results, STCore.DataManager
 import numpy
@@ -39,13 +39,13 @@ def Load():
 		_XTICKS_ = tk.IntVar(value = SettingsObject.tickNumber)
 		_TIMELENGHT_ = tk.IntVar(value = SettingsObject.timeLenght/60)
 	except:
-		print "Inavelid or Outdated Result Setting Object, creating a new one from scratch.."
+		print ("Inavelid or Outdated Result Setting Object, creating a new one from scratch..")
 		SettingsObject = None
 		Load()
 		pass
 def CheckWindowClear():
 	value = PlotWindow == None or not tk.Toplevel.winfo_exists(PlotWindow)
-	print "Result Window Cleared: ", value
+	print ("Result Window Cleared: ", value)
 	return value
 
 def Apply(root, ItemList, TrackedStars):

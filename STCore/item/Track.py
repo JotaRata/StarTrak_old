@@ -10,7 +10,7 @@ class TrackItem(object):
 		self.trackedPos = []
 		self.lostPoints = []
 	def PrintData(self):
-		print ""
-		print self.star.name, " Track Info: "
-		print "Last seen at file: ", self.lastSeen," in ", self.lastPos," with value ",self.lastValue, "tracked for", len(self.trackedPos), "frames"
-		print "Lost Points: ", len(self.lostPoints)
+		print ("")
+		print (self.star.name, " Track Info: ")
+		print ("Last seen at file: ", self.lastSeen," in ", self.lastPos," with value ",self.lastValue, "tracked for", len(self.trackedPos), "frames")
+		print ("Lost Points: ", len(self.lostPoints))

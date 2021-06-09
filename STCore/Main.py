@@ -1,8 +1,8 @@
 # coding=utf-8
-import Tkinter as tk
-import tkFileDialog
-import tkMessageBox
-import ttk
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
+from tkinter import ttk
 import sys
 from os.path import dirname, abspath, basename, isfile
 import gc
@@ -48,14 +48,14 @@ def _helperLoadData(path, root):
 	if isfile(path):
 		STCore.DataManager.LoadData(path)
 	else:
-		tkMessageBox.showerror("Error", "Este archivo ya no existe")
+		messagebox.showerror("Error", "Este archivo ya no existe")
 		STCore.DataManager.RecentFiles.remove(path)
 		STCore.DataManager.SaveRecent()
 		Destroy()
 		Awake(root)
+
 def LoadFiles(root):
-	paths = tkFileDialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
-	paths = root.tk.splitlist(paths)
+	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
 	Destroy()
 	STCore.ImageSelector.Awake(root, paths)
 
@@ -85,8 +85,8 @@ def LoadData(window):
 		STCore.RuntimeAnalysis.startFile = ""
 		STCore.RuntimeAnalysis.dirState = STCore.DataManager.RuntimeDirState
 
-		print "---------------------------"
-		print "DirState: ", len(STCore.DataManager.RuntimeDirState)
+		print ("---------------------------")
+		print ("DirState: ", len(STCore.DataManager.RuntimeDirState))
 	else:
 		STCore.RuntimeAnalysis.directoryPath = ""
 		STCore.RuntimeAnalysis.dirState = []
@@ -147,7 +147,7 @@ def Reset():
 	STCore.RuntimeAnalysis.filesList = []
 	STCore.RuntimeAnalysis.startFile = ""
 	STCore.Tracker.DataChanged = False
-	print "Window Reset"
+	print ("Window Reset")
 	if STCore.DataManager.CurrentWindow == 0:
 		# No hacer nada #
 		return

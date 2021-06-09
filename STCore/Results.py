@@ -1,5 +1,5 @@
-import Tkinter as tk
-import ttk
+import tkinter as tk
+from tkinter import ttk
 from matplotlib import figure, use
 use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -232,7 +232,6 @@ def CreateCanvas(root, app, ItemList, TrackedStars):
 	if (MagData is None):
 		MagData = numpy.empty((0 ,len(TrackedStars)))
 		i = 0
-		print len(ItemList)
 		while i < len(ItemList):
 			YAxis = GetTrackedValues(ItemList, TrackedStars, i, Constant)
 			MagData = numpy.append(MagData, numpy.atleast_2d(numpy.array(YAxis)), 0)
@@ -283,7 +282,7 @@ def GetValue(data, Track, Constant, FileIndex, Backdata):
 	global prevFlux
 	radius = Track.star.radius
 	if len(Track.trackedPos) <= FileIndex:
-		print "Star has no enough tracking points, aborting.."
+		print ("Star has no enough tracking points, aborting..")
 		return numpy.nan
 	pos = list(reversed(Track.trackedPos[FileIndex]))
 	clipLoc = numpy.clip(pos, radius, (data.shape[0] - radius, data.shape[1] - radius))

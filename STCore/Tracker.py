@@ -6,8 +6,8 @@ use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle, Polygon
 from matplotlib.artist import setp
-import Tkinter as tk
-import ttk
+import tkinter as tk
+from tkinter import ttk
 from os.path import basename
 from STCore.item.Track import TrackItem
 from STCore.utils.backgroundEstimator import GetBackground
@@ -21,8 +21,8 @@ import STCore.Composite
 from threading import Thread, Lock
 from time import sleep, time
 from functools import partial
-from PIL import Image, ImageTk
-import tkMessageBox
+from PIL import Image
+from tkinter import messagebox
 
 #region Variables
 TrackerFrame = None
@@ -66,7 +66,7 @@ def Awake(root, stars, ItemList):
 	CurrentFile = 0
 	if len(TrackedStars) > 0:
 		if DataChanged == True:
-			tkMessageBox.showwarning("Aviso", "La lista de estrellas ha sido modificada\nNo se podrán usar los datos de rastreo anteriores.")
+			messagebox.showwarning("Aviso", "La lista de estrellas ha sido modificada\nNo se podrán usar los datos de rastreo anteriores.")
 			TrackedStars = []
 			STCore.Results.MagData = None
 			if STCore.DataManager.RuntimeEnabled == True:
@@ -102,7 +102,7 @@ def UpdateImage():
 def StartTracking(root, ItemList, stars):
 	global TrackedStars, IsTracking, applyButton, CurrentFile
 	if len(TrackedStars) > 0:
-		condition = (len(TrackedStars[0].trackedPos) > 0 and tkMessageBox.askyesno("Confirmar sobreescritura", "Ya existen datos de rastreo, desea sobreescribirlos?")) or len(TrackedStars[0].trackedPos) == 0
+		condition = (len(TrackedStars[0].trackedPos) > 0 and messagebox.askyesno("Confirmar sobreescritura", "Ya existen datos de rastreo, desea sobreescribirlos?")) or len(TrackedStars[0].trackedPos) == 0
 	else:
 		condition = True
 	if condition:
@@ -187,10 +187,10 @@ def PopupMenu(event, ApplyMenu):
 
 def CompositeNow(root, ItemList):
 	if len(TrackedStars[0].trackedPos) == 0:
-		tkMessageBox.showerror("Error", "No hay estrellas restreadas.")
+		messagebox.showerror("Error", "No hay estrellas restreadas.")
 		return
 	if len(TrackedStars) < 2:
-		tkMessageBox.showerror("Error", "Se necesitan al menos dos estrellas para iniciar una composicion.")
+		messagebox.showerror("Error", "Se necesitan al menos dos estrellas para iniciar una composicion.")
 		return
 	Destroy()
 	STCore.Composite.Awake(root, ItemList, TrackedStars)
@@ -198,7 +198,7 @@ def ResultSetting(root, ItemList):
 	if len(TrackedStars[0].trackedPos) > 0:
 		STCore.ResultsConfigurator.Awake(root, ItemList, TrackedStars)
 	else:
-		tkMessageBox.showerror("Error", "No hay estrellas restreadas.")
+		messagebox.showerror("Error", "No hay estrellas restreadas.")
 
 def Apply(root, ItemList):
 	if len(TrackedStars[0].trackedPos) > 0:
@@ -208,7 +208,7 @@ def Apply(root, ItemList):
 			Destroy()
 			STCore.Results.Awake(root, ItemList[0:len(TrackedStars[0].trackedPos)], TrackedStars)
 	else:
-		tkMessageBox.showerror("Error", "No hay estrellas restreadas.")
+		messagebox.showerror("Error", "No hay estrellas restreadas.")
 
 def UpdateSidebar(data, stars):
 	global SidebarList
@@ -238,7 +238,7 @@ def UpdateSidebar(data, stars):
 		noisy = numpy.clip(255 * (crop - minv) / (maxv - minv), 0 , 255).astype(numpy.uint8)	
 		Pic = Image.fromarray(noisy, mode='L')
 		Pic = Pic.resize((50, 50))
-		Img = ImageTk.PhotoImage(Pic)
+		Img = tk.PhotoImage(Pic)
 		ImageLabel = tk.Label(frame, image = Img, width = 50, height = 50)
 		ImageLabel.image = Img
 		ImageLabel.grid(row = 0, column = 3, columnspan = 1, rowspan = 3, padx = 20)
@@ -411,7 +411,7 @@ def OnMousePress(event):
 				tup = a.xy
 				x0, y0 = tup[0], tup[1]
 				MousePress = x0, y0, event.xdata, event.ydata
-				SelectedTrack = int(filter(str.isdigit, a.aname)[0])
+				SelectedTrack = int("".join(filter(str.isdigit, a.aname)[0]))
 				setp(a, linewidth = 4)
 			else:
 				setp(a, linewidth = 1)

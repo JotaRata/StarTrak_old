@@ -2,7 +2,7 @@ import STCore.ImageView
 import STCore.Tracker
 import STCore.Results
 import STCore.DataManager
-import tkFileDialog
+from tkinter import filedialog
 from os.path import dirname, abspath, basename, isfile
 from astropy.io import fits
 #import pyfits as fits
@@ -11,7 +11,7 @@ from time import sleep, strftime, localtime, strptime,gmtime, mktime
 from STCore.item.File import FileItem
 from STCore.utils.backgroundEstimator import GetBackgroundMean
 import os, time
-import Tkinter as tk
+import tkinter as tk
 import __main__
 #region Variables
 directoryPath = ""
@@ -30,7 +30,7 @@ def Awake(root):
 
 def LoadFile(root):
 	global startFile, directoryPath, filesList
-	startFile = str(tkFileDialog.askopenfilename(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")]))
+	startFile = str(filedialog.askopenfilename(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")]))
 	if len(startFile) == 0:
 		print ("Cancelled Analysis")
 		return False

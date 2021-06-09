@@ -36,11 +36,11 @@ def Reset():
 	RuntimeDirectory = None
 	RuntimeDirState = []
 def PrintData():
-	print CurrentFilePath
-	print FileItemList
-	print StarItemList
-	print TrackItemList
-	print CurrentWindow
+	print (CurrentFilePath)
+	print (FileItemList)
+	print (StarItemList)
+	print (TrackItemList)
+	print (CurrentWindow)
 def SaveRecent():
 	with open(WorkingPath+"/StarTrak.bin", "wb") as f:
 		pickle.dump(RecentFiles, f, pickle.HIGHEST_PROTOCOL)
