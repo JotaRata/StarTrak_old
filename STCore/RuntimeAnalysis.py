@@ -68,7 +68,7 @@ def UpdateFileList(root, path):
 		stIndex += 1
 	STCore.Results.UpdateScale(True)
 	STCore.DataManager.FileItemList = filesList
-
+	
 def GetXTick(index):
 	epoch = mktime(filesList[0].date)
 	if STCore.ResultsConfigurator.SettingsObject.sortingMode == 0:
@@ -104,4 +104,5 @@ def WatchDir(root):
 					pass
 		if removed: print "Removed: ", ", ".join (removed)
 		dirState = after
+		STCore.DataManager.RuntimeDirState = dirState
 		root.after(100, lambda: WatchDir(root))

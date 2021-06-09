@@ -173,7 +173,6 @@ def Awake(root, items):
 	Data =  items[0].data
 	Levels = STCore.DataManager.Levels
 	if not isinstance(Levels, tuple):
-		print "Viewer: not tuple!", type(Levels)
 		Levels = (max(Data), min(Data))
 		STCore.DataManager.Levels = Levels
 	_LEVEL_MIN_ = tk.IntVar(value = Levels[1])

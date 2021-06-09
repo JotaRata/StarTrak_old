@@ -81,9 +81,12 @@ def LoadData(window):
 	STCore.Results.BackgroundFlux = 0
 	if  STCore.DataManager.RuntimeEnabled == True:
 		STCore.RuntimeAnalysis.directoryPath = STCore.DataManager.RuntimeDirectory
-		STCore.RuntimeAnalysis.dirState = []
 		STCore.RuntimeAnalysis.filesList = STCore.DataManager.FileItemList
 		STCore.RuntimeAnalysis.startFile = ""
+		STCore.RuntimeAnalysis.dirState = STCore.DataManager.RuntimeDirState
+
+		print "---------------------------"
+		print "DirState: ", len(STCore.DataManager.RuntimeDirState)
 	else:
 		STCore.RuntimeAnalysis.directoryPath = ""
 		STCore.RuntimeAnalysis.dirState = []
@@ -96,16 +99,16 @@ def LoadData(window):
 		Destroy()
 		STCore.ImageSelector.Awake(win)
 		return
+
+	if (window == 2) and STCore.DataManager.RuntimeEnabled == True:
+		Destroy()
+		STCore.ImageView.Awake(win, STCore.DataManager.FileItemList)
+		return
+
 	if window == 2:
 		Destroy()
 		STCore.ImageSelector.Awake(win)
 		STCore.ImageSelector.Apply(win)
-		return
-	if (window == 2) and STCore.DataManager.RuntimeEnabled == True:
-		Destroy()
-		print "gone"
-		STCore.ImageView.Awake(win, STCore.DataManager.FileItemList)
-		STCore.RuntimeAnalysis.StartRuntime(win)
 		return
 
 	if (window == 4 or window == 3) and STCore.DataManager.RuntimeEnabled == True:
@@ -144,6 +147,7 @@ def Reset():
 	STCore.RuntimeAnalysis.filesList = []
 	STCore.RuntimeAnalysis.startFile = ""
 	STCore.Tracker.DataChanged = False
+	print "Window Reset"
 	if STCore.DataManager.CurrentWindow == 0:
 		# No hacer nada #
 		return
@@ -169,7 +173,7 @@ def Reset():
 		STCore.Composite.Destroy()
 		Awake(win)
 		return
-	print "Window Reset"
+	
 
 if __name__ == "__main__":
 	Window = tk.Tk()

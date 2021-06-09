@@ -43,9 +43,10 @@ IsTracking = False
 SelectedTrack = -1
 MousePress = None
 CurrentFile = 0
+ScrollFileLbd = (None, None)
 #endregion
 def Awake(root, stars, ItemList):
-	global TrackerFrame, TitleLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile, DataChanged, IsTracking
+	global TrackerFrame, TitleLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile, DataChanged, IsTracking, ScrollFileLbd
 	STCore.DataManager.CurrentWindow = 3
 	IsTracking = False
 	TrackerFrame = tk.Frame(root)
@@ -54,8 +55,9 @@ def Awake(root, stars, ItemList):
 	TitleFrame.pack(fill = tk.X)
 	TitleLabel = tk.Label(TitleFrame, text = "Analizando imagen..")
 	TitleLabel.pack(fill = tk.X)
-	tk.Button(TitleFrame, image = icons.Icons["prev"], command = lambda: PrevFile(ItemList, stars)).pack(side = tk.LEFT)
-	tk.Button(TitleFrame, image = icons.Icons["next"], command = lambda: NextFile(ItemList, stars)).pack(side = tk.RIGHT)
+	ScrollFileLbd = lambda: PrevFile(ItemList, stars), lambda: NextFile(ItemList, stars)
+	tk.Button(TitleFrame, image = icons.Icons["prev"], command = ScrollFileLbd[0]).pack(side = tk.LEFT)
+	tk.Button(TitleFrame, image = icons.Icons["next"], command = ScrollFileLbd[1]).pack(side = tk.RIGHT)
 	ImgFrame = tk.Frame(TrackerFrame)
 	ImgFrame.pack(side = tk.LEFT, fill = tk.BOTH, expand = 1)
 	CreateCanvas(ItemList,stars)
@@ -308,6 +310,7 @@ def UpdateTrack(root, ItemList, stars, index = 0, auto = True):
 	#updsThread.start()
 	#updsThread.join()
 	#UpdateSidebar(ItemList[index].data, stars)
+	ScrollFileLbd = lambda: PrevFile(ItemList, stars), lambda: NextFile(ItemList, stars)
 	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[index].path))
 	if auto:
 		TrackerFrame.after(50, lambda: UpdateTrack(root, ItemList, stars, index + 1))

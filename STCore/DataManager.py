@@ -4,7 +4,7 @@ from os.path import isfile
 WorkingPath = ""
 def Awake():
 	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow
-	global TkWindowRef, ResultSetting, Levels, RecentFiles, ResultData, RuntimeEnabled, ResultConstant, RuntimeDirectory
+	global TkWindowRef, ResultSetting, Levels, RecentFiles, ResultData, RuntimeEnabled, ResultConstant, RuntimeDirectory, RuntimeDirState
 	CurrentFilePath = ""
 	FileItemList = []
 	StarItemList = []
@@ -18,8 +18,10 @@ def Awake():
 	ResultConstant = None
 	RuntimeEnabled = False
 	RuntimeDirectory = ""
+	RuntimeDirState = []
 def Reset():
-	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels, ResultData, RuntimeEnabled, ResultConstant, RuntimeDirectory
+	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels
+	global ResultData, RuntimeEnabled, ResultConstant, RuntimeDirectory, RuntimeDirState
 	Main.Reset()
 	CurrentFilePath = ""
 	FileItemList = []
@@ -32,7 +34,7 @@ def Reset():
 	ResultConstant = None
 	RuntimeEnabled = False
 	RuntimeDirectory = None
-
+	RuntimeDirState = []
 def PrintData():
 	print CurrentFilePath
 	print FileItemList
@@ -66,10 +68,12 @@ def SaveData(filepath):
 		pickle.dump(ResultConstant, out, pickle.HIGHEST_PROTOCOL)
 		pickle.dump(RuntimeEnabled, out, pickle.HIGHEST_PROTOCOL)
 		pickle.dump(RuntimeDirectory, out, pickle.HIGHEST_PROTOCOL)
+		pickle.dump(RuntimeDirState, out, pickle.HIGHEST_PROTOCOL)
 	Main.WindowName()
 
 def LoadData(filepath):
-	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels, ResultData, ResultConstant, RuntimeEnabled, RuntimeDirectory
+	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels
+	global ResultData, ResultConstant, RuntimeEnabled, RuntimeDirectory, RuntimeDirState
 	Reset()
 	CurrentFilePath = filepath
 	with open(filepath, "rb") as inp:
@@ -84,6 +88,7 @@ def LoadData(filepath):
 			ResultConstant = pickle.load(inp)
 			RuntimeEnabled = pickle.load(inp)
 			RuntimeDirectory = pickle.load(inp)
+			RuntimeDirState = pickle.load(inp)
 		except:
 			pass
 	Main.WindowName()

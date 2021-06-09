@@ -232,6 +232,7 @@ def CreateCanvas(root, app, ItemList, TrackedStars):
 	if (MagData is None):
 		MagData = numpy.empty((0 ,len(TrackedStars)))
 		i = 0
+		print len(ItemList)
 		while i < len(ItemList):
 			YAxis = GetTrackedValues(ItemList, TrackedStars, i, Constant)
 			MagData = numpy.append(MagData, numpy.atleast_2d(numpy.array(YAxis)), 0)
