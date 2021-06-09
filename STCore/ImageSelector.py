@@ -50,10 +50,12 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	item.path = str(path)
 	item.data, hdr = fits.getdata(item.path, header = True)
 	#item.date = fits.header['NOTE'].split()[3]
+	# Request DATE-OBS keyword to extract date information (previously used NOTE keyword which was not always available)
 	try:
-		item.date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
-	except:
-		print "File has no Header!   -   using system time instead.."
+		item.date = strptime(hdr["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
+	except Exception as e:
+                print e
+		print "File has no DATE-OBS keyword in Header   -   using system time instead.."
 		item.date = gmtime(getmtime(item.path))
 		pass
 	#print strftime('%H/%M/%S', localtime(item.date))
