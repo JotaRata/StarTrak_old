@@ -6,7 +6,8 @@ from matplotlib import figure
 from os.path import splitext, isfile
 from os import remove
 import STCore.ImageView
-import pyfits as fits
+#import pyfits as fits
+from astropy.io import fits
 def ExportImage(figure):
 	path = tkFileDialog.asksaveasfilename(confirmoverwrite = True, filetypes=[("Portable Network Graphics", "*.png"), ("JPEG Image", "*.jpg")], defaultextension = "*.png")
 	figure.savefig(str(path))

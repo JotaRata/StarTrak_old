@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from  numpy import min, max
+from  numpy import min, max, nanmin,nanmax
 from matplotlib import use, figure
 use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -82,7 +82,7 @@ def UpdateCanvasOverlay():
 def UpdateImage():
 		global Levels
 		if _LEVEL_MIN_.get() >_LEVEL_MAX_.get():
-			_LEVEL_MIN_.set(_LEVEL_MAX_.get())
+			_LEVEL_MIN_.set(_LEVEL_MAX_.get() + 1)
 		ImagePlot.norm.vmax = _LEVEL_MAX_.get()
 		ImagePlot.norm.vmin = _LEVEL_MIN_.get() + 0.01
 		ImagePlot.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
@@ -173,7 +173,7 @@ def Awake(root, items):
 	Data =  items[0].data
 	Levels = STCore.DataManager.Levels
 	if not isinstance(Levels, tuple):
-		Levels = (max(Data), min(Data))
+		Levels = (nanmax(Data), nanmin(Data))
 		STCore.DataManager.Levels = Levels
 	_LEVEL_MIN_ = tk.IntVar(value = Levels[1])
 	_LEVEL_MAX_ = tk.IntVar(value = Levels[0])

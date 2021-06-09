@@ -4,7 +4,8 @@ import STCore.Results
 import STCore.DataManager
 import tkFileDialog
 from os.path import dirname, abspath, basename, isfile
-import pyfits as fits
+from astropy.io import fits
+#import pyfits as fits
 from os.path import  getmtime
 from time import sleep, strftime, localtime, strptime,gmtime, mktime
 from STCore.item.File import FileItem
@@ -31,7 +32,7 @@ def LoadFile(root):
 	global startFile, directoryPath, filesList
 	startFile = str(tkFileDialog.askopenfilename(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")]))
 	if len(startFile) == 0:
-		print "Cancelled Analysis"
+		print ("Cancelled Analysis")
 		return False
 	directoryPath = dirname(startFile)
 	filesList.append(CreateFileItem(startFile))
@@ -41,13 +42,14 @@ def CreateFileItem(path):
 	item = FileItem()
 	item.path = str(path)
 	item.data, hdr = fits.getdata(item.path, header = True)
+	# Request DATE-OBS keyword to extract date information (previously used NOTE keyword which was not always available)
 	try:
-		item.date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
+		item.date = strptime(hdr["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
 	except:
-		print "File has no Header!   -   using system time instead.."
+		print ("File has no DATE-OBS keyword in Header   -   using system time instead..")
 		item.date = gmtime(getmtime(item.path))
 		pass
-	print hdr["NOTE"]
+	
 	return item
 
 def UpdateFileList(root, path):
@@ -94,15 +96,15 @@ def WatchDir(root):
 		added = [f for f in after if not f in dirState]
 		removed = [f for f in dirState if not f in after]
 		if added:
-		   for a in added:
-			try:
-				UpdateFileList(root, os.path.join(directoryPath, str(a)))
-				time.sleep(0.001)
-			except Exception as e:
-					print "No se pudo abrir el archivo: ", str(a)
-					print e
-					pass
-		if removed: print "Removed: ", ", ".join (removed)
+			for a in added:
+				try:
+					UpdateFileList(root, os.path.join(directoryPath, str(a)))
+					time.sleep(0.001)
+				except Exception as e:
+						print ("No se pudo abrir el archivo: ", str(a))
+						print (e)
+						pass
+		if removed: print ("Removed: ", ", ".join (removed))
 		dirState = after
 		STCore.DataManager.RuntimeDirState = dirState
 		root.after(100, lambda: WatchDir(root))

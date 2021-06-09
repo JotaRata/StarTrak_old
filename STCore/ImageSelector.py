@@ -3,7 +3,8 @@
 import Tkinter as tk
 import ttk
 from PIL import Image, ImageTk
-import pyfits as fits
+from astropy.io import fits
+#import pyfits as fits
 from os.path import basename, getmtime, isfile
 from time import sleep, strftime, localtime, strptime,gmtime
 import tkFileDialog
@@ -53,9 +54,8 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	# Request DATE-OBS keyword to extract date information (previously used NOTE keyword which was not always available)
 	try:
 		item.date = strptime(hdr["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
-	except Exception as e:
-                print e
-		print "File has no DATE-OBS keyword in Header   -   using system time instead.."
+	except:
+		print ("File has no DATE-OBS keyword in Header   -   using system time instead..")
 		item.date = gmtime(getmtime(item.path))
 		pass
 	#print strftime('%H/%M/%S', localtime(item.date))
@@ -108,7 +108,7 @@ def Awake(root, paths = []):
 					try:
 						ItemList[ind].date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
 					except:
-						print "File has no Header!   -   using system time instead.."
+						print ("File has no Header!   -   using system time instead..")
 						ItemList[ind].date = gmtime(getmtime(ItemList[ind].path))
 						pass
 					Progress.set(100*float(ind)/len(ItemList))

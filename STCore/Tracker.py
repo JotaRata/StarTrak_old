@@ -470,7 +470,7 @@ def NextFile(ItemList, stars):
 	Img.set_array(ItemList[CurrentFile].data)
 	UpdateCanvasOverlay(stars, CurrentFile)
 	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[CurrentFile].path))
-	print CurrentFile
+	print (CurrentFile)
 
 def PrevFile(ItemList, stars):
 	global CurrentFile
@@ -481,4 +481,4 @@ def PrevFile(ItemList, stars):
 	Img.set_array(ItemList[CurrentFile].data)
 	UpdateCanvasOverlay(stars, CurrentFile)
 	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[CurrentFile].path))
-	print CurrentFile
+	print (CurrentFile)
