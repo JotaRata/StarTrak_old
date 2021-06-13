@@ -1,9 +1,17 @@
 # coding=utf-8
+import sys
+if sys.version_info < (3, 0):
+	print ("Star Trak debe iniciar con Python3")
+	quit()
+
+
+print ("\n Cargando StarTrak..")
+
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
-import sys
+
 from os.path import dirname, abspath, basename, isfile
 import gc
 try:
@@ -16,30 +24,34 @@ import STCore.DataManager
 import STCore.Settings
 import STCore.RuntimeAnalysis
 import STCore.utils.Icons as icons
+
+print ("=" * 60)
+	
+
 def Awake(root):
 	global StartFrame
 	icons.Initialize()
 	STCore.DataManager.CurrentWindow = 0
 	WindowName()
 	gc.collect()
-	StartFrame = tk.Frame(root, width = 1100, height = 400)
+	StartFrame = ttk.Frame(root, width = 1100, height = 400)
 	STCore.Tracker.DataChanged = False
 	StartFrame.pack(expand = 1, fill = tk.BOTH)
-	tk.Label(StartFrame, text = "Bienvenido a StarTrak",font="-weight bold").pack()
-	tk.Label(StartFrame, text = "Por favor seleccione la accion que quiera realizar").pack(anchor = tk.CENTER)
-	RunButton = tk.Button(StartFrame, text = "     Comenzar análisis     ",image = icons.Icons["run"], compound = "left",anchor="w", command = lambda: (STCore.RuntimeAnalysis.Awake(root)), width = 200)
+	ttk.Label(StartFrame, text = "Bienvenido a StarTrak",font="-weight bold").pack()
+	ttk.Label(StartFrame, text = "Por favor seleccione la accion que quiera realizar").pack(anchor = tk.CENTER)
+	RunButton = ttk.Button(StartFrame, text = "     Comenzar análisis     ",image = icons.Icons["run"], compound = "left", command = lambda: (STCore.RuntimeAnalysis.Awake(root)), width = 100)
 	RunButton.pack(anchor = tk.CENTER)
-	MultiButton = tk.Button(StartFrame, text = "     Seleccionar varias Imagenes     ",image = icons.Icons["multi"], compound = "left",anchor="w", command = lambda:LoadFiles(root), width = 200)
+	MultiButton = ttk.Button(StartFrame, text = "     Seleccionar varias Imagenes     ",image = icons.Icons["multi"], compound = "left", command = lambda:LoadFiles(root), width = 100)
 	MultiButton.pack(anchor = tk.CENTER)
 	#tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
-	OpenButton = tk.Button(StartFrame, text = "     Abrir archivo     ",image = icons.Icons["open"], compound = "left",anchor="w", command = STCore.Tools.OpenFileCommand, width = 200)
+	OpenButton = ttk.Button(StartFrame, text = "     Abrir archivo     ",image = icons.Icons["open"], compound = "left", command = STCore.Tools.OpenFileCommand, width = 100)
 	OpenButton.pack(anchor = tk.CENTER)
 
 	if STCore.Settings._RECENT_FILES_.get() == 1:
-		recentlabel = tk.LabelFrame(StartFrame, text = "Archivos recientes:")
-		recentlabel.pack(anchor = tk.CENTER)
+		recentlabel = tk.LabelFrame(StartFrame, text = "Archivos recientes:", bg="gray18", fg="gray90", relief="flat")
+		recentlabel.pack(anchor = tk.CENTER, pady=64)
 		for p in reversed(STCore.DataManager.RecentFiles):
-			l = tk.Label(recentlabel, text = p, fg = "blue", cursor="hand2")
+			l = ttk.Label(recentlabel, text = p,foreground="blue", cursor="hand2")
 			l.bind("<Button-1>", _helperOpenFile(p, root))
 			l.pack(anchor = tk.CENTER)
 def _helperOpenFile(path, root):
@@ -177,6 +189,11 @@ def Reset():
 
 if __name__ == "__main__":
 	Window = tk.Tk()
+	style =ttk.Style(Window)
+	Window.configure(bg="black")
+	Window.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
+	Window.tk.call('package', 'require', 'awdark')
+
 	STCore.DataManager.Awake()
 	STCore.Settings.WorkingPath = dirname(abspath(__file__))
 	STCore.DataManager.WorkingPath = dirname(abspath(__file__))
@@ -192,6 +209,34 @@ if __name__ == "__main__":
 	STCore.Tools.Awake(Window)
 	if len(sys.argv) > 1:
 		_helperLoadData(str(sys.argv[1]), Window)
+	
+	#print(style.theme_names())
+	
+	style.theme_use("awdark")
+	style.configure("Vertical.TScrollbar", gripcount=3,
+                background="#367783", lightcolor="gray35",
+                troughcolor="gray18", bordercolor="gray10", arrowcolor="azure2", relief ="flat",
+				width="20", borderwidth = 0)
+	style.map("Vertical.TScrollbar",
+		background=[ ('!active','#367783'),('pressed', '#49A0AE'), ('active', '#49A0AE')]
+		)
+
+	style.configure("Horizontal.TScale", gripcount=3,
+                background="#49A0AE", lightcolor="gray35",
+                troughcolor="gray8", bordercolor="gray10", arrowcolor="azure2", relief ="flat",
+				width="20", borderwidth = 0)
+	style.map("Horizontal.TScale",
+		background=[ ('!active','#49A0AE'),('pressed', '#49A0AE'), ('active', '#49A0AE')]
+		)
+	style.configure("TFrame", background = "gray15", relief="flat")
+	style.configure("TLabel", background = "gray15", foreground ="gray80")
+	style.configure("TLabelFrame", background = "gray15", highlightcolor="gray15")
+
+	style.configure("TButton", relief = "flat")
+	style.map("TButton",
+		foreground=[('!active', 'gray90'),('pressed', 'gray95'), ('active', 'gray90')],
+		background=[ ('!active','grey20'),('pressed', 'gray26'), ('active', 'gray24')]
+		)	
 	Window.mainloop()
 def GetWindow():
 	return Window 

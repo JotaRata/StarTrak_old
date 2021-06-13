@@ -17,7 +17,8 @@ def GetBackground(image):
     return background, sig
 
 def GetBackgroundMean(image):
-	return getmode(getmode(image))[0]
+    return numpy.median(image)
+	#return getmode(getmode(image))[0]
 
 def getmode(ndarray, axis=0):
     # Check inputs
@@ -69,4 +70,4 @@ def getmode(ndarray, axis=0):
     del slices[axis]
     index = numpy.ogrid[slices]
     index.insert(axis, numpy.argmax(counts, axis=axis))
-    return sort[index]#, counts[index]
+    return sort[tuple(index)]#, counts[index]

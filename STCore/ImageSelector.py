@@ -31,6 +31,7 @@ def LoadFiles(paths, root):
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
 	sortedP = sorted(paths, key=lambda f: Sort(f))
 	n = 0
+	print ("-"*60)
 	[SetFileItems(x, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root) for x in sortedP]
 	#map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
 	loadIndex = 0
@@ -46,6 +47,7 @@ def Sort(path):
 
 def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	global loadIndex
+
 	print (path)
 	item = FileItem()
 	item.path = str(path)
@@ -74,17 +76,17 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 def Awake(root, paths = []):
 	global SelectorFrame, ItemList, ImagesFrame, ScrollView
 	STCore.DataManager.CurrentWindow = 1
-	SelectorFrame = tk.Frame(root)
+	SelectorFrame = ttk.Frame(root)
 	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
-	tk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
-	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-80, len(paths)*220/4), width = root.winfo_width()-180)
+	ttk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
+	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-80, len(paths)*220/4), width = root.winfo_width()-180, bg= "gray15", bd=0, relief="flat")
 	ScrollBar = ttk.Scrollbar(SelectorFrame, command=ScrollView.yview)
 	ScrollView.config(yscrollcommand=ScrollBar.set)  
 	ScrollView.pack(expand = 0, fill = tk.BOTH, anchor = tk.NW, side = tk.LEFT)
 	ScrollBar.pack(side = tk.LEFT,fill=tk.Y) 
-	ImagesFrame = tk.Frame()
+	ImagesFrame = ttk.Frame(height=root.winfo_height())
 	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 180)
-	buttonFrame = tk.Frame(SelectorFrame, width = 80)
+	buttonFrame = ttk.Frame(SelectorFrame, width = 80)
 	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH, expand = 1)
 	for c in range(1):
 		tk.Grid.columnconfigure(buttonFrame, c, weight=1)
@@ -130,13 +132,13 @@ def Awake(root, paths = []):
 
 def GridPlace(root, index, size):
 	maxrows = root.winfo_height()/size
-	maxcols = (root.winfo_width()-180)/size
+	maxcols = (root.winfo_width()-180) / size - 1
 	col = index
 	row = 0
 	while col >= maxcols:
 		col -= maxcols
 		row += 1
-	return row, col
+	return int(row), int(col)
 
 def CreateLoadBar(root, progress, title = "Cargando.."):
 	popup = tk.Toplevel()
@@ -154,22 +156,22 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 
 def CreateFileGrid(index, item, root):
 	
-	GridFrame = tk.LabelFrame(ImagesFrame, width = 200, height = 200)
+	GridFrame = tk.LabelFrame(ImagesFrame, width = 200, height = 200, bg="gray30", relief="flat")
 	Row, Col = GridPlace(root, index, 250)
 	GridFrame.grid(row = Row, column = Col, sticky = tk.NSEW, padx = 20, pady = 20)
 	dat = item.data.astype(float)
-	minv = numpy.percentile(dat, 5)
-	maxv = numpy.percentile(dat, 95)
+	minv = numpy.percentile(dat, 1)
+	maxv = numpy.percentile(dat, 99.8)
 	thumb = numpy.clip(255*(dat - minv)/(maxv - minv), 0, 255).astype(numpy.uint8)
 	Pic = Image.fromarray(thumb)
 	Pic.thumbnail((200, 200))
 	Img = ImageTk.PhotoImage(Pic)
-	tk.Label(GridFrame, text=basename(item.path)).grid(row=0,column=0, sticky=tk.W)
+	ttk.Label(GridFrame, text=basename(item.path)).grid(row=0,column=0, sticky=tk.W)
 	isactive =tk.IntVar(ImagesFrame, value=item.active)
-	Ckeckbox = tk.Checkbutton(GridFrame, variable = isactive)
+	Ckeckbox = ttk.Checkbutton(GridFrame, variable = isactive)
 	Ckeckbox.grid(row=0,column=1, sticky=tk.E)
 	isactive.trace("w", lambda a,b,c: SetActive(item, isactive, c))
-	ImageLabel = tk.Label(GridFrame, image =Img, width = 200, height = 200 * item.data.shape[0]/float(item.data.shape[1]))
+	ImageLabel = ttk.Label(GridFrame, image =Img, width = 200, state="focus")
 	ImageLabel.image = Img
 	ImageLabel.grid(row=1,column=0, columnspan=2)
 

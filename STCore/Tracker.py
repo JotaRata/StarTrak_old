@@ -21,7 +21,7 @@ import STCore.Composite
 from threading import Thread, Lock
 from time import sleep, time
 from functools import partial
-from PIL import Image
+from PIL import Image, ImageTk
 from tkinter import messagebox
 
 #region Variables
@@ -49,16 +49,16 @@ def Awake(root, stars, ItemList):
 	global TrackerFrame, TitleLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile, DataChanged, IsTracking, ScrollFileLbd
 	STCore.DataManager.CurrentWindow = 3
 	IsTracking = False
-	TrackerFrame = tk.Frame(root)
+	TrackerFrame = ttk.Frame(root)
 	TrackerFrame.pack(fill = tk.BOTH, expand = 1)
-	TitleFrame = tk.Frame(TrackerFrame)
+	TitleFrame = ttk.Frame(TrackerFrame)
 	TitleFrame.pack(fill = tk.X)
-	TitleLabel = tk.Label(TitleFrame, text = "Analizando imagen..")
+	TitleLabel = ttk.Label(TitleFrame, text = "Analizando imagen..")
 	TitleLabel.pack(fill = tk.X)
 	ScrollFileLbd = lambda: PrevFile(ItemList, stars), lambda: NextFile(ItemList, stars)
-	tk.Button(TitleFrame, image = icons.Icons["prev"], command = ScrollFileLbd[0]).pack(side = tk.LEFT)
-	tk.Button(TitleFrame, image = icons.Icons["next"], command = ScrollFileLbd[1]).pack(side = tk.RIGHT)
-	ImgFrame = tk.Frame(TrackerFrame)
+	ttk.Button(TitleFrame, image = icons.Icons["prev"], command = ScrollFileLbd[0]).pack(side = tk.LEFT)
+	ttk.Button(TitleFrame, image = icons.Icons["next"], command = ScrollFileLbd[1]).pack(side = tk.RIGHT)
+	ImgFrame = ttk.Frame(TrackerFrame)
 	ImgFrame.pack(side = tk.LEFT, fill = tk.BOTH, expand = 1)
 	CreateCanvas(ItemList,stars)
 	CreateSidebar(root, ItemList, stars)
@@ -90,7 +90,9 @@ def Awake(root, stars, ItemList):
 			item.trackedPos = []
 			TrackedStars.append(item)
 			OnFinishTrack()
-	UpdateCanvasOverlay(stars, CurrentFile)
+	
+	
+	UpdateCanvasOverlay(stars, CurrentFile, BrightestStar)
 	UpdateSidebar(ItemList[CurrentFile].data, stars)
 
 def UpdateImage():
@@ -132,10 +134,10 @@ def Destroy():
 def CreateSidebar(root, ItemList, stars):
 	import STCore.ImageView
 	global TrackerFrame, SidebarList, Sidebar, applyButton, TrackButton, buttonsFrame
-	Sidebar = tk.LabelFrame(TrackerFrame, width = 200, text = "Detalles de análisis")
+	Sidebar = ttk.LabelFrame(TrackerFrame, width = 200, text = "Detalles de análisis")
 	Sidebar.pack(side = tk.RIGHT, expand = 0, fill = tk.BOTH, anchor = tk.NE)
 	
-	SidebarList = tk.Frame(Sidebar)
+	SidebarList = ttk.Frame(Sidebar)
 	SidebarList.pack(expand = 1, fill = tk.X, anchor = tk.NW)
 
 	cmdBack = lambda: (Destroy(), STCore.ImageView.Awake(root, ItemList))
@@ -147,7 +149,7 @@ def CreateSidebar(root, ItemList, stars):
 		ApplyMenu.add_command(label="Configurar analisiss", command=lambda: ResultSetting(root, ItemList))
 	ApplyMenu.add_command(label="Componer imagen", command=lambda : CompositeNow(root, ItemList))
 
-	buttonsFrame = tk.Frame(Sidebar, width = 200)
+	buttonsFrame = ttk.Frame(Sidebar, width = 200)
 	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
 	PrevButton = ttk.Button(buttonsFrame, text = " Volver", command = cmdBack, image = icons.Icons["prev"], compound = "left")
 	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
@@ -216,19 +218,23 @@ def UpdateSidebar(data, stars):
 	for child in SidebarList.winfo_children():
 		child.destroy()
 	for track in TrackedStars:
-		frame = tk.Frame(SidebarList)
+		trackFrame = ttk.Frame(SidebarList, style="TButton")
 		col = "black"
 		if CurrentFile in track.lostPoints:
 			col = "red"
-		frame.config(highlightbackground = col, borderwidth = 2, highlightthickness = 2)
-		tk.Grid.columnconfigure(frame, 2, weight=0)
-		frame.pack(fill = tk.X, anchor = tk.N)
-		tk.Label(frame, text = track.star.name,font="-weight bold").grid(row = 0, column = 0,sticky = tk.W, columnspan = 2)
+		#frame.config(highlightbackground = col, borderwidth = 2, highlightthickness = 2)
+		tk.Grid.columnconfigure(trackFrame, 2, weight=0)
+		trackFrame.pack(fill = tk.X, anchor = tk.N, pady=4)
+		ttk.Label(trackFrame, text = track.star.name,font="-weight bold").grid(row = 0, column = 0,sticky = tk.W, columnspan = 2)
 		if len(track.trackedPos) > 0:
-			tk.Label(frame, text = "Posicion: " + str(track.trackedPos[CurrentFile]), width = 18).grid(row = 1, column = 0,sticky = tk.W)
-			tk.Label(frame, text = "Confianza: " + str(int(100*numpy.clip(1 - numpy.abs(-GetMaxima(data, track, CurrentFile) + track.star.value)/float(track.star.threshold),0,1.0)))+"%", width = 18).grid(row = 1, column = 1,sticky = tk.W)
-			tk.Label(frame, text = "Rastreados: " + str(len(track.trackedPos) - len(track.lostPoints)), width = 15).grid(row = 2, column = 0,sticky = tk.W)
-			tk.Label(frame, text = "Perdidos: " + str(len(track.lostPoints)), width = 15).grid(row = 2, column = 1,sticky = tk.W)
+			
+			_trust = 100 *  numpy.clip(1 - numpy.abs(-GetMaxima(data, track, CurrentFile) + track.star.value) / track.star.threshold, 0, 1) 
+			_trust = int(_trust)
+
+			ttk.Label(trackFrame, text = "Posicion: " + str(track.trackedPos[CurrentFile]), width = 18).grid(row = 1, column = 0,sticky = tk.W)
+			ttk.Label(trackFrame, text = "Confianza: " + str(_trust)+"%", width = 18).grid(row = 1, column = 1,sticky = tk.W)
+			ttk.Label(trackFrame, text = "Rastreados: " + str(len(track.trackedPos) - len(track.lostPoints)), width = 15).grid(row = 2, column = 0,sticky = tk.W)
+			ttk.Label(trackFrame, text = "Perdidos: " + str(len(track.lostPoints)), width = 15).grid(row = 2, column = 1,sticky = tk.W)
 		clipLoc = (track.currPos[1], track.currPos[0]) 
 		if len(track.trackedPos) > 0:
 			clipLoc = numpy.clip(track.trackedPos[CurrentFile], stars[index].radius, (data.shape[1] - stars[index].radius, data.shape[0] - stars[index].radius))
@@ -238,29 +244,30 @@ def UpdateSidebar(data, stars):
 		noisy = numpy.clip(255 * (crop - minv) / (maxv - minv), 0 , 255).astype(numpy.uint8)	
 		Pic = Image.fromarray(noisy, mode='L')
 		Pic = Pic.resize((50, 50))
-		Img = tk.PhotoImage(Pic)
-		ImageLabel = tk.Label(frame, image = Img, width = 50, height = 50)
+		Img = ImageTk.PhotoImage(Pic)
+		ImageLabel = ttk.Label(trackFrame, image = Img, width = 50)
 		ImageLabel.image = Img
 		ImageLabel.grid(row = 0, column = 3, columnspan = 1, rowspan = 3, padx = 20)
 		index += 1
 
 def CreateCanvas(ItemList, stars):
 	global ImgCanvas, ImgFrame, Img, ImgAxis, CurrentFile
-	fig = figure.Figure(figsize = (7,4), dpi = 100)
+	ImageFigure = figure.Figure(figsize = (7,4), dpi = 100)
+	ImageFigure.set_facecolor("black")
 	if CurrentFile >= len(ItemList):
 		CurrentFile = 0
 
 	data = ItemList[CurrentFile].data
-	ImgAxis = fig.add_subplot(111)
+	ImgAxis = ImageFigure.add_subplot(111)
 	ImgAxis.set_axis_off()
-	fig.subplots_adjust(0.01,0.01,0.99,1)
+	ImageFigure.subplots_adjust(0.01,0.01,0.99,1)
 	levels = STCore.DataManager.Levels
 	if  not isinstance(levels, tuple):
 		#print "Tracker: not tuple!"
 		levels = (numpy.max(data), numpy.min(data))
 		STCore.DataManager.Levels = STCore.ImageView.Levels = levels
 	Img = ImgAxis.imshow(data, vmin = levels[1], vmax = levels[0], cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
-	ImgCanvas = FigureCanvasTkAgg(fig,master=ImgFrame)
+	ImgCanvas = FigureCanvasTkAgg(ImageFigure,master=ImgFrame)
 	if STCore.Settings._SHOW_GRID_.get() == 1:
 		ImgAxis.grid()
 	ImgCanvas.draw()
@@ -268,7 +275,7 @@ def CreateCanvas(ItemList, stars):
 	ImgCanvas.mpl_connect("motion_notify_event", OnMouseDrag) 
 	ImgCanvas.mpl_connect("button_release_event", lambda event: OnMouseRelase(event, stars, ItemList)) 
 	wdg = ImgCanvas.get_tk_widget()
-	wdg.config(cursor = "fleur")
+	wdg.config(cursor = "fleur", bg="black")
 	wdg.pack(fill=tk.BOTH, expand=1)
 	#wdg.wait_visibility()
 
@@ -289,6 +296,8 @@ def StopTracking():
 		IsTracking = False
 	if STCore.DataManager.RuntimeEnabled == True:
 		STCore.RuntimeAnalysis.StopRuntime()
+
+
 def UpdateTrack(root, ItemList, stars, index = 0, auto = True):
 	global TrackedStars, SidebarList, CurrentFile, IsTracking, TrackButton
 	if (index >= len(ItemList) or IsTracking == False) and auto:
@@ -300,10 +309,12 @@ def UpdateTrack(root, ItemList, stars, index = 0, auto = True):
 		return
 	CurrentFile = index
 	Img.set_array(ItemList[index].data)
-	trackThread = Thread(target = Track, args = (index,ItemList, stars))
-	trackThread.start()
-	trackThread.join()
-	#Track(index,ItemList, stars)	
+
+	#trackThread = Thread(target = Track, args = (index,ItemList, stars))
+	#trackThread.start()
+	#trackThread.join()
+
+	Track(index,ItemList, stars)	 # Se elimino mutlithreading por ahora..
 	UpdateCanvasOverlay(stars, index)
 	UpdateSidebar(ItemList[index].data, stars)
 	#updsThread = Thread(target = UpdateSidebar, args = (ItemList[index].data, stars))
@@ -315,7 +326,7 @@ def UpdateTrack(root, ItemList, stars, index = 0, auto = True):
 	if auto:
 		TrackerFrame.after(50, lambda: UpdateTrack(root, ItemList, stars, index + 1))
 
-def UpdateCanvasOverlay(stars, ImgIndex):
+def UpdateCanvasOverlay(stars, ImgIndex, brightest =  None):
 	for a in reversed(ImgAxis.artists):
 		a.remove()
 	for t in reversed(ImgAxis.texts):
@@ -325,7 +336,11 @@ def UpdateCanvasOverlay(stars, ImgIndex):
 		trackPos = (TrackedStars[stIndex].currPos[1], TrackedStars[stIndex].currPos[0])
 		if len(TrackedStars[stIndex].trackedPos) > 0:
 			trackPos = TrackedStars[stIndex].trackedPos[ImgIndex]
+		
 		col = "w"
+		if s == BrightestStar:
+			col = "y"
+		
 		if len(trackPos) == 0:
 			continue
 		if ImgIndex in TrackedStars[stIndex].lostPoints:
@@ -334,28 +349,30 @@ def UpdateCanvasOverlay(stars, ImgIndex):
 			try:
 				points = TrackedStars[stIndex].trackedPos[max(ImgIndex - 4, 0):ImgIndex + 1]
 				poly = Polygon(points , closed = False, fill = False, edgecolor = "w", linewidth = 2)
-				poly.aname = "Poly"+str(stIndex)
+				poly.label = "Poly"+str(stIndex)
 				ImgAxis.add_artist(poly)
 			except:
 				pass
 		rect_pos = (trackPos[0] - s.radius, trackPos[1] - s.radius)
 		rect = Rectangle(rect_pos, s.radius *2, s.radius *2, edgecolor = col, facecolor='none')
-		rect.aname = "Rect"+str(stIndex)
+		rect.label = "Rect"+str(stIndex)
 		ImgAxis.add_artist(rect)
 		text_pos = (trackPos[0], trackPos[1] - s.radius - 6)
 		text = ImgAxis.annotate(s.name, text_pos, color=col, weight='bold',fontsize=6, ha='center', va='center')
-		text.aname = "Text"+str(stIndex)
+		text.label = "Text"+str(stIndex)
 		stIndex += 1
 	ImgCanvas.draw()
 
 def Track(index, ItemList, stars):
 	global TrackedStars, BrightestStar
 	#starIndex = 0
+	#print ("Tracking Thread started")
 	data = ItemList[index].data
 	back, bgStD =  GetBackground(data)
 	deltaPos = numpy.array([0,0])
-	indexes = range(len(stars))
-	for starIndex in sorted(indexes, key = lambda e: stars[e].value, reverse = True):
+	indices = range(len(stars))
+	sortedIndices = sorted(indices, key = lambda e: stars[e].value, reverse = True)
+	for starIndex in sortedIndices:
 		s = stars[starIndex]
 		Pos = numpy.array(TrackedStars[starIndex].currPos)
 		clipLoc = numpy.clip(Pos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
@@ -363,7 +380,7 @@ def Track(index, ItemList, stars):
 			clipLoc = numpy.clip(Pos + deltaPos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
 		crop = data[clipLoc[0]-s.bounds : clipLoc[0]+s.bounds,clipLoc[1]-s.bounds : clipLoc[1]+s.bounds]
 		#indices = numpy.where((numpy.abs(-crop + s.value) < s.threshold) & (crop > bgStD*2 + back))
-		indices = numpy.unravel_index(numpy.flatnonzero((numpy.abs(-crop + s.value) < s.threshold) & (crop > bgStD*2 + back)),crop.shape)
+		indices = numpy.unravel_index(numpy.flatnonzero( (numpy.abs(-crop + s.value) < s.threshold) & (crop >  s.threshold * bgStD / s.value + back)),crop.shape)
 		SearchIndices = numpy.swapaxes(numpy.array(indices), 0, 1)
 		RegPositions = numpy.empty((0,2), int)
 		i = 0
@@ -396,22 +413,24 @@ def GetMaxima(data, track, fileIndex):
 	radius = track.star.radius
 	value = track.star.value
 	clipLoc = numpy.clip((xloc,yloc), radius, (data.shape[0] - radius, data.shape[1] - radius))
-	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius].flatten()
-	return crop[numpy.abs(-crop + value).argmin()]
+	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
+	return float(numpy.max(crop))
 	#return  numpy.max(data[vloc[0]-radius : vloc[0]+radius,vloc[1]-radius : vloc[1]+radius])
+
+
 MousePressTime=0
 def OnMousePress(event):
 	global ImgCanvas, MousePress, SelectedTrack, ImgAxis, MousePressTime
 	if time() - MousePressTime < 0.2:
 		return
 	for a in ImgAxis.artists:
-		if a.aname != "Poly":
+		if a.label != "Poly":
 			contains, attrd = a.contains(event)
 			if contains:
 				tup = a.xy
 				x0, y0 = tup[0], tup[1]
 				MousePress = x0, y0, event.xdata, event.ydata
-				SelectedTrack = int("".join(filter(str.isdigit, a.aname)[0]))
+				SelectedTrack = int("".join(next(filter(str.isdigit, a.label))))
 				setp(a, linewidth = 4)
 			else:
 				setp(a, linewidth = 1)
@@ -424,8 +443,8 @@ def OnMouseDrag(event):
 	x0, y0, xpress, ypress = MousePress
 	dx = event.xdata - xpress
 	dy = event.ydata - ypress
-	sel = filter(lambda obj: obj.aname == "Rect"+str(SelectedTrack), ImgAxis.artists)
-	text = filter(lambda obj: obj.aname == "Text"+str(SelectedTrack), ImgAxis.texts)
+	sel = list(filter(lambda obj: obj.label == "Rect"+str(SelectedTrack), ImgAxis.artists))
+	text = list(filter(lambda obj: obj.label == "Text"+str(SelectedTrack), ImgAxis.texts))
 	if len(sel) > 0 and len(text) > 0:
 		sel[0].set_x(x0+dx)
 		sel[0].set_y(y0+dy)
@@ -434,7 +453,7 @@ def OnMouseDrag(event):
 		TrackedStars[SelectedTrack].trackedPos[CurrentFile][1] = int(y0 + dy + TrackedStars[SelectedTrack].star.radius)
 		TrackedStars[SelectedTrack].trackedPos[CurrentFile][0] = int(x0 + dx+ TrackedStars[SelectedTrack].star.radius)
 		TrackedStars[SelectedTrack].currPos = list(reversed(TrackedStars[SelectedTrack].trackedPos[CurrentFile]))
-	poly = filter(lambda obj: obj.aname == "Poly"+str(SelectedTrack), ImgAxis.artists)[0]
+	poly = filter(lambda obj: obj.label == "Poly"+str(SelectedTrack), ImgAxis.artists)[0]
 	poly.set_xy(TrackedStars[SelectedTrack].trackedPos[max(CurrentFile - 4, 0):CurrentFile + 1])
 	ImgCanvas.draw()
 
@@ -457,7 +476,7 @@ def OnMouseRelase(event, stars, ItemList):
 	SelectedTrack = -1
 	ImgCanvas.draw()
 	for a in ImgAxis.artists:
-		if a.aname != "Poly":
+		if a.label != "Poly":
 			setp(a, linewidth = 1)
 	ImgCanvas.draw()
 

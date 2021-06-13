@@ -10,7 +10,7 @@ ToolbarFrame = None
 #endregion
 
 def Awake(root):
-	menubar = tk.Menu(root)
+	menubar = tk.Menu(root, activebackground="grey")
 
 	filemenu = tk.Menu(menubar, tearoff=0)
 	filemenu.add_command(label="Nuevo", command=NewFileCommand)
