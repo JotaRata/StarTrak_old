@@ -228,7 +228,7 @@ def CreateCanvas(root, app, ItemList, TrackedStars):
 												  max(Config.SettingsObject.refStar, 0),TrackedStars, Config.SettingsObject.refValue)
 	#for item in ItemList:
 	#	Xlabel.append(basename(item.path))
-	Plots = range(len(TrackedStars))
+	Plots = list(range(len(TrackedStars)))
 	if (MagData is None):
 		MagData = numpy.empty((0 ,len(TrackedStars)))
 		i = 0

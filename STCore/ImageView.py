@@ -49,7 +49,7 @@ def UpdateStarList():
 		ListFrame = ttk.Frame(SidebarList)
 		ListFrame.pack(fill = tk.X, expand = 1, anchor = tk.N, pady = 5)
 
-		cmd = __helperCreateWindow(index, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold / s.value)
+		cmd = __helperCreateWindow(index, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold, bsg=s.bsigma)
 		cmd2= __helperPop(Stars, index)
 		ttk.Button(ListFrame, text = s.name, width = 10, command = cmd).pack(side = tk.LEFT, fill = tk.X, expand = 1)
 		deleteButton = ttk.Button(ListFrame, image = icon, width = 1, command = cmd2)
@@ -58,7 +58,7 @@ def UpdateStarList():
 		index += 1
 #Las funciones lambda no se pueden llamar dentro de un loop for o while,
 ## para eso hay que crear una funcion que retorne un lambda
-def __helperCreateWindow(index, stName, stLoc, stRadius, stBound, stType,stThr):
+def __helperCreateWindow(index, stName, stLoc, stRadius, stBound, stType,stThr, bsg):
 	return lambda: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, index, stName, stLoc, stRadius, stBound, stType, stThr)
 def __helperPop (list, index):
 	return lambda: (list.pop(index), OnStarChange(), __helperTrackedChanged())

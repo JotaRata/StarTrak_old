@@ -22,7 +22,7 @@ XLoc= YLoc = None
 #endregion
 
 
-def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20), radius = 15, bounds = 40, Type = 0, threshold = 50):
+def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20), radius = 15, bounds = 40, Type = 0, threshold = 50, sigma = 2):
 	global Window, Image, ImageCanvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
 	if Window is not None:
 		return
@@ -64,6 +64,7 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 	StarBounds = tk.IntVar(locFrame, value = bounds)
 	StarRadius = tk.IntVar(locFrame, value = radius)
 	StarThreshold = tk.IntVar(locFrame, value = threshold)
+	SigmaFactor = tk.IntVar(locFrame, value = sigma)
 
 	ttk.Label(locFrame, text = "Posicion:").grid(row = 3, column = 2, sticky = tk.W)
 	XLocSpinBox = ttk.Spinbox(locFrame, from_ = 0, to = Data.shape[1], textvariable = XLoc, width = 10)
@@ -72,7 +73,8 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 	
 	BoundSpinBox = ttk.Spinbox(trackFrame, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10, increment = 10)
 	ThreSpinBox = ttk.Scale(trackFrame, from_ = 0, to = 100, variable = StarThreshold, orient=tk.HORIZONTAL)
-	
+	SigSpinBox = ttk.Spinbox(trackFrame, from_ = 0, to = 4, textvariable = SigmaFactor, width=10, increment= 0.5)
+
 	XLocSpinBox.grid(row = 3, column = 3)
 	YLocSpinBox.grid(row = 3, column = 4, padx = 20)
 	ttk.Label(locFrame, text = "Tamaño de la estrella:").grid(row = 4, column = 2, sticky = tk.W)
@@ -81,26 +83,31 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 
 	ttk.Label(trackFrame, text = "Radio de búsqueda:").grid(row = 5, column = 2, sticky = tk.W)
 	BoundSpinBox.grid(row = 5, column = 3, columnspan = 1, sticky = tk.EW)
-	ttk.Label(trackFrame, text = "Tolerancia de busqueda:").grid(row = 6, column = 2, sticky = tk.W)
+	ttk.Label(trackFrame, text = "Variabilidad:").grid(row = 6, column = 2, sticky = tk.W)
 	ThreSpinBox.grid(row = 6, column = 3, columnspan = 2, sticky = tk.EW)
 	
+	ttk.Label(trackFrame, text = "Rechazar si Sigma es menor a:").grid(row = 7, column = 2, sticky = tk.W)
+	SigSpinBox.grid(row = 7, column = 3, columnspan = 1, sticky = tk.EW)
+
 	DrawCanvas(location, radius, Data)
-	mean = float(GetBackgroundMean(Data))
-	confidence = int(min((numpy.max(Image.get_array()))/ mean - 1, 1.0)*100)
+	back_median = float(GetBackgroundMean(Data))
+	confidence = int(min((numpy.max(Image.get_array()))/ back_median - 1, 1.0)*100)
 	BrightLabel = ttk.Label(trackFrame, text = "Confidencia: " + str(confidence)+"%",font="-weight bold", width = 18, anchor = "w")
 	_conf = str(numpy.clip(int(confidence/30 + 1), 1, 3))
 	ConfIcon = ttk.Label(trackFrame, image = icons.Icons["conf"+ _conf])
 	ConfIcon.grid(row = 8, column = 3)
 	BrightLabel.grid(row = 8, column = 2, sticky = tk.W)
-	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), mean)
+	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), back_median)
 	XLoc.trace("w",cmd)
 	YLoc.trace("w",cmd)
 	StarRadius.trace("w",cmd)
 	
-	applycmd = lambda: Apply(StarName.get(),(YLoc.get(), XLoc.get()), StarBounds.get(),
-						 StarRadius.get() , 1,
-						 GetMaxima(Data,XLoc.get(), YLoc.get(), StarRadius.get()), StarThreshold.get(),
-						 Stars, OnStarChange, starIndex)
+	applycmd = lambda: Apply(name=StarName.get(),loc=(YLoc.get(), XLoc.get()), bounds=StarBounds.get(),
+						 radius=StarRadius.get() , Type=1,
+						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get(), back_median)
+						 , threshold=StarThreshold.get(),
+						 stars=Stars, OnStarChange= OnStarChange,starIndex=starIndex, sigma = SigmaFactor.get())
+
 	controlButtons = ttk.Frame(rightPanel)
 	controlButtons.grid(row =3)
 	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = applycmd, image = icons.Icons["check"], compound = "right")
@@ -108,11 +115,12 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 	CancelButton = ttk.Button(controlButtons, text = "Cancelar", command = CloseWindow, image = icons.Icons["delete"], compound = "left")
 	CancelButton.grid(row = 0, column = 0)
 
-def GetMaxima(data, xloc, yloc, radius):
+
+def GetMax(data, xloc, yloc, radius, background):
 	stLoc = (yloc, xloc)
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
-	return numpy.max(crop)
+	return int(numpy.max(crop) - background), numpy.std(crop)
 
 def DrawCanvas(stLoc, radius, data):
 	global Image, ImageCanvas, rig
@@ -147,7 +155,7 @@ def UpdateCanvas(data, stLoc, radius, mean):
 	ConfIcon.config(image = icons.Icons["conf"+_conf])
 	ImageCanvas.draw()
 
-def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, starIndex):
+def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, starIndex, sigma):
 
 	st = StarItem()
 	st.name = name
@@ -155,8 +163,10 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.location = loc
 	st.bounds = bounds
 	st.radius = radius
-	st.value = value
-	st.threshold = (threshold * 0.01) * value
+	st.value = value[0]
+	st.std = value[1]
+	st.threshold = (threshold * 0.01)
+	st.bsigma = sigma
 	if starIndex == -1:
 		stars.append(st)
 		STCore.Tracker.DataChanged = True

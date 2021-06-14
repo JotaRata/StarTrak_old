@@ -23,6 +23,7 @@ from time import sleep, time
 from functools import partial
 from PIL import Image, ImageTk
 from tkinter import messagebox
+from scipy.ndimage import median_filter
 
 #region Variables
 TrackerFrame = None
@@ -114,6 +115,7 @@ def StartTracking(root, ItemList, stars):
 			item = TrackItem()
 			item.star = s
 			item.lastValue = s.value
+			item.currValue = s.value
 			item.currPos = s.location
 			item.trackedPos = []
 			TrackedStars.append(item)
@@ -372,6 +374,7 @@ def Track(index, ItemList, stars):
 	deltaPos = numpy.array([0,0])
 	indices = range(len(stars))
 	sortedIndices = sorted(indices, key = lambda e: stars[e].value, reverse = True)
+
 	for starIndex in sortedIndices:
 		s = stars[starIndex]
 		Pos = numpy.array(TrackedStars[starIndex].currPos)
@@ -379,11 +382,23 @@ def Track(index, ItemList, stars):
 		if BrightestStar != s and STCore.Settings._TRACK_PREDICTION_.get() == 1:
 			clipLoc = numpy.clip(Pos + deltaPos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
 		crop = data[clipLoc[0]-s.bounds : clipLoc[0]+s.bounds,clipLoc[1]-s.bounds : clipLoc[1]+s.bounds]
+		crop = median_filter(crop, 2)
 		#indices = numpy.where((numpy.abs(-crop + s.value) < s.threshold) & (crop > bgStD*2 + back))
-		indices = numpy.unravel_index(numpy.flatnonzero( (numpy.abs(-crop + s.value) < s.threshold) & (crop >  s.threshold * bgStD / s.value + back)),crop.shape)
+
+		lvalue = s.value + back#TrackedStars[starIndex].lastValue 
+		
+
+		sigma_criterion = (numpy.abs(crop - back) > s.bsigma * bgStD)		# Determina cuando la imagen se encuentra a (threshold) sigma del fondo
+		value_criterion = ((-crop + lvalue) < numpy.abs(lvalue - max(numpy.max(crop) - back, back) ) * (1 + s.threshold)/2 )			# Compara el brillo de la estrella con su referencia
+		#spread_criterion = sigma_criterion.sum() > 4							# Se asegura de que no se detecten hot pixels como estrellas
+		# \operatorname{abs}\left(L-\max\left(b-c,\ 1\right)\right)+d\cdot2
+		indices = numpy.unravel_index(numpy.flatnonzero( value_criterion &  sigma_criterion),  crop.shape)
 		SearchIndices = numpy.swapaxes(numpy.array(indices), 0, 1)
 		RegPositions = numpy.empty((0,2), int)
+
+		print (s.name, lvalue,"||", crop.max(), "||", numpy.sum(indices), "||b", back)
 		i = 0
+
 		while i < SearchIndices.shape[0]:
 			_ind = numpy.atleast_2d(SearchIndices[i,:]) + clipLoc - s.bounds
 			RegPositions = numpy.append(RegPositions, _ind, axis = 0)
@@ -394,7 +409,7 @@ def Track(index, ItemList, stars):
 			TrackedStars[starIndex].lastValue = TrackedStars[starIndex].currValue 
 			TrackedStars[starIndex].currPos = MeanPos.tolist()
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].currPos)))
-			TrackedStars[starIndex].currValue = GetMaxima(data, TrackedStars[starIndex], index)
+			TrackedStars[starIndex].currValue = GetMaxima(data, TrackedStars[starIndex], index, back)
 			if TrackedStars[starIndex].lastSeen != -1:
 				TrackedStars[starIndex].lastSeen = -1
 		else:
@@ -407,14 +422,14 @@ def Track(index, ItemList, stars):
 		#starIndex += 1
 	
 # Copiado de SetStar
-def GetMaxima(data, track, fileIndex):
+def GetMaxima(data, track, fileIndex, background=0):
 	xloc = track.trackedPos[fileIndex][1]
 	yloc = track.trackedPos[fileIndex][0]
 	radius = track.star.radius
 	value = track.star.value
 	clipLoc = numpy.clip((xloc,yloc), radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
-	return float(numpy.max(crop))
+	return int(numpy.max(crop) - background)
 	#return  numpy.max(data[vloc[0]-radius : vloc[0]+radius,vloc[1]-radius : vloc[1]+radius])
 
 
@@ -453,7 +468,7 @@ def OnMouseDrag(event):
 		TrackedStars[SelectedTrack].trackedPos[CurrentFile][1] = int(y0 + dy + TrackedStars[SelectedTrack].star.radius)
 		TrackedStars[SelectedTrack].trackedPos[CurrentFile][0] = int(x0 + dx+ TrackedStars[SelectedTrack].star.radius)
 		TrackedStars[SelectedTrack].currPos = list(reversed(TrackedStars[SelectedTrack].trackedPos[CurrentFile]))
-	poly = filter(lambda obj: obj.label == "Poly"+str(SelectedTrack), ImgAxis.artists)[0]
+	poly = next(filter(lambda obj: obj.label == "Poly"+str(SelectedTrack), ImgAxis.artists))
 	poly.set_xy(TrackedStars[SelectedTrack].trackedPos[max(CurrentFile - 4, 0):CurrentFile + 1])
 	ImgCanvas.draw()
 
@@ -489,7 +504,6 @@ def NextFile(ItemList, stars):
 	Img.set_array(ItemList[CurrentFile].data)
 	UpdateCanvasOverlay(stars, CurrentFile)
 	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[CurrentFile].path))
-	print (CurrentFile)
 
 def PrevFile(ItemList, stars):
 	global CurrentFile
@@ -500,4 +514,3 @@ def PrevFile(ItemList, stars):
 	Img.set_array(ItemList[CurrentFile].data)
 	UpdateCanvasOverlay(stars, CurrentFile)
 	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[CurrentFile].path))
-	print (CurrentFile)
