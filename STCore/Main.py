@@ -1,5 +1,12 @@
 # coding=utf-8
+from logging import log
 import sys
+from tkinter import Toplevel, font
+from tkinter.filedialog import FileDialog
+
+from astropy.io.fits.card import HIERARCH_VALUE_INDICATOR
+from astropy.io.fits.convenience import info
+from numpy.lib.npyio import load
 if sys.version_info < (3, 0):
 	print ("Star Trak debe iniciar con Python3")
 	quit()
@@ -7,10 +14,17 @@ if sys.version_info < (3, 0):
 
 print ("\n Cargando StarTrak..")
 
-import tkinter as tk
-from tkinter import filedialog
-from tkinter import messagebox
-from tkinter import ttk
+try:
+	import tkinter as tk
+	from tkinter import filedialog
+	from tkinter import messagebox
+	from tkinter import ttk
+except:
+	raise ImportError("No se pudo cargar Tkinter")
+try:
+	from PIL import Image, ImageTk
+except:
+	raise ImportError("No se pudo cargar Python Image Library\nAsegurate de instalarlo usando:\npip3 install pillow")
 
 from os.path import dirname, abspath, basename, isfile
 import gc
@@ -25,37 +39,64 @@ import STCore.Settings
 import STCore.RuntimeAnalysis
 import STCore.utils.Icons as icons
 
+
 print ("=" * 60)
 	
 
 def Awake(root):
-	global StartFrame
+	global StartFrame, sidebar, bottombar
 	icons.Initialize()
 	STCore.DataManager.CurrentWindow = 0
 	WindowName()
 	gc.collect()
-	StartFrame = ttk.Frame(root, width = 1100, height = 400)
-	STCore.Tracker.DataChanged = False
-	StartFrame.pack(expand = 1, fill = tk.BOTH)
-	ttk.Label(StartFrame, text = "Bienvenido a StarTrak",font="-weight bold").pack()
-	ttk.Label(StartFrame, text = "Por favor seleccione la accion que quiera realizar").pack(anchor = tk.CENTER)
-	RunButton = ttk.Button(StartFrame, text = "     Comenzar análisis     ",image = icons.Icons["run"], compound = "left", command = lambda: (STCore.RuntimeAnalysis.Awake(root)), width = 100)
-	RunButton.pack(anchor = tk.CENTER)
-	MultiButton = ttk.Button(StartFrame, text = "     Seleccionar varias Imagenes     ",image = icons.Icons["multi"], compound = "left", command = lambda:LoadFiles(root), width = 100)
-	MultiButton.pack(anchor = tk.CENTER)
-	#tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
-	OpenButton = ttk.Button(StartFrame, text = "     Abrir archivo     ",image = icons.Icons["open"], compound = "left", command = STCore.Tools.OpenFileCommand, width = 100)
-	OpenButton.pack(anchor = tk.CENTER)
 
+	StartFrame = tk.Frame(root, width = 1100, height = 400, bg="gray18")
+	STCore.Tracker.DataChanged = False
+	StartFrame.pack(side = tk.RIGHT, anchor=tk.NE, expand = 1, fill = tk.BOTH)
+
+	# Sidebar Area
+	sidebar = tk.Frame(root, bg="gray15", width=400)
+	sidebar.pack(side = tk.LEFT, anchor = tk.NW, fill = tk.Y, expand = 0)
+	sidebar.pack_propagate(0)
+
+	logo = ImageTk.PhotoImage(file ="STCore/StarTrak.png")
+	logo_label = tk.Label(sidebar,image= logo, bg = "gray15")
+	logo_label.image = logo
+	logo_label.pack(pady=16)
+
+	tk.Label(sidebar, text = "Bienvenido a StarTrak",font="-weight bold", bg = "gray15", fg = "gray80").pack(pady=16)
+	
+	# Bottombar Area
+
+	bottombar = tk.Frame(StartFrame, bg ="gray18", height=64)
+	bottombar.pack(expand=1, side=tk.BOTTOM, anchor=tk.SW, fill = tk.X)
+	bottombar.pack_propagate(0)
+	SessionButton = ttk.Button(bottombar, text = "Nueva Sesion",image = icons.Icons["run"], compound = "left", command = lambda: NewSessionTopLevel(root), width=32, style="Highlight.TButton")
+	SessionButton.pack(side= tk.RIGHT, anchor = tk.E)
+	FilesButton = ttk.Button(StartFrame, text = "Abrir Imagenes",image = icons.Icons["multi"], compound = "left", command = lambda:LoadFiles(root), width = 100)
+	#FilesButton.pack()
+	#tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
+	LoadButton = ttk.Button(bottombar, text = "Cargar Sesion",image = icons.Icons["open"], compound = "left", command = STCore.Tools.OpenFileCommand, width=32)
+	LoadButton.pack(side= tk.RIGHT, anchor = tk.E, after=SessionButton)
+
+	# Right panel Area
+	CreateRecent(root)
+
+def CreateRecent(root):
+	global StartFrame, recentlabel
 	if STCore.Settings._RECENT_FILES_.get() == 1:
-		recentlabel = tk.LabelFrame(StartFrame, text = "Archivos recientes:", bg="gray18", fg="gray90", relief="flat")
-		recentlabel.pack(anchor = tk.CENTER, pady=64)
+		recentlabel = tk.LabelFrame(StartFrame, text = "Archivos recientes:", bg="gray18", fg="gray90", relief="flat", font="-weight bold")
+		recentlabel.pack(anchor = tk.NW, pady=16, expand=1, fill=tk.BOTH)
+
+		ttk.Label(recentlabel).pack()
 		for p in reversed(STCore.DataManager.RecentFiles):
-			l = ttk.Label(recentlabel, text = p,foreground="blue", cursor="hand2")
-			l.bind("<Button-1>", _helperOpenFile(p, root))
-			l.pack(anchor = tk.CENTER)
-def _helperOpenFile(path, root):
-	return lambda e: _helperLoadData(path, root)
+
+			file_el = ttk.Button(recentlabel, text = basename(p), cursor="hand2", style= "Highlight.TButton", command= lambda : _helperLoadData(p, root))
+			#l.bind("<Button-1>", _helperOpenFile(p, root))
+			file_el.pack(anchor = tk.W, pady=4, fill=tk.X)
+
+			ttk.Button(file_el, image=icons.Icons["delete"], command=lambda:RemoveRecent(p, root), style="Highlight.TButton").pack(side=tk.RIGHT)
+			
 def _helperLoadData(path, root):
 	if isfile(path):
 		STCore.DataManager.LoadData(path)
@@ -66,6 +107,13 @@ def _helperLoadData(path, root):
 		Destroy()
 		Awake(root)
 
+def RemoveRecent(path, root):
+	STCore.DataManager.RecentFiles.remove(path)
+	STCore.DataManager.SaveRecent()
+	recentlabel.destroy()
+	
+	CreateRecent(root)
+
 def LoadFiles(root):
 	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
 	Destroy()
@@ -73,12 +121,16 @@ def LoadFiles(root):
 
 def Destroy():
 	StartFrame.destroy()
+	sidebar.destroy()
+	bottombar.destroy()
 
 def WindowName():
 	if len(STCore.DataManager.CurrentFilePath) > 0:
-		Window.wm_title(string = "StarTrak v1.1.0 - "+ basename(STCore.DataManager.CurrentFilePath))
+		Window.wm_title(string = "StarTrak 1.1.0 - "+ basename(STCore.DataManager.CurrentFilePath))
 	else:
-		Window.wm_title(string = "StarTrak v1.1.0")
+		Window.wm_title(string = "StarTrak 1.1.0")
+
+
 def LoadData(window):
 	win = Window
 	STCore.ImageSelector.ItemList = STCore.DataManager.FileItemList
@@ -185,15 +237,145 @@ def Reset():
 		STCore.Composite.Destroy()
 		Awake(win)
 		return
+
+def NewSessionTopLevel(root):
+	global sessionName
+	Destroy()
+	sessionType = -1
+	top = tk.Toplevel(root)
+	top.geometry("720x480+%d+%d" % (root.winfo_width()/2 + root.winfo_x() - 360,  root.winfo_height()/2 + root.winfo_y() - 240) )
+	top.wm_title(string = "Nueva Sesion")
+	top.attributes('-topmost', 'true')
+	top.overrideredirect(1)
+	
+	TopFrame = ttk.Frame(top)
+	TopFrame.pack(expand=1, fill=tk.BOTH)
+
+	file_paths = []
+	directory_path = ""
+	load_frame = ttk.Frame(TopFrame)
+	load_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=1, pady=16)
+
+	info_label = None
+
+	def GetFilePaths():
+		nonlocal file_paths, info_label
+		file_paths = filedialog.askopenfilenames(parent = top, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
+		if info_label is not None:
+			info_label.config(text="Se seleccionaron %o archivos" % len(file_paths))
+	def GetDirectory():
+		nonlocal directory_path, info_label
+		directory_path = filedialog.askopenfilename(parent=top, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
+		if info_label is not None:
+			info_label.config(text="Directorio de la sesion:\n"+dirname(directory_path))
+
+	def SetSessionType(index, rtbutton, asbutton):
+		nonlocal load_frame, sessionType, info_label
+		sessionType = index
+		
+		rtcolor = "gray20"
+		ascolor = "gray20"
+		selectText = ""
+		if index == 0:
+			rtcolor="gray30"
+			ascolor="gray20"
+			
+			for c in load_frame.winfo_children():
+				c.destroy()
+			ttk.Label(load_frame, text="Abrir la primera imagen de la sesion").pack()
+			ttk.Button(load_frame, text="Arbir archivo", command=GetDirectory, width=28).pack()
+		
+		if index == 1:
+			rtcolor ="gray20"
+			ascolor ="gray30"
+
+			for c in load_frame.winfo_children():
+				c.destroy()
+			
+			ttk.Label(load_frame, text="Abrir varias imagenes").pack()
+			ttk.Button(load_frame, text="Arbir archivos", command=GetFilePaths, width=28).pack()
+
+		info_label = ttk.Label(load_frame, text = "")
+		info_label.pack()
+
+		rtbutton.config(bg=rtcolor)
+		for c in rtbutton.winfo_children():
+			c.config(bg=rtcolor)
+
+		asbutton.config(bg=ascolor)
+		for c in asbutton.winfo_children():
+			c.config(bg=ascolor)
+
+	def CloseLevel(wakemain = True):
+		nonlocal root
+		top.destroy()
+		if wakemain:
+			Awake(root)
+	
+	def Continue():
+		nonlocal sessionType, root, file_paths, directory_path
+		if sessionType == 0:
+			CloseLevel(False)
+			STCore.RuntimeAnalysis.startFile = directory_path
+			STCore.RuntimeAnalysis.Awake(root)
+		if sessionType == 1:
+			CloseLevel(False)
+			Destroy()
+			print (file_paths)
+			STCore.ImageSelector.Awake(root, file_paths)
+
+	ttk.Label(TopFrame, text="Crear nueva sesion", font="-weight bold").pack(side=tk.TOP, anchor=tk.NW, fill=tk.X, pady=16, padx=8)
+	ttk.Label(TopFrame, text="Nombre de la sesion").pack(side=tk.TOP, anchor=tk.N, fill=tk.X, pady=16, padx=16)
+	sessionName = tk.StringVar(top, value="Nueva Sesion")
+	entry = ttk.Entry(TopFrame, textvariable=sessionName)
+	entry.pack(side=tk.TOP, anchor=tk.N, fill=tk.X, padx=32)
+
+	rtsession = tk.Frame(TopFrame, relief=tk.FLAT, bg="gray18", height=4)
+	rtsession.pack(anchor=tk.CENTER, fill=tk.X, pady=8)
+	assession = tk.Frame(TopFrame, relief=tk.FLAT, bg="gray18", height=4)
+	assession.pack(anchor=tk.CENTER, fill=tk.X, pady=8)
+
+	rt_cmd = lambda e: SetSessionType(0, rtsession, assession)
+	as_cmd = lambda e: SetSessionType(1, rtsession, assession)
+
+	rtsession.bind('<Button-1>', rt_cmd)
+	assession.bind('<Button-1>', as_cmd)
+
+	rt_title = tk.Label(rtsession,text="Analisis en tiempo real", font="-weight bold", fg="gray80")
+	rt_title.pack(side=tk.TOP)
+	
+	as_title = tk.Label(assession,text="Analisis asincrono", font="-weight bold", fg="gray80")
+	as_title.pack(side=tk.TOP)
+	
+	rt_label = tk.Label(rtsession, text="Comienza un analisis fotometrico en tiempo real con el telescopio\nDebes seleccionar un archivo de muestra que se encuentre en la misma carpeta donde se exportaran los archivos FITS desde el CCD", fg="gray60")
+	rt_label.pack(side=tk.BOTTOM)
+	
+	as_label = tk.Label(assession, text="Selecciona varias imagenes tomadas anteriormente para comenzar un analisis fotometrico de estas\nTambien puedes apilar estas imagenes", fg="gray60")
+	as_label.pack(side=tk.BOTTOM)
+	
+	rt_title.bind('<Button-1>', rt_cmd)
+	as_title.bind('<Button-1>', as_cmd)
+
+	rt_label.bind('<Button-1>', rt_cmd)
+	as_label.bind('<Button-1>', as_cmd)
+
+	SetSessionType(-1, rtsession, assession)
+
+	button_frame = ttk.Frame(top)
+	button_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+	ttk.Button(button_frame, text = "Continuar", style="Highlight.TButton", command=Continue, width=40).pack(side=tk.RIGHT, pady=16, padx=8)
+	ttk.Button(button_frame, text = "Cancelar", command=CloseLevel, width=32).pack(side=tk.RIGHT, pady=16, padx=8)
 	
 
 if __name__ == "__main__":
 	Window = tk.Tk()
-	style =ttk.Style(Window)
+	
 	Window.configure(bg="black")
 	Window.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
 	Window.tk.call('package', 'require', 'awdark')
 
+	import Styles
 	STCore.DataManager.Awake()
 	STCore.Settings.WorkingPath = dirname(abspath(__file__))
 	STCore.DataManager.WorkingPath = dirname(abspath(__file__))
@@ -201,7 +383,7 @@ if __name__ == "__main__":
 	STCore.DataManager.LoadRecent()
 	STCore.DataManager.TkWindowRef = Window
 	StartFrame = None
-	Window.wm_title(string = "StarTrak v1.1.0")
+	Window.wm_title(string = "StarTrak 1.1.0")
 	Window.geometry("1280x640")
 	Window.iconbitmap(STCore.DataManager.WorkingPath+"/icon.ico")
 	STCore.Settings.LoadSettings()
@@ -212,31 +394,7 @@ if __name__ == "__main__":
 	
 	#print(style.theme_names())
 	
-	style.theme_use("awdark")
-	style.configure("Vertical.TScrollbar", gripcount=3,
-                background="#367783", lightcolor="gray35",
-                troughcolor="gray18", bordercolor="gray10", arrowcolor="azure2", relief ="flat",
-				width="20", borderwidth = 0)
-	style.map("Vertical.TScrollbar",
-		background=[ ('!active','#367783'),('pressed', '#49A0AE'), ('active', '#49A0AE')]
-		)
-
-	style.configure("Horizontal.TScale", gripcount=3,
-                background="#49A0AE", lightcolor="gray35",
-                troughcolor="gray8", bordercolor="gray10", arrowcolor="azure2", relief ="flat",
-				width="20", borderwidth = 0)
-	style.map("Horizontal.TScale",
-		background=[ ('!active','#49A0AE'),('pressed', '#49A0AE'), ('active', '#49A0AE')]
-		)
-	style.configure("TFrame", background = "gray15", relief="flat")
-	style.configure("TLabel", background = "gray15", foreground ="gray80")
-	style.configure("TLabelFrame", background = "gray15", highlightcolor="gray15")
-
-	style.configure("TButton", relief = "flat")
-	style.map("TButton",
-		foreground=[('!active', 'gray90'),('pressed', 'gray95'), ('active', 'gray90')],
-		background=[ ('!active','grey20'),('pressed', 'gray26'), ('active', 'gray24')]
-		)	
+	
 	Window.mainloop()
 def GetWindow():
 	return Window 

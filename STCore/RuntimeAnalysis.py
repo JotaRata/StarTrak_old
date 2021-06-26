@@ -30,7 +30,7 @@ def Awake(root):
 
 def LoadFile(root):
 	global startFile, directoryPath, filesList
-	startFile = str(filedialog.askopenfilename(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")]))
+	#startFile = str(filedialog.askopenfilename(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")]))
 	if len(startFile) == 0:
 		print ("Cancelled Analysis")
 		return False
