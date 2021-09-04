@@ -1,43 +1,68 @@
 # coding=utf-8
-from logging import log
-import sys
-from tkinter import Toplevel, font
-from tkinter.filedialog import FileDialog
-
-from astropy.io.fits.card import HIERARCH_VALUE_INDICATOR
-from astropy.io.fits.convenience import info
-from numpy.lib.npyio import load
-if sys.version_info < (3, 0):
-	print ("Star Trak debe iniciar con Python3")
-	quit()
-
-
-print ("\n Cargando StarTrak..")
 
 try:
+	print("Cargando modulos principales..", end=" ")
+	import sys
+	if sys.version_info < (3, 0):
+		print ("Star Trak debe iniciar con Python3")
+		quit()
+	from logging import log
+	from os.path import dirname, abspath, basename, isfile
+	import gc
+	print ("Listo")
+except:
+	raise ImportError("StarTrak no pudo cargar los modulos del sistema.\nCompruebe su instalacion de python.")
+
+try:
+	print ("Iniciando modulos Tk..", end=" ")
+	from tkinter import Toplevel, font
+	from tkinter.filedialog import FileDialog
 	import tkinter as tk
 	from tkinter import filedialog
 	from tkinter import messagebox
 	from tkinter import ttk
+	print ("Listo")
 except:
-	raise ImportError("No se pudo cargar Tkinter")
+	raise ImportError("No se pudo cargar los modulos de Tcl/Tk\nAsegurese que estos modulos esten activados en su instalacion de python.")
+
 try:
+	print("Iniciando NumPy..", end=" ")
+	from numpy.lib.npyio import load
+	print ("Listo")
+except:
+	raise ImportError("NumPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de NumPy usando:\npip3 install numpy")
+
+try:
+	print ("Iniciando AstroPy..", end=" ")
+	from astropy.io.fits.card import HIERARCH_VALUE_INDICATOR
+	from astropy.io.fits.convenience import info
+	print ("Listo")
+except:
+	raise ImportError("AstroPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de AstroPy usando:\npip3 install astropy")
+
+try:
+	print ("Iniciando PIL..", end=" ")
 	from PIL import Image, ImageTk
+	print ("Listo")
 except:
 	raise ImportError("No se pudo cargar Python Image Library\nAsegurate de instalarlo usando:\npip3 install pillow")
 
-from os.path import dirname, abspath, basename, isfile
-import gc
 try:
 	sys.path.append(dirname(dirname(abspath(__file__))))
 except NameError:  # We are the main py2exe script, not a module
 	sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
-import STCore.ImageSelector
-import STCore.Tools
-import STCore.DataManager
-import STCore.Settings
-import STCore.RuntimeAnalysis
-import STCore.utils.Icons as icons
+
+try:
+	print ("Cargando paquetes..", end=" ")
+	import STCore.ImageSelector
+	import STCore.Tools
+	import STCore.DataManager
+	import STCore.Settings
+	import STCore.RuntimeAnalysis
+	import STCore.utils.Icons as icons
+	print ("Listo")
+except Exception as e:
+	raise ImportError("Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n" + e)
 
 
 print ("=" * 60)
