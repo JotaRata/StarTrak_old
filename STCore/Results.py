@@ -41,10 +41,10 @@ def Awake(root, ItemList, TrackedStars):
 	global ResultsFrame, TimeLenght
 	STCore.DataManager.CurrentWindow = 4
 	TimeLenght = Config.SettingsObject.timeLenght
-	ResultsFrame = tk.Frame(root)
+	ResultsFrame = ttk.Frame(root)
 	ResultsFrame.pack(fill = tk.BOTH, expand = 1)
 	canvas = CreateCanvas(root, ResultsFrame, ItemList, TrackedStars)
-	Sidebar = tk.Frame(ResultsFrame, width = 400)
+	Sidebar = ttk.Frame(ResultsFrame, width = 400)
 	Sidebar.pack(side = tk.RIGHT, fill = tk.Y)
 	cmdBack = lambda: (Destroy(), STCore.Tracker.Awake(root, STCore.ImageView.Stars, ItemList))
 	Exportmenu = tk.Menu(root, tearoff=0)
@@ -61,8 +61,9 @@ def Awake(root, ItemList, TrackedStars):
 	else:
 		ttk.Button(Sidebar, text = "Actualizar",image = icons.Icons["restart"], compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, STCore.Tracker.TrackedStars))).grid(row = 0, column = 1)
 	ttk.Button(Sidebar, text = "Configurar", image = icons.Icons["settings"], compound = "left", command = lambda: Config.Awake(root, ItemList, mini = True)).grid(row = 0, column =2)
-	legend = figure.Figure(figsize = (3,4), dpi = 100, facecolor="0.95")
+	legend = figure.Figure(figsize = (3,4), dpi = 100, facecolor="0.25")
 	i = 0
+	legend.set_facecolor("0.15")
 	names = []
 	while i < len(TrackedStars):
 		names.append(TrackedStars[i].star.name)
@@ -213,9 +214,10 @@ def UpdateScale(Realtime = False):
 
 def CreateCanvas(root, app, ItemList, TrackedStars):
 	global PlotAxis, Plots, MagData, PlotCanvas, Constant, BackgroundFlux
-	viewer = tk.Frame(app, width = 700, height = 400, bg = "white")
+	viewer = ttk.Frame(app, width = 700, height = 400)
 	viewer.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
+	fig.set_facecolor("black")
 	PlotAxis = fig.add_subplot(111)
 	progress = tk.DoubleVar()
 	LoadBar = CreateLoadBar(root, progress)
