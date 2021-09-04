@@ -44,13 +44,11 @@ def NewFileCommand():
 	if messagebox.askyesno("Confirmar Nuevo Archivo", "Desea descartar los cambios actuales?"):
 		STCore.DataManager.CurrentFilePath = ""
 		STCore.DataManager.Reset()
+
 def OpenFileCommand():
 	path = filedialog.askopenfilename(filetypes=[("StarTrak Save", "*.trak")])
 	if len(path) == 0:
 		return
-	if path not in STCore.DataManager.RecentFiles:
-		STCore.DataManager.RecentFiles.append(str(path))
-	STCore.DataManager.SaveRecent()
 	STCore.DataManager.LoadData(str(path))
 
 def SaveFileCommand():

@@ -4,8 +4,8 @@ try:
 	print("Cargando modulos principales..", end=" ")
 	import sys
 	if sys.version_info < (3, 0):
-		print ("Star Trak debe iniciar con Python3")
-		quit()
+		raise  SystemError("StarTrak debe ser ejecutado usando  Python3")
+		
 	from logging import log
 	from os.path import dirname, abspath, basename, isfile
 	import gc
@@ -32,6 +32,12 @@ try:
 except:
 	raise ImportError("NumPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de NumPy usando:\npip3 install numpy")
 
+try:
+	print("Iniciando MatplotLib..", end=" ")
+	import matplotlib.pyplot as plt
+	print ("Listo")
+except:
+	raise ImportError("MatplotLib no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de MatplotLib usando:\npip3 install matplotlib")
 try:
 	print ("Iniciando AstroPy..", end=" ")
 	from astropy.io.fits.card import HIERARCH_VALUE_INDICATOR
@@ -116,7 +122,7 @@ def CreateRecent(root):
 		ttk.Label(recentlabel).pack()
 		for p in reversed(STCore.DataManager.RecentFiles):
 
-			file_el = ttk.Button(recentlabel, text = basename(p), cursor="hand2", style= "Highlight.TButton", command= lambda : _helperLoadData(p, root))
+			file_el = ttk.Button(recentlabel, text = p[0], cursor="hand2", style= "Highlight.TButton", command= lambda : _helperLoadData(p[1], root))
 			#l.bind("<Button-1>", _helperOpenFile(p, root))
 			file_el.pack(anchor = tk.W, pady=4, fill=tk.X)
 
@@ -339,6 +345,7 @@ def NewSessionTopLevel(root):
 	
 	def Continue():
 		nonlocal sessionType, root, file_paths, directory_path
+		STCore.DataManager.SessionName = str(sessionName.get())
 		if sessionType == 0:
 			CloseLevel(False)
 			STCore.RuntimeAnalysis.startFile = directory_path

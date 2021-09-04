@@ -1,6 +1,8 @@
 
 from tkinter import ttk
+import matplotlib.pyplot as plt
 
+plt.style.use("dark_background")
 
 style =ttk.Style()
 style.theme_use("awdark")
