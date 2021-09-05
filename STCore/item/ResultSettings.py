@@ -9,3 +9,4 @@ class ResultSetting(object):
 		self.refValue = 0
 		self.tickNumber = 5
 		self.timeLenght = 3600
+		self.plotkind = 0
