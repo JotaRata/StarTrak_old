@@ -481,7 +481,7 @@ def OnMouseRelase(event, stars, ItemList):
 			data = STCore.RuntimeAnalysis.filesList[CurrentFile].data
 			UpdateSidebar(data, stars)
 			if STCore.Results.MagData is not None:
-				STCore.Results.MagData[CurrentFile, SelectedTrack] = STCore.Results.GetValue(data, TrackedStars[SelectedTrack], STCore.Results.Constant,  STCore.Tracker.CurrentFile, GetBackgroundMean(data))
+				STCore.Results.MagData[CurrentFile, SelectedTrack] = STCore.Results.GetMagnitude(data, TrackedStars[SelectedTrack], STCore.Results.Constant,  STCore.Tracker.CurrentFile, GetBackgroundMean(data))
 		except:
 			pass
 	else:

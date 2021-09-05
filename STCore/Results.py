@@ -101,17 +101,7 @@ def GetNameLabel(ItemList):
 	for i in l:
 		t.append(basename(ItemList[i].path))
 	return t
-def GetConstant(data, index, StarIndex, TrackedStars, Ref):
-	track = TrackedStars[StarIndex]
-	pos = list(reversed(track.trackedPos[index]))
-	radius = track.star.radius
-	clipLoc = numpy.clip(pos, radius, (data.shape[0] - radius, data.shape[1] - radius))
-	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
-	Backdata = GetBackground(data)
-	RefFlux = numpy.sum(crop)
-	BackgroundFlux = Backdata[0] * 4 * (radius **2)
-	value = Ref + 2.5 * numpy.log10(RefFlux - BackgroundFlux)
-	return value
+
 
 def GetDateValue(ItemList):
 	global TimeLenght
@@ -213,8 +203,8 @@ def UpdateScale(Realtime = False):
 		MagData = numpy.append(MagData,-numpy.array([added_points]) + Constant, 0)
 	PlotAxis.figure.canvas.draw_idle()
 
-def CreateCanvas(root, app, ItemList, TrackedStars):
-	global PlotAxis, Plots, MagData, PlotCanvas, Constant, BackgroundFlux
+def CreateCanvas(root, app, TrackList, TrackedStars):
+	global PlotAxis, Plots, MagData, PlotCanvas, BackgroundFlux
 	viewer = ttk.Frame(app, width = 700, height = 400)
 	viewer.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)
 	fig = figure.Figure(figsize = (7,4), dpi = 100)
@@ -223,29 +213,28 @@ def CreateCanvas(root, app, ItemList, TrackedStars):
 	progress = tk.DoubleVar()
 	LoadBar = CreateLoadBar(root, progress)
 
-	XAxis, Xlabel, XTicks = GetXTicks(ItemList)
+	XAxis, Xlabel, XTicks = GetXTicks(TrackList)
 	progress.set(20)
 	sleep(0.001)
 	#Xlabel= []
-	Constant = GetConstant(ItemList[0].data, 0, 
-												  max(Config.SettingsObject.refStar, 0),TrackedStars, Config.SettingsObject.refValue)
+	
 	#for item in ItemList:
 	#	Xlabel.append(basename(item.path))
 	Plots = list(range(len(TrackedStars)))
 	if (MagData is None):
 		MagData = numpy.empty((0 ,len(TrackedStars)))
 		i = 0
-		while i < len(ItemList):
-			YAxis = GetTrackedValues(ItemList, TrackedStars, i, Constant)
+		while i < len(TrackList):
+			
+			YAxis = GetTrackedValues(TrackList, TrackedStars, i)
 			MagData = numpy.append(MagData, numpy.atleast_2d(numpy.array(YAxis)), 0)
-			progress.set(20+80*float(i)/len(ItemList))
+			progress.set(20+80*float(i)/len(TrackList))
 			LoadBar[0].update()
 			sleep(0.001)
 			i += 1
 	for a in range(len(Plots)):
-		Plots[a] = PlotAxis.scatter(XAxis, -MagData[:,a] + Constant, label = TrackedStars[a].star.name, picker=2, marker="*")
+		Plots[a] = PlotAxis.scatter(XAxis, -MagData[:,a], label = TrackedStars[a].star.name, picker=2, marker="*")
 	STCore.DataManager.ResultData = MagData
-	STCore.DataManager.ResultConstant = Constant
 	#print MagData.shape
 	LoadBar[0].destroy()
 	#PlotAxis.legend()
@@ -281,7 +270,19 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	bar.pack(fill = tk.X)
 	return popup, label, bar
 
-def GetValue(data, Track, Constant, FileIndex, Backdata):
+def GetConstant(data, index, StarIndex, TrackedStars, Ref):
+	track = TrackedStars[StarIndex]
+	pos = list(reversed(track.trackedPos[index]))
+	radius = track.star.radius
+	clipLoc = numpy.clip(pos, radius, (data.shape[0] - radius, data.shape[1] - radius))
+	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
+	BackgroundMedian = GetBackgroundMean(data)
+	RefFlux = numpy.sum(crop)
+	BackgroundFlux = BackgroundMedian* (radius **2)
+	value = Ref + 2.5 * numpy.log10(RefFlux - BackgroundFlux)
+	return value
+
+def GetMagnitude(data, Track, Constant, FileIndex, BackgroundMedian):
 	global prevFlux
 	radius = Track.star.radius
 	if len(Track.trackedPos) <= FileIndex:
@@ -293,8 +294,11 @@ def GetValue(data, Track, Constant, FileIndex, Backdata):
 	StarFlux = numpy.sum(crop)
 	if FileIndex == 0:
 		prevFlux = StarFlux
-	BackgroundFlux = Backdata * 4 * (radius **2)
-	mag = 2.5 * numpy.log10(StarFlux - BackgroundFlux) #0*Constant -  M
+
+	BackgroundFlux = BackgroundMedian * (radius **2)
+	mag = 2.5 * numpy.log10(StarFlux - BackgroundFlux) - Constant#0*Constant -  M
+
+
 	if Config.SettingsObject.delLostTracks == 1 and FileIndex in Track.lostPoints:
 		mag = numpy.nan
 	if Config.SettingsObject.delError == 1 and abs(numpy.sqrt(StarFlux) - numpy.sqrt(prevFlux)) > numpy.sqrt(Track.star.threshold)*0.5:
@@ -302,16 +306,19 @@ def GetValue(data, Track, Constant, FileIndex, Backdata):
 	prevFlux = StarFlux
 	return mag
 
-def GetTrackedValues(ItemList, TrackedStars, Trackindex, Constant):
+def GetTrackedValues(TrackList, TrackedStars, Trackindex):
 	global prevFlux
 	values=[]
 	index = 0
 	prevFlux = 0
-	data = ItemList[Trackindex].data
+	refIndex = max(Config.SettingsObject.refStar, 0)
+	data = TrackList[Trackindex].data
 	#st = time()
-	Backdata = GetBackgroundMean(data)
+	BackgroundMedian = GetBackgroundMean(data)
+	RefMag = GetMagnitude(data, TrackedStars[refIndex], Config.SettingsObject.refValue, Trackindex, BackgroundMedian)
+
 	while index < len(TrackedStars):
-		mag = GetValue(data, TrackedStars[index], Constant, Trackindex, Backdata)
+		mag = GetMagnitude(data, TrackedStars[index], RefMag, Trackindex, BackgroundMedian)
 		values.append(mag)
 		index += 1
 	#print "elapsed: ", time() -st

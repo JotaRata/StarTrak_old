@@ -63,7 +63,7 @@ def UpdateFileList(root, path):
 	if STCore.DataManager.CurrentWindow == 3:
 		return
 	while stIndex < len(STCore.Tracker.TrackedStars):
-		value = STCore.Results.GetValue(data, STCore.Tracker.TrackedStars[stIndex], STCore.Results.Constant,  STCore.Tracker.CurrentFile, GetBackgroundMean(data))
+		value = STCore.Results.GetMagnitude(data, STCore.Tracker.TrackedStars[stIndex], STCore.Results.Constant,  STCore.Tracker.CurrentFile, GetBackgroundMean(data))
 		X = GetXTick(STCore.Tracker.CurrentFile)
 		point = [X, -value +  STCore.Results.Constant]
 		STCore.Results.AddPoint(point, stIndex)
