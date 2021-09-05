@@ -55,13 +55,13 @@ def Awake(root, ItemList, TrackedStars):
 
 	exportbutton = ttk.Button(Sidebar, text = "Exportar",image = icons.Icons["export"], compound = "left")
 	exportbutton.bind("<Button-1>", lambda event: PopupMenu(event, Exportmenu))
-	exportbutton.grid(row = 0, column = 3)
+	exportbutton.pack(side=tk.TOP)
 	if STCore.DataManager.RuntimeEnabled == False:
-		ttk.Button(Sidebar, text = "Volver", command = cmdBack, image = icons.Icons["prev"], compound = "left").grid(row = 0, column = 0)
+		ttk.Button(Sidebar, text = "Volver", command = cmdBack, image = icons.Icons["prev"], compound = "left").pack(side=tk.TOP)
 	else:
-		ttk.Button(Sidebar, text = "Actualizar",image = icons.Icons["restart"], compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, STCore.Tracker.TrackedStars))).grid(row = 0, column = 1)
-	ttk.Button(Sidebar, text = "Configurar", image = icons.Icons["settings"], compound = "left", command = lambda: Config.Awake(root, ItemList, mini = True)).grid(row = 0, column =2)
-	legend = figure.Figure(figsize = (3,4), dpi = 100, facecolor="0.25")
+		ttk.Button(Sidebar, text = "Actualizar",image = icons.Icons["restart"], compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, STCore.Tracker.TrackedStars))).pack(side=tk.TOP)
+	ttk.Button(Sidebar, text = "Configurar", image = icons.Icons["settings"], compound = "left", command = lambda: Config.Awake(root, ItemList, mini = True)).pack(side=tk.TOP)
+	legend = figure.Figure(figsize = (1,1), dpi = 100, facecolor="0.25")
 	i = 0
 	legend.set_facecolor("0.15")
 	names = []
@@ -71,7 +71,8 @@ def Awake(root, ItemList, TrackedStars):
 	legend.legend(Plots, names, loc = 'upper center', fancybox = False, mode ="expand", shadow = False, )
 	LegendCanvas = FigureCanvasTkAgg(legend, master=Sidebar)
 	LegendCanvas.draw()
-	LegendCanvas.get_tk_widget().grid(row = 1, column = 0, columnspan = 3, rowspan = 4, sticky = tk.NSEW)
+	LegendCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.X)
+	Config.Awake(Sidebar, ItemList, toplevel=False)
 
 def PopupMenu(event, Menu):
 	Menu.post(event.x_root, event.y_root)
@@ -242,7 +243,7 @@ def CreateCanvas(root, app, ItemList, TrackedStars):
 			sleep(0.001)
 			i += 1
 	for a in range(len(Plots)):
-		Plots[a] = PlotAxis.scatter(XAxis, -MagData[:,a] + Constant, label = TrackedStars[a].star.name, picker=2)
+		Plots[a] = PlotAxis.scatter(XAxis, -MagData[:,a] + Constant, label = TrackedStars[a].star.name, picker=2, marker="*")
 	STCore.DataManager.ResultData = MagData
 	STCore.DataManager.ResultConstant = Constant
 	#print MagData.shape

@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from STCore.item import ResultSettings
 import numpy
 from matplotlib import use, figure
 use("TkAgg")
@@ -148,7 +149,7 @@ def CreateSidebar(root, ItemList, stars):
 	ApplyMenu = tk.Menu(Sidebar, tearoff=0)
 	ApplyMenu.add_command(label="Analizar", command=cmdNext)
 	if STCore.ResultsConfigurator.SettingsObject is not None:
-		ApplyMenu.add_command(label="Configurar analisiss", command=lambda: ResultSetting(root, ItemList))
+		ApplyMenu.add_command(label="Configurar analisiss", command=lambda: OpenResults(root, ItemList))
 	ApplyMenu.add_command(label="Componer imagen", command=lambda : CompositeNow(root, ItemList))
 
 	buttonsFrame = ttk.Frame(Sidebar, width = 200)
@@ -198,19 +199,18 @@ def CompositeNow(root, ItemList):
 		return
 	Destroy()
 	STCore.Composite.Awake(root, ItemList, TrackedStars)
-def ResultSetting(root, ItemList):
+def OpenResults(root, ItemList):
 	if len(TrackedStars[0].trackedPos) > 0:
-		STCore.ResultsConfigurator.Awake(root, ItemList, TrackedStars)
+		STCore.Results.Awake(root, ItemList, TrackedStars)
 	else:
 		messagebox.showerror("Error", "No hay estrellas restreadas.")
 
 def Apply(root, ItemList):
 	if len(TrackedStars[0].trackedPos) > 0:
 		if (STCore.ResultsConfigurator.SettingsObject is None):
-			STCore.ResultsConfigurator.Awake(root, ItemList[0:len(TrackedStars[0].trackedPos)], TrackedStars)
-		else:
-			Destroy()
-			STCore.Results.Awake(root, ItemList[0:len(TrackedStars[0].trackedPos)], TrackedStars)
+			STCore.ResultsConfigurator.SettingsObject = ResultSettings.ResultSetting()		
+		Destroy()
+		STCore.Results.Awake(root, ItemList[0:len(TrackedStars[0].trackedPos)], TrackedStars)
 	else:
 		messagebox.showerror("Error", "No hay estrellas restreadas.")
 

@@ -78,14 +78,17 @@ def Apply(root, ItemList, TrackedStars):
 												  max(SettingsObject.refStar, 0), TrackedStars, SettingsObject.refValue)
 		STCore.Results.UpdateConstant(ItemList)
 		return;
-def Awake(root, ItemList, mini = False):
+def Awake(root, ItemList, mini = False, toplevel = True):
 	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_
-	ConfiguratorFrame = tk.Toplevel(root)
-	ConfiguratorFrame.wm_title(string = "Configurar analisis")
-	ConfiguratorFrame.resizable(False, False)
+	if toplevel:
+		ConfiguratorFrame = tk.Toplevel(root)
+		ConfiguratorFrame.wm_title(string = "Configurar analisis")
+		ConfiguratorFrame.resizable(False, False)
+		ConfiguratorFrame.protocol("WM_DELETE_WINDOW", lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), ConfiguratorFrame.destroy()))
+		ConfiguratorFrame.attributes('-topmost', 'true')
+	else:
+		ConfiguratorFrame = root
 	Load()
-	ConfiguratorFrame.protocol("WM_DELETE_WINDOW", lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), ConfiguratorFrame.destroy()))
-	ConfiguratorFrame.attributes('-topmost', 'true')
 	MainPanel = ttk.Frame(ConfiguratorFrame)
 	MainPanel.pack(side=tk.LEFT, fill = tk.Y, anchor = tk.N)
 	TrackedStars = STCore.Tracker.TrackedStars
@@ -114,8 +117,8 @@ def Awake(root, ItemList, mini = False):
 
 	Sidebar = ttk.Frame(ConfiguratorFrame)
 	Sidebar.pack(side = tk.RIGHT, fill = tk.Y, anchor = tk.N)
-	ttk.Button(Sidebar, text = "Cancelar", command =  lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), ConfiguratorFrame.destroy())).grid(row = 1, column = 0)
-	ttk.Button(Sidebar, text = "Analizar", command = lambda:(ConfiguratorFrame.destroy(), Apply(root, ItemList, TrackedStars))).grid(row = 0, column = 0)
+	#ttk.Button(Sidebar, text = "Cancelar", command =  lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), ConfiguratorFrame.destroy())).grid(row = 1, column = 0)
+	ttk.Button(Sidebar, text = "Aplicar", command = lambda:Apply(root, ItemList, TrackedStars)).grid(row = 0, column = 0)
 def UpdateReferences(RefFrame, TrackedStars):
 	for child in RefFrame.winfo_children():
 		child.destroy()
