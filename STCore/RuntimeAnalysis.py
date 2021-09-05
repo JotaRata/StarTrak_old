@@ -100,9 +100,15 @@ def WatchDir(root):
 				try:
 					UpdateFileList(root, os.path.join(directoryPath, str(a)))
 					time.sleep(0.001)
-				except Exception as e:
-						print ("No se pudo abrir el archivo: ", str(a))
-						print (e)
+				except:
+						print ("Algo impidio que se abriera", str(a), "Intentandolo otra vez.. (1/2)")
+						
+						try:
+							UpdateFileList(root, os.path.join(directoryPath, str(a)))
+							time.sleep(0.001)
+						except Exception as e:
+							print ("No se pudo abrir el archivo: ", str(a), "(2/2)")
+							print (e)
 						pass
 		if removed: print ("Removed: ", ", ".join (removed))
 		dirState = after
