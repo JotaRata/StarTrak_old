@@ -1,18 +1,18 @@
 # coding=utf-8
 
-import Tkinter as tk
-import ttk
+import tkinter as tk
 from PIL import Image, ImageTk
 from astropy.io import fits
+#import pyfits as fits
 from os.path import basename, getmtime, isfile
-from time import sleep, strftime, localtime
-import tkFileDialog
-import tkMessageBox
+from time import sleep, strftime, localtime, strptime,gmtime
+from tkinter import filedialog, messagebox, ttk
 from STCore.item.File import FileItem
 import STCore.ImageView
 import STCore.DataManager
 import numpy
 from functools import partial
+import STCore.utils.Icons as icons
 #region Variables
 SelectorFrame = None
 ImagesFrame = None
@@ -29,19 +29,37 @@ def LoadFiles(paths, root):
 	LoadWindow = CreateLoadBar(root, Progress)
 	LoadWindow[0].update()
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
-	sortedP = sorted(paths, key=lambda f: int(filter(str.isdigit, str(f))))
-	map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
+	sortedP = sorted(paths, key=lambda f: Sort(f))
+	n = 0
+	print ("-"*60)
+	[SetFileItems(x, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root) for x in sortedP]
+	#map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
 	loadIndex = 0
 	
 	LoadWindow[0].destroy()
-	ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
+	ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(ItemList)*240/4))
+
+def Sort(path):
+	if any(char.isdigit() for char in path):
+		return int("".join(filter(str.isdigit, str(path))))
+	else:
+		return str(path)
 
 def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	global loadIndex
+
+	print (path)
 	item = FileItem()
 	item.path = str(path)
-	item.data, header = fits.getdata(item.path, header = True)
-	item.date = getmtime(item.path)
+	item.data, hdr = fits.getdata(item.path, header = True)
+	#item.date = fits.header['NOTE'].split()[3]
+	# Request DATE-OBS keyword to extract date information (previously used NOTE keyword which was not always available)
+	try:
+		item.date = strptime(hdr["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
+	except:
+		print ("File has no DATE-OBS keyword in Header   -   using system time instead..")
+		item.date = gmtime(getmtime(item.path))
+		pass
 	#print strftime('%H/%M/%S', localtime(item.date))
 	#item.timee = header['NOTE'].split()[3]
 	item.active = 1
@@ -58,58 +76,75 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 def Awake(root, paths = []):
 	global SelectorFrame, ItemList, ImagesFrame, ScrollView
 	STCore.DataManager.CurrentWindow = 1
-	SelectorFrame = tk.Frame(root)
+	SelectorFrame = ttk.Frame(root)
 	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
-	tk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
-	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width(), len(paths)*220/4))
+	ttk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
+	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-80, len(paths)*220/4), width = root.winfo_width()-180, bg= "gray15", bd=0, relief="flat")
 	ScrollBar = ttk.Scrollbar(SelectorFrame, command=ScrollView.yview)
 	ScrollView.config(yscrollcommand=ScrollBar.set)  
-	ScrollView.pack(expand = 1, fill = tk.BOTH, anchor = tk.NW, side = tk.LEFT)
+	ScrollView.pack(expand = 0, fill = tk.BOTH, anchor = tk.NW, side = tk.LEFT)
 	ScrollBar.pack(side = tk.LEFT,fill=tk.Y) 
-	ImagesFrame = tk.Frame()
-	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 120)
+	ImagesFrame = ttk.Frame(height=root.winfo_height())
+	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 180)
+	buttonFrame = ttk.Frame(SelectorFrame, width = 80)
+	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH, expand = 1)
+	for c in range(1):
+		tk.Grid.columnconfigure(buttonFrame, c, weight=1)
+	style = ttk.Style()
+	style.configure("Left.TButton", anchor = tk.E)
+	CleanButton = ttk.Button(buttonFrame, text="Limpiar todo     ", command = lambda: ClearList(root), state = tk.DISABLED,  image = icons.Icons["delete"], compound = "right",style = "Left.TButton")
+	CleanButton.image = icons.Icons["delete"]
+	CleanButton.grid(row=2, column=0, sticky = tk.EW, pady=5)
+	AddButton = ttk.Button(buttonFrame, text=  "Agregar archivo  ", command = lambda: AddFiles(root), state = tk.DISABLED, image = icons.Icons["multi"], compound = "right",style = "Left.TButton")
+	AddButton.grid(row=1, column=0, sticky = tk.EW, pady=5)
+	ApplyButton = ttk.Button(buttonFrame, text="Continuar        ", command = lambda: Apply(root), state = tk.DISABLED, image = icons.Icons["next"], compound = "right",style = "Left.TButton")
+	ApplyButton.grid(row=0, column=0, sticky = tk.EW, pady=5)
+
+	# Saved File
 	if len(ItemList) != 0 and len(paths) == 0:
 		ind = 0
 		Progress = tk.DoubleVar()
 		LoadWindow = CreateLoadBar(root, Progress, title = "Cargando "+basename(STCore.DataManager.CurrentFilePath))
 		while ind < len(ItemList):
 			if ItemList[ind].data is None:
-				if isfile(ItemList[ind].path):
-					ItemList[ind].data = fits.getdata(ItemList[ind].path)
-					ItemList[ind].date = getmtime(ItemList[ind].path)
+				if ItemList[ind].Exists():
+					ItemList[ind].data, hdr = fits.getdata(ItemList[ind].path, header = True)
+					try:
+						ItemList[ind].date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
+					except:
+						print ("File has no Header!   -   using system time instead..")
+						ItemList[ind].date = gmtime(getmtime(ItemList[ind].path))
+						pass
 					Progress.set(100*float(ind)/len(ItemList))
 					LoadWindow[0].update()
 				else:
-					tkMessageBox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ ItemList[ind].path)
+					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ ItemList[ind].path)
 					break	
-			ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(ItemList)*240/4))
+			ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(ItemList)*240/4))
 			CreateFileGrid(ind, ItemList[ind], root)
 			ind += 1
 		LoadWindow[0].destroy()
 	else:
 		LoadFiles(paths, root)
-	
-	buttonFrame = tk.Frame(SelectorFrame, width = 400)
-	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH)
-	ttk.Button(buttonFrame, text="Limpiar todo", command = lambda: ClearList(root)).grid(row=2, column=0, sticky = tk.EW, pady=5)
-	ttk.Button(buttonFrame, text="Agregar archivo", command = lambda: AddFiles(root)).grid(row=1, column=0, sticky = tk.EW, pady=5)
-	ttk.Button(buttonFrame, text="Continuar", command = lambda: Apply(root)).grid(row=0, column=0, sticky = tk.EW, pady=5)
-
+	CleanButton.config(state = tk.NORMAL)
+	ApplyButton.config(state = tk.NORMAL)
+	AddButton.config(state = tk.NORMAL)
 
 def GridPlace(root, index, size):
 	maxrows = root.winfo_height()/size
-	maxcols = root.winfo_width()/size
+	maxcols = (root.winfo_width()-180) / size - 1
 	col = index
 	row = 0
 	while col >= maxcols:
 		col -= maxcols
 		row += 1
-	return row, col
+	return int(row), int(col)
 
 def CreateLoadBar(root, progress, title = "Cargando.."):
 	popup = tk.Toplevel()
 	popup.geometry("300x60+%d+%d" % (root.winfo_width()/2,  root.winfo_height()/2) )
 	popup.wm_title(string = title)
+	popup.attributes('-topmost', 'true')
 	popup.overrideredirect(1)
 	pframe = tk.LabelFrame(popup)
 	pframe.pack(fill = tk.BOTH, expand = 1)
@@ -120,22 +155,23 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	return popup, label, bar
 
 def CreateFileGrid(index, item, root):
-	GridFrame = tk.LabelFrame(ImagesFrame, width = 200, height = 200)
+	
+	GridFrame = tk.LabelFrame(ImagesFrame, width = 200, height = 200, bg="gray30", relief="flat")
 	Row, Col = GridPlace(root, index, 250)
 	GridFrame.grid(row = Row, column = Col, sticky = tk.NSEW, padx = 20, pady = 20)
 	dat = item.data.astype(float)
-	minv = numpy.min(dat)
-	maxv = numpy.max(dat)
+	minv = numpy.percentile(dat, 1)
+	maxv = numpy.percentile(dat, 99.8)
 	thumb = numpy.clip(255*(dat - minv)/(maxv - minv), 0, 255).astype(numpy.uint8)
 	Pic = Image.fromarray(thumb)
 	Pic.thumbnail((200, 200))
 	Img = ImageTk.PhotoImage(Pic)
-	tk.Label(GridFrame, text=basename(item.path)).grid(row=0,column=0, sticky=tk.W)
+	ttk.Label(GridFrame, text=basename(item.path)).grid(row=0,column=0, sticky=tk.W)
 	isactive =tk.IntVar(ImagesFrame, value=item.active)
-	Ckeckbox = tk.Checkbutton(GridFrame, variable = isactive)
+	Ckeckbox = ttk.Checkbutton(GridFrame, variable = isactive)
 	Ckeckbox.grid(row=0,column=1, sticky=tk.E)
 	isactive.trace("w", lambda a,b,c: SetActive(item, isactive, c))
-	ImageLabel = tk.Label(GridFrame, image = Img, width = 200, height = 200 * item.data.shape[0]/float(item.data.shape[1]))
+	ImageLabel = ttk.Label(GridFrame, image =Img, width = 200, state="focus")
 	ImageLabel.image = Img
 	ImageLabel.grid(row=1,column=0, columnspan=2)
 
@@ -150,7 +186,7 @@ def SetFilteredList():
 def Apply(root):
 	SetFilteredList()
 	if len(FilteredList) == 0:
-		tkMessageBox.showerror("Error", "Debe seleccionar al menos un archivo")
+		messagebox.showerror("Error", "Debe seleccionar al menos un archivo")
 		return
 	Destroy()
 	# Crea otra lista identica pero solo conteniendo los valores path y active  para liberar espacio al guardar #
@@ -176,8 +212,8 @@ def ClearList(root):
 		pass
 
 def AddFiles(root):
-	paths = tkFileDialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
-	paths = root.tk.splitlist(paths)
+	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
+	print (paths)
 	STCore.Tracker.DataChanged = True
 	LoadFiles(paths, root)
 

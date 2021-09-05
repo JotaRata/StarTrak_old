@@ -1,0 +1,10 @@
+# Ignore Python compiled files
+*.pyc
+
+# Ignore sample folders
+AEFor/
+
+# Ignore vscode folders
+
+.vs/
+.vscode/

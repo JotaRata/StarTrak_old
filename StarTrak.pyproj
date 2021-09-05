@@ -24,6 +24,12 @@
     <Compile Include="STCore\Composite.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="setup.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="STCore\RuntimeAnalysis.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="STCore\utils\Exporter.py">
       <SubType>Code</SubType>
     </Compile>
@@ -71,6 +77,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="STCore\utils\backgroundEstimator.py" />
+    <Compile Include="STCore\utils\Icons.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="STCore\utils\thicc.py" />
     <Compile Include="STCore\utils\__init__.py" />
     <Compile Include="STCore\__init__.py" />
@@ -79,11 +88,13 @@
     <InterpreterReference Include="Global|PythonCore|2.7" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="C:\Users\Jota\Documents\GitHub\StarTrak\STCore\" />
     <Folder Include="STCore\" />
-    <Folder Include="C:\Users\Jota\Documents\GitHub\StarTrak\STCore\item\" />
+    <Folder Include="STCore\icons\" />
     <Folder Include="STCore\item\" />
     <Folder Include="STCore\utils\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="STCore\icons\delete.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

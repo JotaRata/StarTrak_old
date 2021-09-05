@@ -1,14 +1,14 @@
 # coding=utf-8
-import Tkinter as tk
-import ttk
-import ConfigParser
+import tkinter as tk
+from tkinter import ttk
+import configparser
 from os.path import isfile
 from os import remove
 import STCore.DataManager
 #region Variables
 SettingsFrame = None
 Window = None
-VisModes = ("Linear", "Raiz cuadrada", "Logartitmico")
+VisModes = ("Linear", "Raiz cuadrada", "Logaritmico")
 VisColors = ("Escala de grises", "Temperatura", "Arcoiris", "Negativo")
 ThrNumber = ("1", "2", "3", "4")
 WorkingPath = ""
@@ -25,24 +25,24 @@ _SHOW_TRACKEDPOS_ = None
 
 def LoadSettings():
 	global _RECENT_FILES_, _PROCESS_NUMBER_, _SHOW_GRID_, _VISUAL_MODE_, _VISUAL_COLOR_, _TRACK_PREDICTION_, _SHOW_TRACKEDPOS_
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	if (isfile(WorkingPath+"/settings.ini")):
 		config.read(WorkingPath+"/settings.ini")
 	else:
-		print "Setting file not found, creating new file.."
+		print ("Setting file not found, creating new file..")
 		SaveSettingsDefault()
 		LoadSettings()
 		return
-	_RECENT_FILES_ = tk.IntVar(value = int(config.get("GENERAL","_SHOW_RECENT_FILES_", 1)))
-	_PROCESS_NUMBER_ = tk.StringVar(value = ThrNumber[int(config.get("GENERAL","_THREADS_NUMBER_", 3))])
-	_SHOW_GRID_ =   tk.IntVar(value = int(config.get("VISUALIZATION","_SHOW_GRID_", 0)))
-	_VISUAL_MODE_ = tk.StringVar(value = VisModes[int(config.get("VISUALIZATION","_SCALE_MODE_", 0))])
-	_VISUAL_COLOR_ = tk.StringVar(value = VisColors[int(config.get("VISUALIZATION","_COLOR_MODE_", 0))])
-	_TRACK_PREDICTION_ = tk.IntVar(value = int(config.get("TRACKING","_USE_PREDICTION_", 1)))
-	_SHOW_TRACKEDPOS_ = tk.IntVar(value = int(config.get("TRACKING","_SHOW_TRACKS_", 1)))
+	_RECENT_FILES_ = tk.IntVar(value = int(config.get("GENERAL","_SHOW_RECENT_FILES_")))
+	_PROCESS_NUMBER_ = tk.StringVar(value = ThrNumber[int(config.get("GENERAL","_THREADS_NUMBER_"))])
+	_SHOW_GRID_ =   tk.IntVar(value = int(config.get("VISUALIZATION","_SHOW_GRID_")))
+	_VISUAL_MODE_ = tk.StringVar(value = VisModes[int(config.get("VISUALIZATION","_SCALE_MODE_"))])
+	_VISUAL_COLOR_ = tk.StringVar(value = VisColors[int(config.get("VISUALIZATION","_COLOR_MODE_"))])
+	_TRACK_PREDICTION_ = tk.IntVar(value = int(config.get("TRACKING","_USE_PREDICTION_")))
+	_SHOW_TRACKEDPOS_ = tk.IntVar(value = int(config.get("TRACKING","_SHOW_TRACKS_")))
 
 def SaveSettingsDefault():
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	config.add_section("GENERAL")
 	config.set("GENERAL", "_SHOW_RECENT_FILES_", 1)
 	config.set("GENERAL", "_THREADS_NUMBER_", 3)
@@ -59,7 +59,7 @@ def SaveSettingsDefault():
 		 config.write(configfile)
 
 def SaveSettings():
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	config.add_section("GENERAL")
 	config.add_section("VISUALIZATION")
 	config.add_section("TRACKING")
@@ -78,13 +78,17 @@ def SaveSettings():
 		STCore.ImageView.UpdateImage()
 	if STCore.DataManager.CurrentWindow == 3:
 		STCore.Tracker.UpdateImage()
-	Window.destroy()
+	CloseWindow()
 
 def Awake(root):
 	global Window,SettingsFrame
 	global _RECENT_FILES_, _PROCESS_NUMBER_, _SHOW_GRID_, _VISUAL_MODE_, _VISUAL_COLOR_, _TRACK_PREDICTION_, _SHOW_TRACKEDPOS_
+	if Window is not None:
+		return
 	Window = tk.Toplevel(root)
 	Window.wm_title(string = "Configuración")
+	Window.protocol("WM_DELETE_WINDOW", CloseWindow)
+	Window.attributes('-topmost', 'true')
 	Window.resizable(False, False)
 	SettingsFrame = tk.Frame(Window)
 	SettingsFrame.pack(fill = tk.BOTH, expand = 1, side = tk.LEFT)
@@ -114,5 +118,10 @@ def Awake(root):
 
 	BottomPanel = tk.Frame(Window)
 	BottomPanel.pack(side = tk.RIGHT, fill = tk.Y)
-	ttk.Button(BottomPanel, text = "Cancelar", command = Window.destroy).grid(row = 1, column = 0)
+	ttk.Button(BottomPanel, text = "Cancelar", command = CloseWindow).grid(row = 1, column = 0)
 	ttk.Button(BottomPanel, text = "Aceptar", command = SaveSettings).grid(row = 0, column = 0)
+
+def CloseWindow():
+	global Window
+	Window.destroy()
+	Window = None

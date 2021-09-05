@@ -1,16 +1,16 @@
-import Tkinter as tk
-import ttk
+import tkinter as tk
+from tkinter import ttk
 import STCore.DataManager
 import STCore.Settings
-import tkFileDialog
-import tkMessageBox
+from tkinter import filedialog
+from tkinter import messagebox
 import webbrowser
 #region Variables
 ToolbarFrame = None
 #endregion
 
 def Awake(root):
-	menubar = tk.Menu(root)
+	menubar = tk.Menu(root, activebackground="grey")
 
 	filemenu = tk.Menu(menubar, tearoff=0)
 	filemenu.add_command(label="Nuevo", command=NewFileCommand)
@@ -41,34 +41,32 @@ def Awake(root):
 	root.config(menu=menubar)
 
 def NewFileCommand():
-	if tkMessageBox.askyesno("Confirmar Nuevo Archivo", "Desea descartar los cambios actuales?"):
+	if messagebox.askyesno("Confirmar Nuevo Archivo", "Desea descartar los cambios actuales?"):
 		STCore.DataManager.CurrentFilePath = ""
 		STCore.DataManager.Reset()
+
 def OpenFileCommand():
-	path = tkFileDialog.askopenfilename(filetypes=[("StarTrak Save", "*.trak")])
+	path = filedialog.askopenfilename(filetypes=[("StarTrak Save", "*.trak")])
 	if len(path) == 0:
 		return
-	if path not in STCore.DataManager.RecentFiles:
-		STCore.DataManager.RecentFiles.append(str(path))
-	STCore.DataManager.SaveRecent()
 	STCore.DataManager.LoadData(str(path))
 
 def SaveFileCommand():
-	path = tkFileDialog.asksaveasfilename(confirmoverwrite = True, filetypes=[("StarTrak Save", "*.trak")], defaultextension = "*.trak")
+	path = filedialog.asksaveasfilename(confirmoverwrite = True, filetypes=[("StarTrak Save", "*.trak")], defaultextension = "*.trak")
 	if len(path) == 0:
 		return
 	STCore.DataManager.SaveData(str(path))
 	
 def QuitAppCommand(root):
-	if tkMessageBox.askyesno("Confirmar Salida", "Desea descartar los cambios actuales?"):
+	if messagebox.askyesno("Confirmar Salida", "Desea descartar los cambios actuales?"):
 		root.destroy()
 
 def OpenSettingsCommand(root):
 	STCore.Settings.Awake(root)
 def hello():
-	print "Coming soon.."
+	print ("Coming soon..")
 def Help():
-	webbrowser.open("file://"+STCore.DataManager.WorkingPath+"/STCore/help/help.html")
+	webbrowser.open("file://"+STCore.DataManager.WorkingPath+"/help/help.html")
 def About():
 	top = tk.Toplevel()
 	top.wm_title(string = "Acerca de")
