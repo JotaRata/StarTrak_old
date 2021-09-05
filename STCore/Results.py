@@ -145,21 +145,28 @@ def AddPoint(point, stIndex):
 	Plots[stIndex].set_offsets(new_off)
 	Plots[stIndex].axes.figure.canvas.draw_idle()
 
-def UpdateConstant(ItemList):
-	global MagData, PlotAxis, Constant
-	temp = GetLimits()
-	temp = None
-	XAxis, Xlabel, XTicks = GetXTicks(ItemList)
+def UpdateGraph(ItemList):
+	global MagData, PlotAxis
+	
 	TrackedStars = STCore.Tracker.TrackedStars
+
+	RegisterMagnitudes(ItemList, TrackedStars)
+	DrawGraph(ItemList, TrackedStars)
+	UpdateScale()
+
+def DrawGraph(ItemList, TrackedStars):
+	global MagData, PlotAxis
+	XAxis, Xlabel, XTicks = GetXTicks(ItemList)
 	PlotAxis.clear()
+	
 	for a in range(len(Plots)):
-		Plots[a] = None
-	for a in range(len(Plots)):
-		Plots[a] = PlotAxis.scatter(XAxis, -MagData[:,a] + Constant, label = TrackedStars[a].star.name, picker = 2)
+		Plots[a] = PlotAxis.scatter(XAxis, -MagData[:,a], label = TrackedStars[a].star.name, picker = 2, marker="*")
 	PlotAxis.set_xticks(XTicks)
 	PlotAxis.grid(axis = "y")
 	PlotAxis.set_xticklabels(Xlabel)
-	UpdateScale()
+
+	for tick in PlotAxis.get_xticklabels():
+		tick.set_rotation(0)
 
 def GetLimits():
 	global TimeLenght
@@ -191,7 +198,7 @@ def GetLimits():
 	return Xmin, Xmax, Ymin, Ymax, added_points
 
 def UpdateScale(Realtime = False):
-	global MagData, TimeLenght, Constant
+	global MagData, TimeLenght
 	Xmin, Xmax, Ymin, Ymax, added_points = GetLimits()
 	if not numpy.isnan(Xmin) or not numpy.isnan(Xmax):
 		PlotAxis.set_xlim(Xmin-0.1*(Xmax-Xmin),Xmax+0.1*(Xmax-Xmin))
@@ -200,7 +207,7 @@ def UpdateScale(Realtime = False):
 	#PlotAxis.invert_yaxis()	
 	#PlotAxis.grid(axis = "y")
 	if Realtime == True:
-		MagData = numpy.append(MagData,-numpy.array([added_points]) + Constant, 0)
+		MagData = numpy.append(MagData,-numpy.array([added_points]), 0)
 	PlotAxis.figure.canvas.draw_idle()
 
 def CreateCanvas(root, app, TrackList, TrackedStars):
@@ -211,42 +218,27 @@ def CreateCanvas(root, app, TrackList, TrackedStars):
 	fig.set_facecolor("black")
 	PlotAxis = fig.add_subplot(111)
 	progress = tk.DoubleVar()
-	LoadBar = CreateLoadBar(root, progress)
+	#LoadBar = CreateLoadBar(root, progress)
 
-	XAxis, Xlabel, XTicks = GetXTicks(TrackList)
-	progress.set(20)
-	sleep(0.001)
-	#Xlabel= []
+	#XAxis, Xlabel, XTicks = GetXTicks(TrackList)
 	
-	#for item in ItemList:
-	#	Xlabel.append(basename(item.path))
 	Plots = list(range(len(TrackedStars)))
-	if (MagData is None):
-		MagData = numpy.empty((0 ,len(TrackedStars)))
-		i = 0
-		while i < len(TrackList):
-			
-			YAxis = GetTrackedValues(TrackList, TrackedStars, i)
-			MagData = numpy.append(MagData, numpy.atleast_2d(numpy.array(YAxis)), 0)
-			progress.set(20+80*float(i)/len(TrackList))
-			LoadBar[0].update()
-			sleep(0.001)
-			i += 1
-	for a in range(len(Plots)):
-		Plots[a] = PlotAxis.scatter(XAxis, -MagData[:,a], label = TrackedStars[a].star.name, picker=2, marker="*")
+	RegisterMagnitudes(TrackList, TrackedStars)
+
+	DrawGraph(TrackList, TrackedStars)
+	
+	#for a in range(len(Plots)):
+	#	Plots[a] = PlotAxis.scatter(XAxis, -MagData[:,a], label = TrackedStars[a].star.name, picker=2, marker="*")
 	STCore.DataManager.ResultData = MagData
-	#print MagData.shape
-	LoadBar[0].destroy()
-	#PlotAxis.legend()
-	#UpdateScale()
+	
 	GetLimits()
 	ticks = Config.SettingsObject.tickNumber
-	PlotAxis.set_xticks(XTicks)
-	PlotAxis.set_xticklabels(Xlabel)
+	#PlotAxis.set_xticks(XTicks)
+	#PlotAxis.set_xticklabels(Xlabel)
 	for tick in PlotAxis.get_xticklabels():
 		tick.set_rotation(0)
 	#PlotAxis.invert_yaxis()	
-	PlotAxis.grid(axis = "y")
+	#PlotAxis.grid(axis = "y")
 	PlotCanvas = FigureCanvasTkAgg(fig,master=viewer)
 	PlotCanvas.draw()
 	PlotCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
@@ -255,6 +247,15 @@ def CreateCanvas(root, app, TrackList, TrackedStars):
 	PlotCanvas.mpl_connect('key_release_event', OnKeyRelase)
 	UpdateScale()
 	return PlotCanvas, fig, MagData
+
+def RegisterMagnitudes(TrackList, TrackedStars):
+	global MagData
+	MagData = numpy.empty((0 ,len(TrackedStars)))
+	i = 0
+	while i < len(TrackList):
+		YAxis = GetTrackedValues(TrackList, TrackedStars, i)
+		MagData = numpy.append(MagData, numpy.atleast_2d(numpy.array(YAxis)), 0)
+		i += 1
 
 def CreateLoadBar(root, progress, title = "Cargando.."):
 	popup = tk.Toplevel()
@@ -270,19 +271,9 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	bar.pack(fill = tk.X)
 	return popup, label, bar
 
-def GetConstant(data, index, StarIndex, TrackedStars, Ref):
-	track = TrackedStars[StarIndex]
-	pos = list(reversed(track.trackedPos[index]))
-	radius = track.star.radius
-	clipLoc = numpy.clip(pos, radius, (data.shape[0] - radius, data.shape[1] - radius))
-	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
-	BackgroundMedian = GetBackgroundMean(data)
-	RefFlux = numpy.sum(crop)
-	BackgroundFlux = BackgroundMedian* (radius **2)
-	value = Ref + 2.5 * numpy.log10(RefFlux - BackgroundFlux)
-	return value
 
-def GetMagnitude(data, Track, Constant, FileIndex, BackgroundMedian):
+
+def GetMagnitude(data, Track, RefMagnitude, FileIndex, BackgroundMedian):
 	global prevFlux
 	radius = Track.star.radius
 	if len(Track.trackedPos) <= FileIndex:
@@ -296,7 +287,7 @@ def GetMagnitude(data, Track, Constant, FileIndex, BackgroundMedian):
 		prevFlux = StarFlux
 
 	BackgroundFlux = BackgroundMedian * (radius **2)
-	mag = 2.5 * numpy.log10(StarFlux - BackgroundFlux) - Constant#0*Constant -  M
+	mag = 2.5 * numpy.log10(StarFlux - BackgroundFlux) - RefMagnitude#0*Constant -  M
 
 
 	if Config.SettingsObject.delLostTracks == 1 and FileIndex in Track.lostPoints:
@@ -315,7 +306,7 @@ def GetTrackedValues(TrackList, TrackedStars, Trackindex):
 	data = TrackList[Trackindex].data
 	#st = time()
 	BackgroundMedian = GetBackgroundMean(data)
-	RefMag = GetMagnitude(data, TrackedStars[refIndex], Config.SettingsObject.refValue, Trackindex, BackgroundMedian)
+	RefMag = GetMagnitude(data, TrackedStars[refIndex], -Config.SettingsObject.refValue, Trackindex, BackgroundMedian)
 
 	while index < len(TrackedStars):
 		mag = GetMagnitude(data, TrackedStars[index], RefMag, Trackindex, BackgroundMedian)

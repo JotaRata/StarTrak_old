@@ -74,9 +74,9 @@ def Apply(root, ItemList, TrackedStars):
 			PlotWindow.protocol("WM_DELETE_WINDOW", lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), PlotWindow.destroy()))
 		return;
 	if STCore.DataManager.CurrentWindow == 4:
-		STCore.Results.Constant = STCore.Results.GetConstant(ItemList[0].data, 0, 
-												  max(SettingsObject.refStar, 0), TrackedStars, SettingsObject.refValue)
-		STCore.Results.UpdateConstant(ItemList)
+		#STCore.Results.Constant = STCore.Results.GetConstant(ItemList[0].data, 0, 
+		#										  max(SettingsObject.refStar, 0), TrackedStars, SettingsObject.refValue)
+		STCore.Results.UpdateGraph(ItemList)
 		return;
 def Awake(root, ItemList, mini = False, toplevel = True):
 	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_
