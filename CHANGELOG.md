@@ -14,6 +14,9 @@ Changes unreleased.
 
 ### Bug Fixes
 
+- General:
+  - Fixed Settings file not being saved in python 3.8 and above ([d8f8045](https://github.com/JotaRata/StarTrak/commit/d8f804513abfe51e5e897fb648e36c381b21afe7))
+
 - Photometry:
   - fixed reference magnitude not showing up correctly ([15bc5b9](https://github.com/JotaRata/StarTrak/commit/15bc5b9aa6a4629f7935f3e48ebd1ea9fa1f5862)) ([#1](https://github.com/JotaRata/StarTrak/pull/1))
 
