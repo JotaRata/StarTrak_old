@@ -44,17 +44,17 @@ def LoadSettings():
 def SaveSettingsDefault():
 	config = configparser.ConfigParser()
 	config.add_section("GENERAL")
-	config.set("GENERAL", "_SHOW_RECENT_FILES_", 1)
-	config.set("GENERAL", "_THREADS_NUMBER_", 3)
+	config.set("GENERAL", "_SHOW_RECENT_FILES_", "1")
+	config.set("GENERAL", "_THREADS_NUMBER_", "3")
 
 	config.add_section("VISUALIZATION")
-	config.set("VISUALIZATION", "_SHOW_GRID_", 0)
-	config.set("VISUALIZATION", "_SCALE_MODE_", 0)
-	config.set("VISUALIZATION", "_COLOR_MODE_", 0)
+	config.set("VISUALIZATION", "_SHOW_GRID_", "0")
+	config.set("VISUALIZATION", "_SCALE_MODE_", "0")
+	config.set("VISUALIZATION", "_COLOR_MODE_", "0")
 
 	config.add_section("TRACKING")
-	config.set("TRACKING", "_USE_PREDICTION_", 1)
-	config.set("TRACKING", "_SHOW_TRACKS_", 1)
+	config.set("TRACKING", "_USE_PREDICTION_", "1")
+	config.set("TRACKING", "_SHOW_TRACKS_", "1")
 	with open(WorkingPath+'/Settings.ini', 'w') as configfile:
 		 config.write(configfile)
 
@@ -63,15 +63,15 @@ def SaveSettings():
 	config.add_section("GENERAL")
 	config.add_section("VISUALIZATION")
 	config.add_section("TRACKING")
-	config.set("TRACKING", "_USE_PREDICTION_", _TRACK_PREDICTION_.get())
-	config.set("TRACKING", "_SHOW_TRACKS_", _SHOW_TRACKEDPOS_.get())
+	config.set("TRACKING", "_USE_PREDICTION_", str(_TRACK_PREDICTION_.get()) )
+	config.set("TRACKING", "_SHOW_TRACKS_",str( _SHOW_TRACKEDPOS_.get()) )
 
-	config.set("VISUALIZATION", "_SHOW_GRID_", _SHOW_GRID_.get())
-	config.set("VISUALIZATION", "_SCALE_MODE_",VisModes.index(str(_VISUAL_MODE_.get())))
-	config.set("VISUALIZATION", "_COLOR_MODE_",VisColors.index(str(_VISUAL_COLOR_.get())))
-
-	config.set("GENERAL", "_SHOW_RECENT_FILES_", _RECENT_FILES_.get())
-	config.set("GENERAL", "_THREADS_NUMBER_",ThrNumber.index(_PROCESS_NUMBER_.get()))
+	config.set("VISUALIZATION", "_SHOW_GRID_", str(_SHOW_GRID_.get()) )
+	config.set("VISUALIZATION", "_SCALE_MODE_",str(VisModes.index(str(_VISUAL_MODE_.get()))) )
+	config.set("VISUALIZATION", "_COLOR_MODE_",str(VisColors.index(str(_VISUAL_COLOR_.get())))
+ )
+	config.set("GENERAL", "_SHOW_RECENT_FILES_", str(_RECENT_FILES_.get()) )
+	config.set("GENERAL", "_THREADS_NUMBER_",str(ThrNumber.index(_PROCESS_NUMBER_.get())) )
 	with open(WorkingPath+'/Settings.ini', 'w') as configfile:
 		 config.write(configfile)
 	if STCore.DataManager.CurrentWindow == 2:

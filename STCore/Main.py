@@ -417,7 +417,7 @@ if __name__ == "__main__":
 	StartFrame = None
 	Window.wm_title(string = "StarTrak 1.1.0")
 	Window.geometry("1280x640")
-	Window.iconbitmap(STCore.DataManager.WorkingPath+"/icon.ico")
+	#Window.iconbitmap(STCore.DataManager.WorkingPath+"/icon.ico")
 	STCore.Settings.LoadSettings()
 	Awake(Window)
 	STCore.Tools.Awake(Window)
