@@ -8,3 +8,7 @@ AEFor/
 
 .vs/
 .vscode/
+
+# Ignore StarTrak generated files
+*.ini
+*.bin

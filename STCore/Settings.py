@@ -26,8 +26,8 @@ _SHOW_TRACKEDPOS_ = None
 def LoadSettings():
 	global _RECENT_FILES_, _PROCESS_NUMBER_, _SHOW_GRID_, _VISUAL_MODE_, _VISUAL_COLOR_, _TRACK_PREDICTION_, _SHOW_TRACKEDPOS_
 	config = configparser.ConfigParser()
-	if (isfile(WorkingPath+"/settings.ini")):
-		config.read(WorkingPath+"/settings.ini")
+	if (isfile(WorkingPath+"/Settings.ini")):
+		config.read(WorkingPath+"/Settings.ini")
 	else:
 		print ("Setting file not found, creating new file..")
 		SaveSettingsDefault()
