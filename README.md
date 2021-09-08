@@ -14,15 +14,15 @@ Se necesitan los siguientes modulos de python:
 
 - Descaragar o Clonar el repositorio
 - Instalar los paquetes:
->pip3 install numpy
->pip3 install matplotlib
->pip3 install astropy
->pip3 install pillow
->pip3 install scipy
+>pip3 install numpy\
+>pip3 install matplotlib\
+>pip3 install astropy\
+>pip3 install pillow\
+>pip3 install scipy\
 
 En Linux puede ser necesario instalar tcl/tk manualmente:
->apt-get update
->apt-get install python3-tk
+>apt-get update\
+>apt-get install python3-tk\
 
 - En la carpeta contenedora, escribir
 >python STCore/Main.py
