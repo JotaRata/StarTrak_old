@@ -5,10 +5,10 @@ Software utilizado para la deteccion y rastreo de estrellas variables
 
 ## Requisitos
 Se necesitan los siguientes modulos de python:
-- Python 2.7
+- Python 3 o superior
 - TKinter
 - NumPy
-- PyFITS
+- AstroPy
 
 ## Instalacion y primer uso
 
