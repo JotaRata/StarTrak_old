@@ -45,6 +45,15 @@ def UpdateStarList():
 		child.destroy()
 	index = 0
 	icon = icons.Icons["delete"]
+	#Las funciones lambda no se pueden llamar dentro de un loop for o while,
+	## para eso hay que crear una funcion que retorne un lambda
+	def __helperCreateWindow(index, stName, stLoc, stRadius, stBound, stType,stThr, bsg):
+		return lambda: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, index, stName, stLoc, stRadius, stBound, stType, stThr)
+	def __helperPop (list, index):
+		return lambda: (list.pop(index), OnStarChange(), __helperTrackedChanged())
+	def __helperTrackedChanged():
+		Tracker.DataChanged = True
+
 	for s in Stars:
 		ListFrame = ttk.Frame(SidebarList)
 		ListFrame.pack(fill = tk.X, expand = 1, anchor = tk.N, pady = 5)
@@ -56,21 +65,15 @@ def UpdateStarList():
 		deleteButton.image = icon   #se necesita una referencia
 		deleteButton.pack(side = tk.RIGHT)
 		index += 1
-#Las funciones lambda no se pueden llamar dentro de un loop for o while,
-## para eso hay que crear una funcion que retorne un lambda
-def __helperCreateWindow(index, stName, stLoc, stRadius, stBound, stType,stThr, bsg):
-	return lambda: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, index, stName, stLoc, stRadius, stBound, stType, stThr)
-def __helperPop (list, index):
-	return lambda: (list.pop(index), OnStarChange(), __helperTrackedChanged())
-def __helperTrackedChanged():
-	Tracker.DataChanged = True
+
+
 def UpdateCanvasOverlay():
 	# Si se elimina el primer elemento de un lista en un ciclo for, entonces
 	# ya no podra seguir iterando, lo que producir errores, se utiliza reversed para eliminar
 	# el ultimo elemento de la lista primero y asi.
-	for a in reversed(ImageAxis.artists):
+	for a in reversed(axis.artists):
 		a.remove()
-	for t in reversed(ImageAxis.texts):
+	for t in reversed(axis.texts):
 		t.remove()
 	for s in Stars:
 		rect_pos = (s.location[1] - s.radius, s.location[0] - s.radius)
@@ -79,52 +82,54 @@ def UpdateCanvasOverlay():
 		bound_pos = (s.location[1] - s.bounds, s.location[0] - s.bounds)
 		bound = Rectangle(bound_pos, s.bounds*2, s.bounds *2, edgecolor = "y", linestyle = 'dashed', facecolor='none')
 		bound.label = "Bound"+str(Stars.index(s))
-		ImageAxis.add_artist(rect)
-		ImageAxis.add_artist(bound)
+		axis.add_artist(rect)
+		axis.add_artist(bound)
 		text_pos = (s.location[1], s.location[0] - s.bounds - 6)
-		text = ImageAxis.annotate(s.name, text_pos, color='w', weight='bold',fontsize=6, ha='center', va='center')
+		text = axis.annotate(s.name, text_pos, color='w', weight='bold',fontsize=6, ha='center', va='center')
 		text.label = "Text"+str(Stars.index(s))
-	ImageCanvas.draw()
+	canvas.draw()
 
-def UpdateImage():
+def ChangeLevels():
 		global Levels
 		if _LEVEL_MIN_.get() >_LEVEL_MAX_.get():
 			_LEVEL_MIN_.set(_LEVEL_MAX_.get() + 1)
-		ImagePlot.norm.vmax = _LEVEL_MAX_.get()
-		ImagePlot.norm.vmin = _LEVEL_MIN_.get() + 0.01
-		ImagePlot.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
-		ImagePlot.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
+		implot.norm.vmax = _LEVEL_MAX_.get()
+		implot.norm.vmin = _LEVEL_MIN_.get() + 0.01
+		implot.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
+		implot.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
 		STCore.DataManager.Levels = (_LEVEL_MAX_.get(), _LEVEL_MIN_.get())
 		Levels = (_LEVEL_MAX_.get(), _LEVEL_MIN_.get())
-		ImageCanvas.draw_idle()
+		canvas.draw_idle()
 
 #endregion
 
 #region Create Funcions
 def CreateCanvas(app, ImageClick):
-	global ImageCanvas, ImagePlot, ImageFrame, ImageAxis
+	global canvas, implot, ImageFrame, axis
 	ImageFrame = ttk.Frame(app, width = 700, height = 350)
 	ImageFrame.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)	
 
 	ImageFigure = figure.Figure(figsize = (7,3.6), dpi = 100)
-	ImageAxis = ImageFigure.add_subplot(111)
+	axis = ImageFigure.add_subplot(111)
 	
 	ImageFigure.subplots_adjust(0.0,0.05,1,1)
-	ImagePlot = ImageAxis.imshow(Data, vmin = Levels[1], vmax = Levels[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
+	implot = axis.imshow(Data, vmin = Levels[1], vmax = Levels[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
 	if STCore.Settings._SHOW_GRID_.get() == 1:
-		ImageAxis.grid()
+		axis.grid()
 	ImageFigure.set_facecolor("black")
 	
-	ImageCanvas = FigureCanvasTkAgg(ImageFigure,master=ImageFrame)
-	ImageCanvas.draw()
-	wdg = ImageCanvas.get_tk_widget()
+	canvas = FigureCanvasTkAgg(ImageFigure,master=ImageFrame)
+	canvas.draw()
+	wdg = canvas.get_tk_widget()
 	wdg.configure(bg="black")
 	wdg.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 	wdg.config(cursor = "fleur")
+
 	#ImageCanvas.mpl_connect('button_press_event',ImageClick)
-	ImageCanvas.mpl_connect("button_press_event", OnMousePress) 
-	ImageCanvas.mpl_connect("motion_notify_event", OnMouseDrag) 
-	ImageCanvas.mpl_connect("button_release_event", OnMouseRelase) 
+	canvas.mpl_connect("button_press_event", OnMousePress) 
+	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
+	canvas.mpl_connect("button_release_event", OnMouseRelase) 
+	canvas.mpl_connect('scroll_event',OnMouseScroll)
 
 
 
@@ -159,10 +164,10 @@ ViewerFrame = None
 Data = None
 Levels = (0,0)
 Stars = []
-ImageCanvas = None
-ImagePlot = None 
+canvas = None
+implot = None 
 ImageFrame = None 
-ImageAxis = None
+axis = None
 Sidebar = None 
 SidebarList = None
 SliderLabel = None
@@ -177,7 +182,7 @@ MousePressTime = -1
 #region Main Body
 
 def Awake(root, items):
-	global ViewerFrame, Data, Stars, ImageCanvas, ImagePlot, ImageFrame, ImageAxis, Sidebar, SidebarList, SliderLabel, _LEVEL_MAX_, _LEVEL_MIN_, Levels
+	global ViewerFrame, Data, Stars, canvas, implot, ImageFrame, axis, Sidebar, SidebarList, SliderLabel, _LEVEL_MAX_, _LEVEL_MIN_, Levels
 	STCore.DataManager.CurrentWindow = 2
 	ViewerFrame = tk.Frame(root)
 	ViewerFrame.pack( fill = tk.BOTH, expand = 1)
@@ -192,8 +197,8 @@ def Awake(root, items):
 
 	_LEVEL_MIN_ = tk.IntVar(value = Levels[1])
 	_LEVEL_MAX_ = tk.IntVar(value = Levels[0])
-	_LEVEL_MIN_.trace("w", lambda a,b,c: UpdateImage())
-	_LEVEL_MAX_.trace("w", lambda a,b,c: UpdateImage())
+	_LEVEL_MIN_.trace("w", lambda a,b,c: ChangeLevels())
+	_LEVEL_MAX_.trace("w", lambda a,b,c: ChangeLevels())
 	CreateCanvas(ViewerFrame, OnImageClick)
 
 	levelFrame = ttk.LabelFrame(ImageFrame, text = "Niveles:")
@@ -225,10 +230,37 @@ def ClearStars():
 	global Stars
 	Stars = []
 #endregion
+def OnMouseScroll(event):
+	global canvas, axis
+	base_scale = 1.5
+
+	cur_xlim = axis.get_xlim()
+	cur_ylim = axis.get_ylim()
+	cur_xrange = (cur_xlim[1] - cur_xlim[0])*.5
+	cur_yrange = (cur_ylim[1] - cur_ylim[0])*.5
+
+	xdata = event.xdata # get event x location
+	ydata = event.ydata # get event y location
+	if event.button == 'up':
+		# deal with zoom in
+		scale_factor = 1/base_scale
+	elif event.button == 'down':
+		# deal with zoom out
+		scale_factor = base_scale
+	else:
+		# deal with something that should never happen
+		scale_factor = 1
+		print (event.button)
+
+	axis.set_xlim([xdata - cur_xrange*scale_factor,
+					xdata + cur_xrange*scale_factor])
+	axis.set_ylim([ydata - cur_yrange*scale_factor,
+					ydata + cur_yrange*scale_factor])
+	canvas.draw() # force re-draw
 
 def OnMousePress(event):
-	global ImageCanvas, MousePress, SelectedStar, ImageAxis, MousePressTime
-	for a in ImageAxis.artists:
+	global canvas, MousePress, SelectedStar, axis, MousePressTime
+	for a in axis.artists:
 		contains, attrd = a.contains(event)
 		if contains:
 			x0, y0 = a.xy
@@ -237,7 +269,7 @@ def OnMousePress(event):
 			setp(a, linewidth = 4)
 		else:
 			setp(a, linewidth = 1)
-	ImageCanvas.draw()
+	canvas.draw()
 	MousePressTime = time()
 
 def OnMouseDrag(event):
@@ -246,9 +278,9 @@ def OnMouseDrag(event):
 	x0, y0, xpress, ypress = MousePress
 	dx = event.xdata - xpress
 	dy = event.ydata - ypress
-	sel = list(filter(lambda obj: obj.label == "Rect"+str(SelectedStar), ImageAxis.artists))
-	bod = list(filter(lambda obj: obj.label == "Bound"+str(SelectedStar), ImageAxis.artists))
-	text = list(filter(lambda obj: obj.label == "Text"+str(SelectedStar), ImageAxis.texts))
+	sel = list(filter(lambda obj: obj.label == "Rect"+str(SelectedStar), axis.artists))
+	bod = list(filter(lambda obj: obj.label == "Bound"+str(SelectedStar), axis.artists))
+	text = list(filter(lambda obj: obj.label == "Text"+str(SelectedStar), axis.texts))
 	if len(sel) > 0 and len(text) > 0:
 		sel[0].set_x(x0+dx + Stars[SelectedStar].bounds - Stars[SelectedStar].radius)
 		sel[0].set_y(y0+dy + Stars[SelectedStar].bounds - Stars[SelectedStar].radius)
@@ -257,7 +289,7 @@ def OnMouseDrag(event):
 		text[0].set_x(x0 + dx + Stars[SelectedStar].bounds)
 		text[0].set_y(y0 -6 +dy )
 		Stars[SelectedStar].location = (int(y0 + dy + Stars[SelectedStar].bounds), int(x0 + dx + Stars[SelectedStar].bounds))
-	ImageCanvas.draw()
+	canvas.draw()
 
 def OnMouseRelase(event):
 	global MousePress, SelectedStar
@@ -268,6 +300,6 @@ def OnMouseRelase(event):
 	SelectedStar = -1
 	if time() - MousePressTime < 0.2:
 		OnImageClick(event)
-	for a in ImageAxis.artists:
+	for a in axis.artists:
 		setp(a, linewidth = 1)
-	ImageCanvas.draw()
+	canvas.draw()
