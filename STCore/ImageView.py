@@ -1,5 +1,7 @@
 # coding=utf-8
 
+from operator import contains
+from os import scandir
 import matplotlib
 from matplotlib import axes
 import numpy
@@ -11,7 +13,7 @@ import matplotlib as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle
 from matplotlib.colors import Normalize, PowerNorm, LogNorm
-from matplotlib.artist import setp
+from matplotlib.artist import setp, getp
 import tkinter as tk
 from tkinter import ttk
 from STCore.item.Star import StarItem
@@ -29,15 +31,6 @@ params = {"ytick.color" : "w",
 			"axes.labelcolor" : "grey",
 			"axes.edgecolor" : "grey"}
 plt.rcParams.update(params)
-
-def OnImageClick(event):
-	loc = (int(event.ydata), int(event.xdata))
-	SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
-
-def OnStarChange():
-	UpdateStarList()
-	UpdateCanvasOverlay()
-	STCore.DataManager.StarItemList = Stars
 #endregion
 
 #region Update Funcions
@@ -68,13 +61,15 @@ def UpdateStarList():
 		deleteButton.image = icon   #se necesita una referencia
 		deleteButton.pack(side = tk.RIGHT)
 		index += 1
-
+	UpdateCanvasOverlay()
 
 def UpdateCanvasOverlay():
 	# Si se elimina el primer elemento de un lista en un ciclo for, entonces
 	# ya no podra seguir iterando, lo que producir errores, se utiliza reversed para eliminar
 	# el ultimo elemento de la lista primero y asi.
 	for a in reversed(axis.artists):
+		if a.label == "zoom_container" or a.label == "zoom_box":
+			continue
 		a.remove()
 	for t in reversed(axis.texts):
 		t.remove()
@@ -91,6 +86,45 @@ def UpdateCanvasOverlay():
 		text = axis.annotate(s.name, text_pos, color='w', weight='bold',fontsize=6, ha='center', va='center')
 		text.label = "Text"+str(Stars.index(s))
 	canvas.draw()
+
+def UpdateZoomGizmo(scale, xrange, yrange):
+	global axis, zoom_factor, img_offset, z_container, z_box
+
+	aspect = yrange/xrange
+
+	# Change the size of the Gizmo
+	size = 320
+
+	if zoom_factor > 1:
+		gizmo_pos = img_offset[0] - xrange * scale, img_offset[1] - yrange * scale
+		gizmo_w = size  * scale
+		gizmo_h = size * scale * aspect
+
+		if z_container is None:
+			z_container = Rectangle(gizmo_pos, gizmo_w, gizmo_h, edgecolor = "w", facecolor='none')
+			z_container.label = "zoom_container"
+
+			z_box = Rectangle(gizmo_pos, gizmo_w, gizmo_h, alpha = 0.5)
+			z_box.label = "zoom_box"
+
+			axis.add_artist(z_container)
+			axis.add_artist(z_box)
+		else:
+			z_container.set_xy(gizmo_pos)
+			z_container.set_width(gizmo_w)
+			z_container.set_height(gizmo_h)
+
+			z_box.set_x(gizmo_pos[0] + 0.5*(img_offset[0] * gizmo_w / xrange- gizmo_w * scale) )	
+			z_box.set_y(gizmo_pos[1] + 0.5*(img_offset[1] * gizmo_h / yrange- gizmo_h * scale) )	
+			z_box.set_width(gizmo_w * scale)
+			z_box.set_height(gizmo_h * scale)
+	else:
+		if z_container is not None:
+			z_container.remove()
+			z_container = None
+
+			z_box.remove()
+			z_box = None
 
 def ChangeLevels():
 		global Levels
@@ -139,7 +173,7 @@ def CreateCanvas(app, ImageClick):
 	canvas.mpl_connect("button_release_event", OnMouseRelase) 
 	canvas.mpl_connect('scroll_event',OnMouseScroll)
 
-
+	UpdateCanvasOverlay()
 
 def CreateSidebar(app, root, items):
 	global Sidebar, SidebarList
@@ -189,6 +223,9 @@ MousePressTime = -1
 img_limits : tuple = None
 img_offset : tuple = (0,0)
 zoom_factor = 1
+
+z_container : Rectangle = None
+z_box : Rectangle = None
 #endregion
 
 #region Main Body
@@ -285,21 +322,33 @@ def OnMouseScroll(event):
 	scale = 1. / zoom_factor
 
 	# Set the offset to the current mouse position
-	img_offset = numpy.clip(xdata, xrange * scale, img_limits[0][1] - xrange * scale), numpy.clip(ydata, yrange * scale, img_limits[1][0] - yrange * scale)
+	img_offset = numpy.clip(xdata * scale + (1-scale)*img_offset[0], xrange * scale, img_limits[0][1] - xrange * scale), numpy.clip(ydata * scale + (1-scale)*img_offset[1], yrange * scale, img_limits[1][0] - yrange * scale)
 	
 	axis.set_xlim([img_offset[0] - xrange * scale,
 					img_offset[0] + xrange * scale])
 	axis.set_ylim([img_offset[1] - yrange * scale,
 					img_offset[1] + yrange * scale])
+	
+	UpdateZoomGizmo(scale, xrange, yrange)
 	canvas.draw() # force re-draw
+
+	
 
 def OnMousePress(event):
 	global canvas, MousePress, SelectedStar, axis, MousePressTime
+	
 	for a in axis.artists:
 		contains, attrd = a.contains(event)
 		if contains:
 			x0, y0 = a.xy
 			MousePress = x0, y0, event.xdata, event.ydata
+
+			# Check if we selected the zoom controls
+			if a.label == "zoom_container" or a.label == "zoom_box":
+				setp(z_box, alpha = 1)
+				setp(z_box, edgecolor = "w")
+				SelectedStar = -100  # We'll use the code -100 to identify whether the zoom controls are selected (to avoid declaring more global variables)
+				break
 			SelectedStar = int(next(filter(str.isdigit, a.label)))
 			setp(a, linewidth = 4)
 		else:
@@ -309,10 +358,41 @@ def OnMousePress(event):
 
 def OnMouseDrag(event):
 	global MousePress, Stars
-	if MousePress is None or SelectedStar == -1 or len(Stars) == 0 or event.inaxes is None: return
+	if MousePress is None or event.inaxes is None:
+		return
 	x0, y0, xpress, ypress = MousePress
 	dx = event.xdata - xpress
 	dy = event.ydata - ypress
+
+	# Check whether the zoom controls are selected
+	if SelectedStar == -100:
+		if z_container is not None:
+			global img_limits, axis, img_offset
+			w, h = getp(z_container, "width"), getp(z_container, "height")
+			xy = getp(z_container, "xy")
+
+			xrange = 0.5 * (img_limits[0][1] - img_limits[0][0])
+			yrange = 0.5 * (img_limits[1][0] - img_limits[1][1])
+			
+			scale = 1./zoom_factor
+			xcenter = 2*(event.xdata - xy[0]) * xrange / w
+			ycenter = 2*(event.ydata - xy[1]) * yrange / h
+
+			xcenter = numpy.clip(xcenter, xrange * scale, img_limits[0][1] - xrange * scale)
+			ycenter = numpy.clip(ycenter, yrange * scale, img_limits[1][0] - yrange * scale)
+			img_offset = xcenter, ycenter
+			axis.set_xlim([xcenter - xrange * scale,
+						xcenter + xrange * scale])
+			axis.set_ylim([ycenter - yrange * scale,
+						ycenter + yrange * scale])
+			UpdateZoomGizmo(scale, xrange, yrange)
+			canvas.draw() # fo
+
+		return # Stop the function here
+	
+	# Fail conditions
+	if SelectedStar == -1 or len(Stars) == 0: return
+
 	sel = list(filter(lambda obj: obj.label == "Rect"+str(SelectedStar), axis.artists))
 	bod = list(filter(lambda obj: obj.label == "Bound"+str(SelectedStar), axis.artists))
 	text = list(filter(lambda obj: obj.label == "Text"+str(SelectedStar), axis.texts))
@@ -330,7 +410,11 @@ def OnMouseRelase(event):
 	global MousePress, SelectedStar
 	UpdateStarList()
 	MousePress = None
-	if SelectedStar != -1:
+	if SelectedStar == -100:
+		if z_box is not None:
+			setp(z_box, alpha = 0.5)
+			setp(z_box, edgecolor = None)
+	if SelectedStar >= 0:
 		OnStarChange()
 	SelectedStar = -1
 	if time() - MousePressTime < 0.2:
@@ -338,3 +422,12 @@ def OnMouseRelase(event):
 	for a in axis.artists:
 		setp(a, linewidth = 1)
 	canvas.draw()
+	
+def OnImageClick(event):
+	loc = (int(event.ydata), int(event.xdata))
+	SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
+
+def OnStarChange():
+	UpdateStarList()
+	#UpdateCanvasOverlay()
+	STCore.DataManager.StarItemList = Stars
