@@ -256,13 +256,14 @@ def OnMouseScroll(event):
 	if img_limits is None:
 		axis.relim()
 		img_limits = (axis.get_xlim(), axis.get_ylim())
-
 	# Modify this for faster/slower increments
 	increment = 0.5
 
 	xdata = event.xdata # get event x location
 	ydata = event.ydata # get event y location
-
+	# If we are outside the viewport, then stop the function
+	if xdata is None or ydata is None:
+		return
 	xcenter = 0.5 * (img_limits[0][1] + img_limits[0][0])
 	ycenter = 0.5 * (img_limits[1][1] + img_limits[1][0])
 
@@ -281,7 +282,6 @@ def OnMouseScroll(event):
 		# deal with something that should never happen
 		zoom_factor = 1
 		print (event.button)
-
 	scale = 1. / zoom_factor
 
 	# Set the offset to the current mouse position
@@ -289,7 +289,6 @@ def OnMouseScroll(event):
 	
 	axis.set_xlim([img_offset[0] - xrange * scale,
 					img_offset[0] + xrange * scale])
-
 	axis.set_ylim([img_offset[1] - yrange * scale,
 					img_offset[1] + yrange * scale])
 	canvas.draw() # force re-draw
