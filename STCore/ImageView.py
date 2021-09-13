@@ -1,9 +1,12 @@
 # coding=utf-8
 
 import matplotlib
+from matplotlib import axes
 import numpy
 from matplotlib import use, figure
+from matplotlib.axes import Axes
 use("TkAgg")
+
 import matplotlib as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle
@@ -125,6 +128,11 @@ def CreateCanvas(app, ImageClick):
 	wdg.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 	wdg.config(cursor = "fleur")
 
+	# Get axis limits and save it as a tuple
+	global img_limits
+
+	img_limits = (axis.get_xlim(), axis.get_ylim())
+
 	#ImageCanvas.mpl_connect('button_press_event',ImageClick)
 	canvas.mpl_connect("button_press_event", OnMousePress) 
 	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
@@ -167,7 +175,7 @@ Stars = []
 canvas = None
 implot = None 
 ImageFrame = None 
-axis = None
+axis : Axes = None
 Sidebar = None 
 SidebarList = None
 SliderLabel = None
@@ -177,12 +185,17 @@ Modes = {"Linear" : Normalize(), "Raiz cuadrada": PowerNorm(gamma = 0.5), "Logar
 SelectedStar = -1
 MousePress = None
 MousePressTime = -1
+
+img_limits : tuple = None
+img_offset : tuple = (0,0)
+zoom_factor = 1
 #endregion
 
 #region Main Body
 
 def Awake(root, items):
 	global ViewerFrame, Data, Stars, canvas, implot, ImageFrame, axis, Sidebar, SidebarList, SliderLabel, _LEVEL_MAX_, _LEVEL_MIN_, Levels
+
 	STCore.DataManager.CurrentWindow = 2
 	ViewerFrame = tk.Frame(root)
 	ViewerFrame.pack( fill = tk.BOTH, expand = 1)
@@ -213,6 +226,12 @@ def Awake(root, items):
 	OnStarChange()
 
 def Destroy():
+	global img_limits, zoom_factor
+
+	# Reset current viewport
+	img_limits, zoom_factor = None, 1
+	img_offset = (0, 0)
+
 	ViewerFrame.destroy()
 	gc.collect()
 
@@ -231,31 +250,48 @@ def ClearStars():
 	Stars = []
 #endregion
 def OnMouseScroll(event):
-	global canvas, axis
-	base_scale = 1.5
+	global Data, canvas, axis, zoom_factor, img_limits, img_offset
 
-	cur_xlim = axis.get_xlim()
-	cur_ylim = axis.get_ylim()
-	cur_xrange = (cur_xlim[1] - cur_xlim[0])*.5
-	cur_yrange = (cur_ylim[1] - cur_ylim[0])*.5
+	# Check if for some reason, no limits were defined
+	if img_limits is None:
+		axis.relim()
+		img_limits = (axis.get_xlim(), axis.get_ylim())
+
+	# Modify this for faster/slower increments
+	increment = 0.5
 
 	xdata = event.xdata # get event x location
 	ydata = event.ydata # get event y location
+
+	xcenter = 0.5 * (img_limits[0][1] + img_limits[0][0])
+	ycenter = 0.5 * (img_limits[1][1] + img_limits[1][0])
+
+	xrange = 0.5 * (img_limits[0][1] - img_limits[0][0])
+	yrange = 0.5 * (img_limits[1][0] - img_limits[1][1]) # By some reason, matplotlib y-axis is inverted
+
 	if event.button == 'up':
 		# deal with zoom in
-		scale_factor = 1/base_scale
+		if zoom_factor < 10:
+			zoom_factor += increment
 	elif event.button == 'down':
 		# deal with zoom out
-		scale_factor = base_scale
+		if zoom_factor > 1:
+			zoom_factor -= increment
 	else:
 		# deal with something that should never happen
-		scale_factor = 1
+		zoom_factor = 1
 		print (event.button)
 
-	axis.set_xlim([xdata - cur_xrange*scale_factor,
-					xdata + cur_xrange*scale_factor])
-	axis.set_ylim([ydata - cur_yrange*scale_factor,
-					ydata + cur_yrange*scale_factor])
+	scale = 1. / zoom_factor
+
+	# Set the offset to the current mouse position
+	img_offset = numpy.clip(xdata, xrange * scale, img_limits[0][1] - xrange * scale), numpy.clip(ydata, yrange * scale, img_limits[1][0] - yrange * scale)
+	
+	axis.set_xlim([img_offset[0] - xrange * scale,
+					img_offset[0] + xrange * scale])
+
+	axis.set_ylim([img_offset[1] - yrange * scale,
+					img_offset[1] + yrange * scale])
 	canvas.draw() # force re-draw
 
 def OnMousePress(event):
