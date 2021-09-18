@@ -170,7 +170,7 @@ def CreateCanvas(app, ImageClick):
 	#ImageCanvas.mpl_connect('button_press_event',ImageClick)
 	canvas.mpl_connect("button_press_event", OnMousePress) 
 	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
-	canvas.mpl_connect("button_release_event", OnMouseRelase) 
+	canvas.mpl_connect("button_release_event", OnMouseRelease) 
 	canvas.mpl_connect('scroll_event',OnMouseScroll)
 
 	UpdateCanvasOverlay()
@@ -353,6 +353,7 @@ def OnMousePress(event):
 			setp(a, linewidth = 4)
 		else:
 			setp(a, linewidth = 1)
+			MousePress = 0, 0, event.xdata, event.ydata
 	canvas.draw()
 	MousePressTime = time()
 
@@ -406,10 +407,10 @@ def OnMouseDrag(event):
 		Stars[SelectedStar].location = (int(y0 + dy + Stars[SelectedStar].bounds), int(x0 + dx + Stars[SelectedStar].bounds))
 	canvas.draw()
 
-def OnMouseRelase(event):
+def OnMouseRelease(event):
 	global MousePress, SelectedStar
 	UpdateStarList()
-	MousePress = None
+	
 	if SelectedStar == -100:
 		if z_box is not None:
 			setp(z_box, alpha = 0.5)
@@ -417,11 +418,22 @@ def OnMouseRelase(event):
 	if SelectedStar >= 0:
 		OnStarChange()
 	SelectedStar = -1
-	if time() - MousePressTime < 0.2:
+
+	dx = event.xdata - MousePress[2]
+	dy = event.ydata - MousePress[3]
+
+	print(dx, dy)
+	# Change this value for lower/higher drag tolerance
+	drag_tolerance = 0.2
+
+	if  dx < drag_tolerance and dy < drag_tolerance:
 		OnImageClick(event)
 	for a in axis.artists:
 		setp(a, linewidth = 1)
+	
+	MousePress = None
 	canvas.draw()
+	
 	
 def OnImageClick(event):
 	loc = (int(event.ydata), int(event.xdata))
