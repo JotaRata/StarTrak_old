@@ -21,6 +21,8 @@ Changes unreleased.
 ### Bug Fixes
 
 - General:
+  - fixed ImageView not invoking click event
+ImageView is using a spatial drag detection now, instead of temporal ([fe0c7d7](https://github.com/JotaRata/StarTrak/commit/fe0c7d74123ba360e1a2a0475495725abf65a478))
   - Fixed Settings file not being saved in python 3.8 and above ([d8f8045](https://github.com/JotaRata/StarTrak/commit/d8f804513abfe51e5e897fb648e36c381b21afe7))
 
 - Photometry:
