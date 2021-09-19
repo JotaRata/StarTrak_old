@@ -336,7 +336,7 @@ def OnMouseScroll(event):
 
 def OnMousePress(event):
 	global canvas, MousePress, SelectedStar, axis, MousePressTime
-	
+	MousePress = 0, 0, event.xdata, event.ydata
 	for a in axis.artists:
 		contains, attrd = a.contains(event)
 		if contains:
@@ -353,7 +353,6 @@ def OnMousePress(event):
 			setp(a, linewidth = 4)
 		else:
 			setp(a, linewidth = 1)
-			MousePress = 0, 0, event.xdata, event.ydata
 	canvas.draw()
 	MousePressTime = time()
 
