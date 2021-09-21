@@ -35,6 +35,179 @@ params = {"ytick.color" : "w",
 plt.rcParams.update(params)
 #endregion
 
+#region Global Variables
+ViewerFrame = None
+Data = None
+Levels = (0,0)
+Stars = []
+canvas = None
+implot = None 
+ImageFrame = None 
+axis : Axes = None
+
+SidebarList = None
+SliderLabel = None
+ColorMaps = {"Escala de grises" : "gray", "Temperatura" : "seismic", "Arcoiris" : "rainbow", "Negativo" : "binary"}
+Modes = {"Linear" : Normalize(), "Raiz cuadrada": PowerNorm(gamma = 0.5), "Logaritmico" : LogNorm()}
+
+SelectedStar = -1
+MousePress = None
+MousePressTime = -1
+
+img_limits : tuple = None
+img_offset : tuple = (0,0)
+zoom_factor = 1
+
+z_container : Rectangle = None
+z_box : Rectangle = None
+
+levelFrame : ttk.LabelFrame = None
+Viewport : tk.Canvas = None
+Sidebar : tk.Canvas = None 
+
+#endregion
+
+#region Main Body
+
+def Awake(root, items):
+	global ViewerFrame, Data, Stars, canvas, implot, ImageFrame, axis, Sidebar, SidebarList, SliderLabel, _LEVEL_MAX_, _LEVEL_MIN_, Levels, levelFrame
+
+	STCore.DataManager.CurrentWindow = 2
+	
+	root.columnconfigure(tuple(range(1)), weight=1)
+	root.rowconfigure(tuple(range(1)), weight=1)
+
+	#ViewerFrame = tk.Frame(root)
+	#ttk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
+	Data =  items[0].data
+	Levels = STCore.DataManager.Levels
+
+	# Setting Levels
+	if not isinstance(Levels, tuple):
+		Levels = (numpy.percentile(Data, 99.8), numpy.percentile(Data, 1))
+		STCore.DataManager.Levels = Levels
+
+	if Viewport is None:
+		CreateCanvas(root, OnImageClick)
+		CreateSidebar(root, root, items)
+	else:
+		Viewport.grid()
+		Sidebar.grid()
+	#ViewerFrame.pack( fill = tk.BOTH, expand = 1)
+	
+	_LEVEL_MIN_ = tk.IntVar(value = Levels[1])
+	_LEVEL_MAX_ = tk.IntVar(value = Levels[0])
+	_LEVEL_MIN_.trace("w", lambda a,b,c: ChangeLevels())
+	_LEVEL_MAX_.trace("w", lambda a,b,c: ChangeLevels())
+	
+	if levelFrame is None:
+		CreateLevels(root)
+	else:
+		levelFrame.grid()
+	
+	DrawCanvas()
+	OnStarChange()
+
+
+#region Create Funcions
+def CreateCanvas(app, ImageClick):
+	global canvas, implot, ImageFrame, axis, Viewport
+	
+	#ImageFrame = ttk.Frame(app, width = 700, height = 350)
+	#ImageFrame.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)	
+
+	fig = figure.Figure(figsize = (7,3.6), dpi = 100)
+	fig.set_facecolor("black")
+
+	# Create Canvas before any complex calculations
+	canvas = FigureCanvasTkAgg(fig, master=app)
+	
+	Viewport = canvas.get_tk_widget()
+	Viewport.configure(bg="black")
+	Viewport.grid(row=0, column=0, sticky=tk.NSEW)
+	Viewport.config(cursor = "fleur")
+
+	axis = fig.add_subplot(111)
+	fig.subplots_adjust(0.0,0.05,1,1)
+	
+	canvas.mpl_connect("button_press_event", OnMousePress) 
+	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
+	canvas.mpl_connect("button_release_event", OnMouseRelease) 
+	canvas.mpl_connect('scroll_event',OnMouseScroll)
+
+def DrawCanvas():
+	global canvas, implot, ImageFrame, axis
+
+	implot = axis.imshow(Data, vmin = Levels[1], vmax = Levels[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
+	if STCore.Settings._SHOW_GRID_.get() == 1:
+		axis.grid()
+	
+	canvas.draw()
+
+	# Get axis limits and save it as a tuple
+	global img_limits
+
+	img_limits = (axis.get_xlim(), axis.get_ylim())
+
+	#ImageCanvas.mpl_connect('button_press_event',ImageClick)
+
+	UpdateCanvasOverlay()
+
+def CreateSidebar(app, root, items):
+	global Sidebar, SidebarList
+	
+	#import STCore.ImageSelector
+
+	Sidebar = tk.Canvas(app, width = 250, relief = "flat", bg = "gray16")
+	Sidebar.config(scrollregion=(0,0, 250, 1))
+	Sidebar.grid(row=0, column=1, rowspan=2, sticky=tk.NS)
+
+	SidebarList = ttk.Frame(Sidebar, width=250,height=root.winfo_height())
+	Sidebar.create_window(250, 0, anchor=tk.NE, window=SidebarList, width=250, height=400)
+
+	ScrollBar = ttk.Scrollbar(Sidebar, command=Sidebar.yview)
+	Sidebar.config(yscrollcommand=ScrollBar.set)  
+	ScrollBar.pack(side = tk.RIGHT,fill=tk.Y) 
+
+	loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
+	
+	
+	cmdCreate = lambda : 	SetStar.Awake(app, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
+	cmdTrack = lambda : Apply(root, items)
+
+	def CommandBack():
+		import STCore.ImageSelector
+		Destroy()
+		STCore.ImageSelector.Awake(root, [])
+
+	buttonsFrame = ttk.Frame(Sidebar)
+	buttonsFrame.pack(side=tk.BOTTOM, anchor = tk.S, expand = 1, fill = tk.X)
+	
+	PrevButton = ttk.Button(buttonsFrame, text = " Volver", image = icons.Icons["prev"], command = CommandBack, compound="left")
+	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
+	AddButton = ttk.Button(buttonsFrame, text = "Agregar estrella", command = cmdCreate, image = icons.Icons["add"], compound="left")
+	AddButton.grid(row = 0, column = 1, sticky = tk.EW)
+	NextButton = ttk.Button(buttonsFrame, text = "Continuar", command = cmdTrack, image = icons.Icons["next"], compound = "right")
+	NextButton.grid(row = 0, column = 2, sticky = tk.EW)
+
+
+def CreateLevels(app):
+	global levelFrame
+
+	levelFrame = ttk.LabelFrame(app, text = "Niveles:")
+	levelFrame.grid(row=1, column=0, sticky=tk.EW)
+
+	for x in range(2):
+		tk.Grid.columnconfigure(levelFrame, x, weight=1)
+
+	ttk.Label(levelFrame, text = "Maximo:").grid(row = 0,column = 0)
+	ttk.Scale(levelFrame, from_= numpy.min(Data), to= numpy.max(Data), orient=tk.HORIZONTAL, variable = _LEVEL_MAX_).grid(row = 0, column = 1, columnspan = 10, sticky = tk.EW)
+	ttk.Label(levelFrame, text = "Minimo:").grid(row = 1,column = 0)
+	ttk.Scale(levelFrame, from_= numpy.min(Data), to= numpy.max(Data), orient=tk.HORIZONTAL, variable = _LEVEL_MIN_).grid(row = 1, column = 1, columnspan = 10, sticky = tk.EW)
+#endregion
+
+
+
 #region Update Funcions
 
 def UpdateStarList():
@@ -147,170 +320,7 @@ def ChangeLevels():
 
 #endregion
 
-#region Create Funcions
-def CreateCanvas(app, ImageClick):
-	global canvas, implot, ImageFrame, axis
-	
-	#ImageFrame = ttk.Frame(app, width = 700, height = 350)
-	#ImageFrame.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)	
 
-	fig = figure.Figure(figsize = (7,3.6), dpi = 100)
-	fig.set_facecolor("black")
-
-	# Create Canvas before any complex calculations
-	canvas = FigureCanvasTkAgg(fig, master=app)
-	
-	wdg = canvas.get_tk_widget()
-	wdg.configure(bg="black")
-	wdg.grid(row=0, column=0, sticky=tk.NSEW)
-	wdg.config(cursor = "fleur")
-
-	axis = fig.add_subplot(111)
-	fig.subplots_adjust(0.0,0.05,1,1)
-	
-	canvas.mpl_connect("button_press_event", OnMousePress) 
-	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
-	canvas.mpl_connect("button_release_event", OnMouseRelease) 
-	canvas.mpl_connect('scroll_event',OnMouseScroll)
-
-def DrawCanvas():
-	global canvas, implot, ImageFrame, axis
-
-	implot = axis.imshow(Data, vmin = Levels[1], vmax = Levels[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
-	if STCore.Settings._SHOW_GRID_.get() == 1:
-		axis.grid()
-	
-	canvas.draw()
-
-	# Get axis limits and save it as a tuple
-	global img_limits
-
-	img_limits = (axis.get_xlim(), axis.get_ylim())
-
-	#ImageCanvas.mpl_connect('button_press_event',ImageClick)
-
-	UpdateCanvasOverlay()
-
-def CreateSidebar(app, root, items):
-	global Sidebar, SidebarList
-	
-	#import STCore.ImageSelector
-
-	Sidebar = tk.Canvas(app, width = 250, relief = "flat", bg = "gray16")
-	Sidebar.config(scrollregion=(0,0, 250, 1))
-	Sidebar.grid(row=0, column=1, rowspan=2, sticky=tk.NS)
-
-	SidebarList = ttk.Frame(Sidebar, width=250,height=root.winfo_height())
-	Sidebar.create_window(250, 0, anchor=tk.NE, window=SidebarList, width=250, height=400)
-
-	ScrollBar = ttk.Scrollbar(Sidebar, command=Sidebar.yview)
-	Sidebar.config(yscrollcommand=ScrollBar.set)  
-	ScrollBar.pack(side = tk.RIGHT,fill=tk.Y) 
-
-	loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
-	
-	
-	cmdCreate = lambda : 	SetStar.Awake(app, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
-	cmdTrack = lambda : Apply(root, items)
-
-	def CommandBack():
-		import STCore.ImageSelector
-		Destroy()
-		STCore.ImageSelector.Awake(root, [])
-
-	buttonsFrame = ttk.Frame(Sidebar)
-	buttonsFrame.pack(side=tk.BOTTOM, anchor = tk.S, expand = 1, fill = tk.X)
-	
-	PrevButton = ttk.Button(buttonsFrame, text = " Volver", image = icons.Icons["prev"], command = CommandBack, compound="left")
-	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
-	AddButton = ttk.Button(buttonsFrame, text = "Agregar estrella", command = cmdCreate, image = icons.Icons["add"], compound="left")
-	AddButton.grid(row = 0, column = 1, sticky = tk.EW)
-	NextButton = ttk.Button(buttonsFrame, text = "Continuar", command = cmdTrack, image = icons.Icons["next"], compound = "right")
-	NextButton.grid(row = 0, column = 2, sticky = tk.EW)
-
-
-#endregion
-
-#region Global Variables
-ViewerFrame = None
-Data = None
-Levels = (0,0)
-Stars = []
-canvas = None
-implot = None 
-ImageFrame = None 
-axis : Axes = None
-Sidebar = None 
-SidebarList = None
-SliderLabel = None
-ColorMaps = {"Escala de grises" : "gray", "Temperatura" : "seismic", "Arcoiris" : "rainbow", "Negativo" : "binary"}
-Modes = {"Linear" : Normalize(), "Raiz cuadrada": PowerNorm(gamma = 0.5), "Logaritmico" : LogNorm()}
-
-SelectedStar = -1
-MousePress = None
-MousePressTime = -1
-
-img_limits : tuple = None
-img_offset : tuple = (0,0)
-zoom_factor = 1
-
-z_container : Rectangle = None
-z_box : Rectangle = None
-
-levelFrame : ttk.LabelFrame = None
-#endregion
-
-#region Main Body
-
-def Awake(root, items):
-	global ViewerFrame, Data, Stars, canvas, implot, ImageFrame, axis, Sidebar, SidebarList, SliderLabel, _LEVEL_MAX_, _LEVEL_MIN_, Levels, levelFrame
-
-	STCore.DataManager.CurrentWindow = 2
-	
-	root.columnconfigure(tuple(range(1)), weight=1)
-	root.rowconfigure(tuple(range(1)), weight=1)
-
-	ViewerFrame = tk.Frame(root)
-	#ttk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
-	Data =  items[0].data
-	Levels = STCore.DataManager.Levels
-
-	# Setting Levels
-	if not isinstance(Levels, tuple):
-		Levels = (numpy.percentile(Data, 99.8), numpy.percentile(Data, 1))
-		STCore.DataManager.Levels = Levels
-
-	CreateCanvas(root, OnImageClick)
-	CreateSidebar(root, root, items)
-	#ViewerFrame.pack( fill = tk.BOTH, expand = 1)
-	
-	_LEVEL_MIN_ = tk.IntVar(value = Levels[1])
-	_LEVEL_MAX_ = tk.IntVar(value = Levels[0])
-	_LEVEL_MIN_.trace("w", lambda a,b,c: ChangeLevels())
-	_LEVEL_MAX_.trace("w", lambda a,b,c: ChangeLevels())
-	
-	if levelFrame is None:
-		CreateLevels(root)
-	else:
-		levelFrame.pack()
-	
-	DrawCanvas()
-	OnStarChange()
-
-def CreateLevels(app):
-	global levelFrame
-
-	levelFrame = ttk.LabelFrame(app, text = "Niveles:")
-	levelFrame.grid(row=1, column=0, sticky=tk.EW)
-
-	for x in range(2):
-		tk.Grid.columnconfigure(levelFrame, x, weight=1)
-
-	ttk.Label(levelFrame, text = "Maximo:").grid(row = 0,column = 0)
-	ttk.Scale(levelFrame, from_= numpy.min(Data), to= numpy.max(Data), orient=tk.HORIZONTAL, variable = _LEVEL_MAX_).grid(row = 0, column = 1, columnspan = 10, sticky = tk.EW)
-	ttk.Label(levelFrame, text = "Minimo:").grid(row = 1,column = 0)
-	ttk.Scale(levelFrame, from_= numpy.min(Data), to= numpy.max(Data), orient=tk.HORIZONTAL, variable = _LEVEL_MIN_).grid(row = 1, column = 1, columnspan = 10, sticky = tk.EW)
-	
 
 def Destroy():
 	global img_limits, zoom_factor
@@ -319,7 +329,10 @@ def Destroy():
 	img_limits, zoom_factor = None, 1
 	img_offset = (0, 0)
 
-	ViewerFrame.destroy()
+	#ViewerFrame.destroy()
+	Sidebar.grid_remove()
+	Viewport.grid_remove()
+	levelFrame.grid_remove()
 	gc.collect()
 
 def Apply(root, items):
@@ -380,7 +393,7 @@ def OnMouseScroll(event):
 					img_offset[1] + yrange * scale])
 	
 	UpdateZoomGizmo(scale, xrange, yrange)
-	canvas.draw() # force re-draw
+	canvas.draw_idle() # force re-draw
 
 	
 
@@ -403,7 +416,7 @@ def OnMousePress(event):
 			setp(a, linewidth = 4)
 		else:
 			setp(a, linewidth = 1)
-	canvas.draw()
+	canvas.draw_idle()
 	MousePressTime = time()
 
 def OnMouseDrag(event):
@@ -436,7 +449,7 @@ def OnMouseDrag(event):
 			axis.set_ylim([ycenter - yrange * scale,
 						ycenter + yrange * scale])
 			UpdateZoomGizmo(scale, xrange, yrange)
-			canvas.draw() # fo
+			canvas.draw_idle() # fo
 
 		return # Stop the function here
 	
@@ -454,7 +467,7 @@ def OnMouseDrag(event):
 		text[0].set_x(x0 + dx + Stars[SelectedStar].bounds)
 		text[0].set_y(y0 -6 +dy )
 		Stars[SelectedStar].location = (int(y0 + dy + Stars[SelectedStar].bounds), int(x0 + dx + Stars[SelectedStar].bounds))
-	canvas.draw()
+	canvas.draw_idle()
 
 def OnMouseRelease(event):
 	global MousePress, SelectedStar
@@ -481,7 +494,7 @@ def OnMouseRelease(event):
 		setp(a, linewidth = 1)
 	
 	MousePress = None
-	canvas.draw()
+	canvas.draw_idle()
 	
 	
 def OnImageClick(event):
