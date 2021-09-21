@@ -68,7 +68,7 @@ try:
 	import STCore.utils.Icons as icons
 	print ("Listo")
 except Exception as e:
-	raise ImportError("Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n" + e)
+	raise ImportError("Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n", e)
 
 
 print ("=" * 60)
@@ -407,6 +407,7 @@ if __name__ == "__main__":
 	Window.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
 	Window.tk.call('package', 'require', 'awdark')
 
+	
 	import Styles
 	STCore.DataManager.Awake()
 	STCore.Settings.WorkingPath = dirname(abspath(__file__))

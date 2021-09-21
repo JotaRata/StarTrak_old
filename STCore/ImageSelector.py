@@ -79,6 +79,8 @@ def Awake(root, paths = []):
 	SelectorFrame = ttk.Frame(root)
 	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
 	ttk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
+	
+	# Create Canvas
 	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-80, len(paths)*220/4), width = root.winfo_width()-180, bg= "gray15", bd=0, relief="flat")
 	ScrollBar = ttk.Scrollbar(SelectorFrame, command=ScrollView.yview)
 	ScrollView.config(yscrollcommand=ScrollBar.set)  
@@ -86,6 +88,7 @@ def Awake(root, paths = []):
 	ScrollBar.pack(side = tk.LEFT,fill=tk.Y) 
 	ImagesFrame = ttk.Frame(height=root.winfo_height())
 	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 180)
+
 	buttonFrame = ttk.Frame(SelectorFrame, width = 80)
 	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH, expand = 1)
 	for c in range(1):
