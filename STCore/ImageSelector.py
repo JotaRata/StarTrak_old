@@ -7,24 +7,24 @@ from astropy.io import fits
 from os.path import basename, getmtime, isfile
 from time import sleep, strftime, localtime, strptime,gmtime
 from tkinter import filedialog, messagebox, ttk
-from STCore.item.File import FileItem
-import STCore.ImageView
-import STCore.DataManager
+from item.File import FileItem
+
+from STCore import ImageView, DataManager, Tracker
 import numpy
 from functools import partial
 import STCore.utils.Icons as icons
+
 #region Variables
 SelectorFrame = None
 ImagesFrame = None
 ScrollView = None
-ItemList = []
 loadIndex = 0
 FilteredList = []
 #endregion
 
 def LoadFiles(paths, root):
 	global loadIndex
-	listSize = len(ItemList)
+	listSize = len(DataManager.FileItemList)
 	Progress = tk.DoubleVar()
 	LoadWindow = CreateLoadBar(root, Progress)
 	LoadWindow[0].update()
@@ -37,7 +37,7 @@ def LoadFiles(paths, root):
 	loadIndex = 0
 	
 	LoadWindow[0].destroy()
-	ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(ItemList)*240/4))
+	ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(DataManager.FileItemList)*240/4))
 
 def Sort(path):
 	if any(char.isdigit() for char in path):
@@ -63,7 +63,7 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	#print strftime('%H/%M/%S', localtime(item.date))
 	#item.timee = header['NOTE'].split()[3]
 	item.active = 1
-	ItemList.append(item)
+	DataManager.FileItemList.append(item)
 	CreateFileGrid(loadIndex + ListSize, item, root)
 	progress.set(100*float(loadIndex)/PathSize)
 	loadWindow[1].config(text="Cargando archivo "+str(loadIndex)+" de "+str(PathSize))
@@ -74,8 +74,8 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	#lock.relase()
 
 def Awake(root, paths = []):
-	global SelectorFrame, ItemList, ImagesFrame, ScrollView
-	STCore.DataManager.CurrentWindow = 1
+	global SelectorFrame, ImagesFrame, ScrollView
+	DataManager.CurrentWindow = 1
 	SelectorFrame = ttk.Frame(root)
 	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
 	ttk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
@@ -104,27 +104,27 @@ def Awake(root, paths = []):
 	ApplyButton.grid(row=0, column=0, sticky = tk.EW, pady=5)
 
 	# Saved File
-	if len(ItemList) != 0 and len(paths) == 0:
+	if len(DataManager.FileItemList) != 0 and len(paths) == 0:
 		ind = 0
 		Progress = tk.DoubleVar()
-		LoadWindow = CreateLoadBar(root, Progress, title = "Cargando "+basename(STCore.DataManager.CurrentFilePath))
-		while ind < len(ItemList):
-			if ItemList[ind].data is None:
-				if ItemList[ind].Exists():
-					ItemList[ind].data, hdr = fits.getdata(ItemList[ind].path, header = True)
+		LoadWindow = CreateLoadBar(root, Progress, title = "Cargando "+basename(DataManager.CurrentFilePath))
+		while ind < len(DataManager.FileItemList):
+			if DataManager.FileItemList[ind].data is None:
+				if DataManager.FileItemList[ind].Exists():
+					DataManager.FileItemList[ind].data, hdr = fits.getdata(DataManager.FileItemList[ind].path, header = True)
 					try:
-						ItemList[ind].date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
+						DataManager.FileItemList[ind].date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
 					except:
 						print ("File has no Header!   -   using system time instead..")
-						ItemList[ind].date = gmtime(getmtime(ItemList[ind].path))
+						DataManager.FileItemList[ind].date = gmtime(getmtime(DataManager.FileItemList[ind].path))
 						pass
-					Progress.set(100*float(ind)/len(ItemList))
+					Progress.set(100*float(ind)/len(DataManager.FileItemList))
 					LoadWindow[0].update()
 				else:
-					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ ItemList[ind].path)
+					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ DataManager.FileItemList[ind].path)
 					break	
-			ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(ItemList)*240/4))
-			CreateFileGrid(ind, ItemList[ind], root)
+			ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(DataManager.FileItemList)*240/4))
+			CreateFileGrid(ind, DataManager.FileItemList[ind], root)
 			ind += 1
 		LoadWindow[0].destroy()
 	else:
@@ -181,10 +181,10 @@ def CreateFileGrid(index, item, root):
 def SetActive(item, intvar, operation):
 	item.active = intvar.get()
 	if operation == "w":
-		STCore.Tracker.DataChanged = True
+		Tracker.DataChanged = True
 def SetFilteredList():
 	global FilteredList
-	FilteredList = list(filter(lambda item: item.active == 1, ItemList))
+	FilteredList = list(filter(lambda item: item.active == 1, DataManager.FileItemList))
 
 def Apply(root):
 	SetFilteredList()
@@ -194,19 +194,19 @@ def Apply(root):
 	Destroy()
 	# Crea otra lista identica pero solo conteniendo los valores path y active  para liberar espacio al guardar #
 	LightList = []
-	for i in ItemList:
+	for i in DataManager.FileItemList:
 		item = FileItem()
 		item.path = i.path
 		item.active = i.active
 		LightList.append(item)
-	STCore.DataManager.FileItemList = LightList
-	STCore.ImageView.Awake(root, FilteredList)
+	DataManager.FileItemList = LightList
+	ImageView.Awake(root, FilteredList)
 
 def ClearList(root):
-	global ItemList
-	for i in ItemList:
+	
+	for i in DataManager.FileItemList:
 		del i
-	ItemList = []
+	DataManager.FileItemList = []
 	try:
 		ScrollView.config(scrollregion=(0,0, root.winfo_width(), 1))
 		for child in ImagesFrame.winfo_children():
@@ -217,7 +217,7 @@ def ClearList(root):
 def AddFiles(root):
 	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
 	print (paths)
-	STCore.Tracker.DataChanged = True
+	Tracker.DataChanged = True
 	LoadFiles(paths, root)
 
 def Destroy():

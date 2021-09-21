@@ -1,5 +1,8 @@
 # coding=utf-8
 
+from sys import winver
+
+
 try:
 	print("Cargando modulos principales..", end=" ")
 	import sys
@@ -60,12 +63,11 @@ except NameError:  # We are the main py2exe script, not a module
 
 try:
 	print ("Cargando paquetes..", end=" ")
-	import STCore.ImageSelector
-	import STCore.Tools
-	import STCore.DataManager
-	import STCore.Settings
-	import STCore.RuntimeAnalysis
 	import STCore.utils.Icons as icons
+	from STCore import ImageSelector, ImageView, Results, Tracker, DataManager
+	from STCore import Settings
+	
+	from STCore import Composite, ResultsConfigurator, RuntimeAnalysis, Tools
 	print ("Listo")
 except Exception as e:
 	raise ImportError("Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n", e)
@@ -76,13 +78,13 @@ print ("=" * 60)
 
 def Awake(root):
 	global StartFrame, sidebar, bottombar
-	icons.Initialize()
-	STCore.DataManager.CurrentWindow = 0
+	DataManager.CurrentWindow = 0
+
 	WindowName()
 	gc.collect()
 
 	StartFrame = tk.Frame(root, width = 1100, height = 400, bg="gray18")
-	STCore.Tracker.DataChanged = False
+	Tracker.DataChanged = False
 	StartFrame.pack(side = tk.RIGHT, anchor=tk.NE, expand = 1, fill = tk.BOTH)
 
 	# Sidebar Area
@@ -102,45 +104,46 @@ def Awake(root):
 	bottombar = tk.Frame(StartFrame, bg ="gray18", height=64)
 	bottombar.pack(expand=1, side=tk.BOTTOM, anchor=tk.SW, fill = tk.X)
 	bottombar.pack_propagate(0)
-	SessionButton = ttk.Button(bottombar, text = "Nueva Sesion",image = icons.Icons["run"], compound = "left", command = lambda: NewSessionTopLevel(root), width=32, style="Highlight.TButton")
+	SessionButton = ttk.Button(bottombar, text = "Nueva Sesion",image = icons.GetIcon("run"), compound = "left", command = lambda: NewSessionTopLevel(root), width=32, style="Highlight.TButton")
 	SessionButton.pack(side= tk.RIGHT, anchor = tk.E)
-	FilesButton = ttk.Button(StartFrame, text = "Abrir Imagenes",image = icons.Icons["multi"], compound = "left", command = lambda:LoadFiles(root), width = 100)
+	FilesButton = ttk.Button(StartFrame, text = "Abrir Imagenes",image = icons.GetIcon("multi"), compound = "left", command = lambda:LoadFiles(root), width = 100)
 	#FilesButton.pack()
 	#tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
-	LoadButton = ttk.Button(bottombar, text = "Cargar Sesion",image = icons.Icons["open"], compound = "left", command = STCore.Tools.OpenFileCommand, width=32)
+	LoadButton = ttk.Button(bottombar, text = "Cargar Sesion",image = icons.GetIcon("open"), compound = "left", command = Tools.OpenFileCommand, width=32)
 	LoadButton.pack(side= tk.RIGHT, anchor = tk.E, after=SessionButton)
 
 	# Right panel Area
 	CreateRecent(root)
 
+
 def CreateRecent(root):
 	global StartFrame, recentlabel
-	if STCore.Settings._RECENT_FILES_.get() == 1:
+	if Settings._RECENT_FILES_.get() == 1:
 		recentlabel = tk.LabelFrame(StartFrame, text = "Archivos recientes:", bg="gray18", fg="gray90", relief="flat", font="-weight bold")
 		recentlabel.pack(anchor = tk.NW, pady=16, expand=1, fill=tk.BOTH)
 
 		ttk.Label(recentlabel).pack()
-		for p in reversed(STCore.DataManager.RecentFiles):
+		for p in reversed(DataManager.RecentFiles):
 
 			file_el = ttk.Button(recentlabel, text = p[0], cursor="hand2", style= "Highlight.TButton", command= lambda : _helperLoadData(p[1], root))
 			#l.bind("<Button-1>", _helperOpenFile(p, root))
 			file_el.pack(anchor = tk.W, pady=4, fill=tk.X)
 
-			ttk.Button(file_el, image=icons.Icons["delete"], command=lambda:RemoveRecent(p, root), style="Highlight.TButton").pack(side=tk.RIGHT)
+			ttk.Button(file_el, image=icons.GetIcon("delete"), command=lambda:RemoveRecent(p, root), style="Highlight.TButton").pack(side=tk.RIGHT)
 			
 def _helperLoadData(path, root):
 	if isfile(path):
-		STCore.DataManager.LoadData(path)
+		DataManager.LoadData(path)
 	else:
 		messagebox.showerror("Error", "Este archivo ya no existe")
-		STCore.DataManager.RecentFiles.remove(path)
-		STCore.DataManager.SaveRecent()
+		DataManager.RecentFiles.remove(path)
+		DataManager.SaveRecent()
 		Destroy()
 		Awake(root)
 
 def RemoveRecent(path, root):
-	STCore.DataManager.RecentFiles.remove(path)
-	STCore.DataManager.SaveRecent()
+	DataManager.RecentFiles.remove(path)
+	DataManager.SaveRecent()
 	recentlabel.destroy()
 	
 	CreateRecent(root)
@@ -148,7 +151,7 @@ def RemoveRecent(path, root):
 def LoadFiles(root):
 	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
 	Destroy()
-	STCore.ImageSelector.Awake(root, paths)
+	ImageSelector.Awake(root, paths)
 
 def Destroy():
 	StartFrame.destroy()
@@ -156,116 +159,116 @@ def Destroy():
 	bottombar.destroy()
 
 def WindowName():
-	if len(STCore.DataManager.CurrentFilePath) > 0:
-		Window.wm_title(string = "StarTrak 1.1.0 - "+ basename(STCore.DataManager.CurrentFilePath))
+	if len(DataManager.CurrentFilePath) > 0:
+		Window.wm_title(string = "StarTrak 1.1.0 - "+ basename(DataManager.CurrentFilePath))
 	else:
 		Window.wm_title(string = "StarTrak 1.1.0")
 
 
 def LoadData(window):
 	win = Window
-	STCore.ImageSelector.ItemList = STCore.DataManager.FileItemList
-	STCore.ImageView.Stars = STCore.DataManager.StarItemList
-	STCore.Tracker.TrackedStars = STCore.DataManager.TrackItemList
-	STCore.Tracker.DataChanged = False
-	STCore.ResultsConfigurator.SettingsObject = STCore.DataManager.ResultSetting
-	STCore.ImageView.Levels = STCore.DataManager.Levels
-	STCore.Results.MagData = STCore.DataManager.ResultData
-	STCore.DataManager.RuntimeEnabled =  STCore.DataManager.RuntimeEnabled
-	STCore.Results.Constant = 0
-	STCore.Results.BackgroundFlux = 0
-	if  STCore.DataManager.RuntimeEnabled == True:
-		STCore.RuntimeAnalysis.directoryPath = STCore.DataManager.RuntimeDirectory
-		STCore.RuntimeAnalysis.filesList = STCore.DataManager.FileItemList
-		STCore.RuntimeAnalysis.startFile = ""
-		STCore.RuntimeAnalysis.dirState = STCore.DataManager.RuntimeDirState
+	ImageSelector.ItemList = DataManager.FileItemList
+	ImageView.Stars = DataManager.StarItemList
+	Tracker.TrackedStars = DataManager.TrackItemList
+	Tracker.DataChanged = False
+	ResultsConfigurator.SettingsObject = DataManager.ResultSetting
+	ImageView.level_perc = DataManager.Levels
+	Results.MagData = DataManager.ResultData
+	DataManager.RuntimeEnabled =  DataManager.RuntimeEnabled
+	Results.Constant = 0
+	Results.BackgroundFlux = 0
+	if  DataManager.RuntimeEnabled == True:
+		RuntimeAnalysis.directoryPath = DataManager.RuntimeDirectory
+		RuntimeAnalysis.filesList = DataManager.FileItemList
+		RuntimeAnalysis.startFile = ""
+		RuntimeAnalysis.dirState = DataManager.RuntimeDirState
 
 		print ("---------------------------")
-		print ("DirState: ", len(STCore.DataManager.RuntimeDirState))
+		print ("DirState: ", len(DataManager.RuntimeDirState))
 	else:
-		STCore.RuntimeAnalysis.directoryPath = ""
-		STCore.RuntimeAnalysis.dirState = []
-		STCore.RuntimeAnalysis.filesList = []
-		STCore.RuntimeAnalysis.startFile = ""
+		RuntimeAnalysis.directoryPath = ""
+		RuntimeAnalysis.dirState = []
+		RuntimeAnalysis.filesList = []
+		RuntimeAnalysis.startFile = ""
 	if window == 0:
 		# No hacer nada #
 		return
 	if window == 1:
 		Destroy()
-		STCore.ImageSelector.Awake(win)
+		ImageSelector.Awake(win)
 		return
 
-	if (window == 2) and STCore.DataManager.RuntimeEnabled == True:
+	if (window == 2) and DataManager.RuntimeEnabled == True:
 		Destroy()
-		STCore.ImageView.Awake(win, STCore.DataManager.FileItemList)
+		ImageView.Awake(win, DataManager.FileItemList)
 		return
 
 	if window == 2:
 		Destroy()
-		STCore.ImageSelector.Awake(win)
-		STCore.ImageSelector.Apply(win)
+		ImageSelector.Awake(win)
+		ImageSelector.Apply(win)
 		return
 
-	if (window == 4 or window == 3) and STCore.DataManager.RuntimeEnabled == True:
+	if (window == 4 or window == 3) and DataManager.RuntimeEnabled == True:
 		Destroy()
-		STCore.Tracker.CurrentFile = 0
-		STCore.Tracker.Awake(win, STCore.ImageView.Stars, STCore.DataManager.FileItemList)
-		STCore.RuntimeAnalysis.StartRuntime(win)
+		Tracker.CurrentFile = 0
+		Tracker.Awake(win, ImageView.Stars, DataManager.FileItemList)
+		RuntimeAnalysis.StartRuntime(win)
 		return
 	if window == 3 or window == 5:
 		Destroy()
-		STCore.ImageSelector.Awake(win)
-		STCore.ImageSelector.Destroy()
-		STCore.Tracker.Awake(win, STCore.ImageView.Stars, STCore.ImageSelector.FilteredList)
+		ImageSelector.Awake(win)
+		ImageSelector.Destroy()
+		Tracker.Awake(win, ImageView.Stars, ImageSelector.FilteredList)
 		return
 	if window == 4:
 		Destroy()
-		STCore.ImageSelector.Awake(win)
-		STCore.ImageSelector.Destroy()
-		STCore.Results.Awake(win, STCore.ImageSelector.FilteredList, STCore.Tracker.TrackedStars)
+		ImageSelector.Awake(win)
+		ImageSelector.Destroy()
+		Results.Awake(win, ImageSelector.FilteredList, Tracker.TrackedStars)
 		return
 
 def Reset():
 	win = Window
-	STCore.ResultsConfigurator.SettingsObject = None
-	STCore.ImageSelector.ItemList = []
-	STCore.ImageView.ClearStars()
-	STCore.Tracker.TrackedStars = []
-	STCore.Tracker.CurrentFile = 0
-	STCore.ImageView.Levels = -1
-	STCore.Results.MagData = None
-	STCore.DataManager.RuntimeEnabled = False
-	STCore.Results.Constant = 0
-	STCore.Results.BackgroundFlux = 0
-	STCore.RuntimeAnalysis.directoryPath = ""
-	STCore.RuntimeAnalysis.dirState = []
-	STCore.RuntimeAnalysis.filesList = []
-	STCore.RuntimeAnalysis.startFile = ""
-	STCore.Tracker.DataChanged = False
+	ResultsConfigurator.SettingsObject = None
+	ImageSelector.ItemList = []
+	ImageView.ClearStars()
+	Tracker.TrackedStars = []
+	Tracker.CurrentFile = 0
+	ImageView.level_perc = -1
+	Results.MagData = None
+	DataManager.RuntimeEnabled = False
+	Results.Constant = 0
+	Results.BackgroundFlux = 0
+	RuntimeAnalysis.directoryPath = ""
+	RuntimeAnalysis.dirState = []
+	RuntimeAnalysis.filesList = []
+	RuntimeAnalysis.startFile = ""
+	Tracker.DataChanged = False
 	print ("Window Reset")
-	if STCore.DataManager.CurrentWindow == 0:
+	if DataManager.CurrentWindow == 0:
 		# No hacer nada #
 		return
-	if STCore.DataManager.CurrentWindow == 1:
-		STCore.ImageSelector.Destroy()
-		STCore.ImageSelector.ClearList(win)
+	if DataManager.CurrentWindow == 1:
+		ImageSelector.Destroy()
+		ImageSelector.ClearList(win)
 		Awake(win)
 		return
-	if STCore.DataManager.CurrentWindow == 2:
-		STCore.ImageView.Destroy()
-		STCore.ImageView.ClearStars()
+	if DataManager.CurrentWindow == 2:
+		ImageView.Destroy()
+		ImageView.ClearStars()
 		Awake(win)
 		return
-	if STCore.DataManager.CurrentWindow == 3:
-		STCore.Tracker.Destroy()
+	if DataManager.CurrentWindow == 3:
+		Tracker.Destroy()
 		Awake(win)
 		return
-	if STCore.DataManager.CurrentWindow == 4:
-		STCore.Results.Destroy()
+	if DataManager.CurrentWindow == 4:
+		Results.Destroy()
 		Awake(win)
 		return
-	if STCore.DataManager.CurrentWindow == 5:
-		STCore.Composite.Destroy()
+	if DataManager.CurrentWindow == 5:
+		Composite.Destroy()
 		Awake(win)
 		return
 
@@ -345,16 +348,16 @@ def NewSessionTopLevel(root):
 	
 	def Continue():
 		nonlocal sessionType, root, file_paths, directory_path
-		STCore.DataManager.SessionName = str(sessionName.get())
+		DataManager.SessionName = str(sessionName.get())
 		if sessionType == 0:
 			CloseLevel(False)
-			STCore.RuntimeAnalysis.startFile = directory_path
-			STCore.RuntimeAnalysis.Awake(root)
+			RuntimeAnalysis.startFile = directory_path
+			RuntimeAnalysis.Awake(root)
 		if sessionType == 1:
 			CloseLevel(False)
 			Destroy()
 			print (file_paths)
-			STCore.ImageSelector.Awake(root, file_paths)
+			ImageSelector.Awake(root, file_paths)
 
 	ttk.Label(TopFrame, text="Crear nueva sesion", font="-weight bold").pack(side=tk.TOP, anchor=tk.NW, fill=tk.X, pady=16, padx=8)
 	ttk.Label(TopFrame, text="Nombre de la sesion").pack(side=tk.TOP, anchor=tk.N, fill=tk.X, pady=16, padx=16)
@@ -400,6 +403,9 @@ def NewSessionTopLevel(root):
 	ttk.Button(button_frame, text = "Cancelar", command=CloseLevel, width=32).pack(side=tk.RIGHT, pady=16, padx=8)
 	
 
+def PreloadComponents():
+	ImageView.BuildLayout(Window)
+
 if __name__ == "__main__":
 	Window = tk.Tk()
 	
@@ -407,24 +413,33 @@ if __name__ == "__main__":
 	Window.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
 	Window.tk.call('package', 'require', 'awdark')
 
-	
 	import Styles
-	STCore.DataManager.Awake()
-	STCore.Settings.WorkingPath = dirname(abspath(__file__))
-	STCore.DataManager.WorkingPath = dirname(abspath(__file__))
-	#print STCore.DataManager.WorkingPath
-	STCore.DataManager.LoadRecent()
-	STCore.DataManager.TkWindowRef = Window
+
+	Settings.WorkingPath = dirname(abspath(__file__))
+	DataManager.WorkingPath = dirname(abspath(__file__))
+	icons.Initialize()
+	DataManager.Awake()
+	Settings.LoadSettings()
+	Tools.Awake(Window)
+	
+	#print DataManager.WorkingPath
+	DataManager.LoadRecent()
+	DataManager.TkWindowRef = Window
+
+
 	StartFrame = None
 	Window.wm_title(string = "StarTrak 1.1.0")
 	Window.geometry("1280x640")
 	try:
-		Window.iconbitmap(STCore.DataManager.WorkingPath+"/icon.ico")
+		Window.iconbitmap(DataManager.WorkingPath+"/icon.ico")
 	except:
 		pass
-	STCore.Settings.LoadSettings()
+	
+
 	Awake(Window)
-	STCore.Tools.Awake(Window)
+	
+	# Pre-initialize UI components
+	Window.after(10, PreloadComponents)
 	if len(sys.argv) > 1:
 		_helperLoadData(str(sys.argv[1]), Window)
 	
