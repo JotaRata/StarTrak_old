@@ -67,6 +67,18 @@ def Awake(root, stars, ItemList):
 	TitleLabel = ttk.Label(TitleFrame, text = "Analizando imagen..")
 	TitleLabel.pack(fill = tk.X)
 	ScrollFileLbd = lambda: PrevFile(ItemList, stars), lambda: NextFile(ItemList, stars)
+	
+	if len(TrackedStars) == 0 and len(stars) != 0:
+		TrackedStars =[]
+		for s in stars:
+			item = TrackItem()
+			item.star = s
+			item.lastValue = s.value
+			item.currPos = s.location
+			item.trackedPos = []
+			TrackedStars.append(item)
+			OnFinishTrack()
+			
 	ttk.Button(TitleFrame, image = icons.Icons["prev"], command = ScrollFileLbd[0]).pack(side = tk.LEFT)
 	ttk.Button(TitleFrame, image = icons.Icons["next"], command = ScrollFileLbd[1]).pack(side = tk.RIGHT)
 	ImgFrame = ttk.Frame(TrackerFrame)
@@ -91,17 +103,7 @@ def Awake(root, stars, ItemList):
 		if s.value > brightestStarValue:
 			BrightestStar = s
 			brightestStarValue = s.value
-	if len(TrackedStars) == 0 and len(stars) != 0:
-		TrackedStars =[]
-		for s in stars:
-			item = TrackItem()
-			item.star = s
-			item.lastValue = s.value
-			item.currPos = s.location
-			item.trackedPos = []
-			TrackedStars.append(item)
-			OnFinishTrack()
-	
+
 	
 	UpdateSidebar(ItemList[CurrentFile].data, stars)
 
@@ -411,6 +413,7 @@ def UpdateCanvasOverlay(stars, ImgIndex, brightest =  None):
 		t.remove()
 	stIndex = 0
 	for s in stars:
+		print(len(TrackedStars), len(stars))
 		trackPos = (TrackedStars[stIndex].currPos[1], TrackedStars[stIndex].currPos[0])
 		if len(TrackedStars[stIndex].trackedPos) > 0:
 			trackPos = TrackedStars[stIndex].trackedPos[ImgIndex]
