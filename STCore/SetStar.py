@@ -26,7 +26,7 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 	global Window, Image, ImageCanvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
 	if Window is not None:
 		return
-	Window = tk.Toplevel(root)
+	Window = tk.Toplevel()
 	Window.configure(bg= "black")
 	Window.wm_title(string = "Configurar Estrella")
 	Window.protocol("WM_DELETE_WINDOW", CloseWindow)
@@ -153,7 +153,7 @@ def UpdateCanvas(data, stLoc, radius, mean):
 	BrightLabel.config(text = "Confidencia: "+str(confidence)+"%")
 	_conf = str(numpy.clip(int(confidence/30 + 1), 1, 3))
 	ConfIcon.config(image = icons.Icons["conf"+_conf])
-	ImageCanvas.draw()
+	ImageCanvas.draw_idle()
 
 def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, starIndex, sigma):
 

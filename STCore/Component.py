@@ -1,3 +1,6 @@
+from STCore import SetStar
+from STCore.item.Star import StarItem
+from STCore.utils.Icons import GetIcon
 import tkinter as tk
 from tkinter import ttk
 
@@ -39,3 +42,20 @@ class Levels(tk.Frame):
 	def setMax(self, lvl):
 		self._LEVEL_MAX_.set(lvl)
 		self.maxScale.set(lvl)
+
+
+class StarElement(tk.Frame):
+	def __init__(self, master, star : StarItem, command_setstar, command_delete, *args, **kwargs):
+		tk.Frame.__init__(self, master, *args, **kwargs)
+
+		delete_icon = GetIcon("delete")
+		self.config(bg="gray8")
+
+		cmd_del = lambda: command_delete() + self.destroy()
+
+		self.main_button = ttk.Button(self, text=star.name, command=command_setstar)
+		self.deleteButton = ttk.Button(self, image = delete_icon, width = 1, command = cmd_del)
+		self.deleteButton.image = delete_icon   
+		
+		self.main_button.grid(row=0, column=0, columnspan=5)
+		self.deleteButton.grid(row=0, column=6)

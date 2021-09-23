@@ -404,6 +404,7 @@ def NewSessionTopLevel(root):
 	
 
 def PreloadComponents():
+	print ("Preloading components..")
 	ImageView.BuildLayout(Window)
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from STCore.Component import StarElement
 from logging import root
 from operator import contains
 from os import scandir
@@ -29,7 +30,7 @@ import gc
 from PIL import Image
 import STCore.utils.Icons as icons
 from STCore import DataManager
-from STCore.Component.Levels import Levels
+from Component import Levels, StarElement
 
 #region Messages and Events
 params = {"ytick.color" : "w",
@@ -70,6 +71,8 @@ levelFrame : Levels = None
 Viewport : tk.Canvas = None
 Sidebar : tk.Canvas = None 
 
+sidebar_elements = []
+
 isInitialized = False
 #endregion
 
@@ -94,7 +97,7 @@ def Awake(root, items):
 	
 	BuildLayout(root)
 
-	DrawCanvas()
+	App.after(10, DrawCanvas)
 
 	levelFrame.set_limits(numpy.nanmin(Data), numpy.nanmax(Data))
 	levelFrame.setMax(level_perc[0])
@@ -184,6 +187,7 @@ def CreateSidebar(app, root):
 	SidebarList = ttk.Frame(Sidebar, width=250,height=root.winfo_height())
 	Sidebar.create_window(250, 0, anchor=tk.NE, window=SidebarList, width=250, height=400)
 
+	SidebarList.grid_columnconfigure(tuple(range(5)), weight=1)
 	ScrollBar = ttk.Scrollbar(Sidebar, command=Sidebar.yview)
 	Sidebar.config(yscrollcommand=ScrollBar.set)  
 	ScrollBar.pack(side = tk.RIGHT,fill=tk.Y) 
@@ -214,7 +218,6 @@ def CreateLevels(app):
 	global levelFrame
 	levelFrame = Levels(app, ChangeLevels)
 
-	
 #endregion
 
 
@@ -223,30 +226,24 @@ def CreateLevels(app):
 
 def UpdateStarList():
 	global SidebarList
-	for child in SidebarList.winfo_children():
-		child.destroy()
+	
 	index = 0
 	delete_icon = icons.GetIcon("delete")
-	#Las funciones lambda no se pueden llamar dentro de un loop for o while,
-	## para eso hay que crear una funcion que retorne un lambda
-	def __helperCreateWindow(index, stName, stLoc, stRadius, stBound, stType,stThr, bsg):
-		return lambda: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, index, stName, stLoc, stRadius, stBound, stType, stThr)
-	def __helperPop (list, index):
-		return lambda: (list.pop(index), OnStarChange(), __helperTrackedChanged())
-	def __helperTrackedChanged():
+
+	def SetTrackerDirty():
 		Tracker.DataChanged = True
 
-	for s in Stars:
-		ListFrame = ttk.Frame(SidebarList, height=32, width=400)
-		ListFrame.grid(row=index, column=0, sticky=tk.NSEW)
-		#ListFrame.pack(fill = tk.X, expand = 1, anchor = tk.N, pady = 5)
+	for star in Stars:
+		
+		cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, i, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold, bsg=s.bsigma)
+		
+		cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty())
 
-		cmd = __helperCreateWindow(index, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold, bsg=s.bsigma)
-		cmd2= __helperPop(Stars, index)
-		ttk.Button(ListFrame, text = s.name, width = 30, command = cmd).pack(side = tk.LEFT, fill = tk.X, expand = 1)
-		deleteButton = ttk.Button(ListFrame, image = delete_icon, width = 1, command = cmd2)
-		deleteButton.image = delete_icon   #se necesita una referencia
-		deleteButton.pack(side = tk.RIGHT)
+		element = StarElement(SidebarList, star, cmd_star, cmd_delete)
+		sidebar_elements.append(element)
+
+		element.grid(row=index, column=0, columnspan=6, sticky= tk.NSEW)
+
 		index += 1
 
 	SidebarList.config(height=32 * index)
@@ -354,7 +351,7 @@ def Destroy():
 	Sidebar.grid_remove()
 	Viewport.grid_remove()
 	levelFrame.grid_remove()
-	gc.collect()
+	#gc.collect()
 
 def Apply(root):
 	items = DataManager.FileItemList
@@ -494,6 +491,15 @@ def OnMouseDrag(event):
 def OnMouseRelease(event):
 	global MousePress, SelectedStar
 	
+	dx = event.xdata - MousePress[2]
+	dy = event.ydata - MousePress[3]
+	# Change this value for lower/higher drag tolerance
+	drag_tolerance = 0.2
+
+	if  dx < drag_tolerance and dy < drag_tolerance:
+		OnImageClick(event)
+		return
+
 	if SelectedStar == -100:
 		if z_box is not None:
 			setp(z_box, alpha = 0.5)
@@ -501,17 +507,7 @@ def OnMouseRelease(event):
 	if SelectedStar >= 0:
 		OnStarChange()
 	SelectedStar = -1
-
-	dx = event.xdata - MousePress[2]
-	dy = event.ydata - MousePress[3]
-	# Change this value for lower/higher drag tolerance
-	drag_tolerance = 0.2
-
-	if  dx < drag_tolerance and dy < drag_tolerance:
-		loc = (int(event.ydata), int(event.xdata))
-		SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
 	
-	UpdateStarList()
 	for a in axis.artists:
 		setp(a, linewidth = 1)
 	
@@ -521,7 +517,7 @@ def OnMouseRelease(event):
 	
 def OnImageClick(event):
 	loc = (int(event.ydata), int(event.xdata))
-	SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
+	SetStar.Awake(App, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
 
 def OnStarChange():
 	UpdateStarList()
