@@ -11,6 +11,8 @@ import numpy
 from matplotlib import use, figure
 from matplotlib.axes import Axes
 from numpy.lib.histograms import histogram
+
+from STCore.item import Star
 use("TkAgg")
 
 import matplotlib as plt
@@ -70,6 +72,7 @@ App : ttk.Frame = None
 levelFrame : Levels = None
 Viewport : tk.Canvas = None
 Sidebar : tk.Canvas = None 
+sidebar_buttons : tk.Frame = None
 
 sidebar_elements = []
 
@@ -115,16 +118,21 @@ def BuildLayout(root : tk.Tk):
 		App = ttk.Frame(root, width=root.winfo_width(), height=root.winfo_height())
 		App.pack(fill=tk.BOTH, expand=1)
 
-		App.columnconfigure(tuple(range(1)), weight=1)
-		App.rowconfigure(tuple(range(1)), weight=1)
+		App.columnconfigure(tuple(range(2)), weight=1)
+		App.columnconfigure(1, weight=0)
+
+		App.rowconfigure(tuple(range(2)), weight=1)
 
 		CreateCanvas(App)
-		CreateSidebar(App, App)
 		CreateLevels(App)
-		
-		Viewport.grid(row=0, column=0, sticky=tk.NSEW)
-		Sidebar.grid(row=0, column=1, rowspan=2, sticky=tk.NS)
-		levelFrame.grid(row=1, column=0, sticky=tk.EW)
+		CreateSidebar(App, root)
+			
+		#Sidebar.grid_propagate(0)
+
+		Viewport.grid(row=0, column=0, rowspan=2, sticky=tk.NSEW)
+		Sidebar.grid(row=0, column=1, rowspan=2, sticky=tk.NSEW)
+		levelFrame.grid(row=2, column=0, sticky=tk.EW)
+		sidebar_buttons.grid(row=2, column=1, sticky="ew")
 		
 		if fresh:
 			Destroy()
@@ -133,6 +141,7 @@ def BuildLayout(root : tk.Tk):
 		Viewport.grid()
 		Sidebar.grid()
 		levelFrame.grid()
+		sidebar_buttons.grid()
 
 #region Create Funcions
 def CreateCanvas(app):
@@ -177,40 +186,40 @@ def DrawCanvas():
 	UpdateCanvasOverlay()
 
 def CreateSidebar(app, root):
-	global Sidebar, SidebarList
+	global Sidebar, SidebarList, sidebar_buttons
 	
 	#import STCore.ImageSelector
 
-	Sidebar = tk.Canvas(app, width = 250, relief = "flat", bg = "gray16")
-	Sidebar.config(scrollregion=(0,0, 250, 1))
+	Sidebar = tk.Canvas(app, width = 300, relief = "flat", bg = "gray16")
+	Sidebar.config(scrollregion=(0,0, 300, 1))
 
-	SidebarList = ttk.Frame(Sidebar, width=250,height=root.winfo_height())
-	Sidebar.create_window(250, 0, anchor=tk.NE, window=SidebarList, width=250, height=400)
+	SidebarList = ttk.Frame(Sidebar, width=300,height=root.winfo_height())
+	Sidebar.create_window(300, 0, anchor=tk.NE, window=SidebarList, width=300, height=600)
 
-	SidebarList.grid_columnconfigure(tuple(range(5)), weight=1)
-	ScrollBar = ttk.Scrollbar(Sidebar, command=Sidebar.yview)
+	SidebarList.grid_columnconfigure(0, weight=1)
+
+	ScrollBar = ttk.Scrollbar(App, command=Sidebar.yview)
+	ScrollBar.grid(row=0, column=2, rowspan=2, sticky=tk.NS)
 	Sidebar.config(yscrollcommand=ScrollBar.set)  
-	ScrollBar.pack(side = tk.RIGHT,fill=tk.Y) 
 
 	cmdTrack = lambda : Apply(root)
 	def CommandCreate():
 		if Data is None:
 			return
 		loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
-		SetStar.Awake(app, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
+		SetStar.Awake(app, Data, Stars, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
 	def CommandBack():
 		import STCore.ImageSelector
 		Destroy()
 		STCore.ImageSelector.Awake(root, [])
 
-	buttonsFrame = ttk.Frame(Sidebar)
-	buttonsFrame.pack(side=tk.BOTTOM, anchor = tk.S, expand = 1, fill = tk.X)
+	sidebar_buttons = ttk.Frame(app)
 	
-	PrevButton = ttk.Button(buttonsFrame, text = " Volver", image = icons.GetIcon("prev"), command = CommandBack, compound="left")
+	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = icons.GetIcon("prev"), command = CommandBack, compound="left")
 	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
-	AddButton = ttk.Button(buttonsFrame, text = "Agregar estrella", command = CommandCreate, image = icons.GetIcon("add"), compound="left")
+	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, image = icons.GetIcon("add"), compound="left")
 	AddButton.grid(row = 0, column = 1, sticky = tk.EW)
-	NextButton = ttk.Button(buttonsFrame, text = "Continuar", command = cmdTrack, image = icons.GetIcon("next"), compound = "right")
+	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = icons.GetIcon("next"), compound = "right")
 	NextButton.grid(row = 0, column = 2, sticky = tk.EW)
 
 
@@ -223,33 +232,46 @@ def CreateLevels(app):
 
 
 #region Update Funcions
-
-def UpdateStarList():
+def AddStar(star : StarItem):
+	global Stars
+	global sidebar_elements
 	global SidebarList
 	
-	index = 0
-	delete_icon = icons.GetIcon("delete")
+	index = len(Stars)
+	Stars.append(star)
 
 	def SetTrackerDirty():
 		Tracker.DataChanged = True
 
+	cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, i, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold, bsg=s.bsigma)
+	
+	cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty())
+
+	element = StarElement(SidebarList, star, cmd_star, cmd_delete)
+	
+	sidebar_elements.append(element)
+
+	element.grid(row=index, column=0, sticky= tk.NSEW)
+
+
+def UpdateStarList():
+	global SidebarList
+	global sidebar_elements
+
+	index = 0
+	
 	for star in Stars:
-		
-		cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, i, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold, bsg=s.bsigma)
-		
-		cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty())
-
-		element = StarElement(SidebarList, star, cmd_star, cmd_delete)
-		sidebar_elements.append(element)
-
-		element.grid(row=index, column=0, columnspan=6, sticky= tk.NSEW)
-
+		element :StarElement = sidebar_elements[index]
+		element.update_star(star)
 		index += 1
 
 	SidebarList.config(height=32 * index)
-	Sidebar.config(scrollregion=(0,0, 250, 32 * index))
-	UpdateCanvasOverlay()
 	Sidebar.update_idletasks()
+	Sidebar.config(scrollregion=SidebarList.bbox())
+	#Sidebar.after(10, lambda:Sidebar.config(scrollregion=(0,0, 250, 32 * index)))
+	#Sidebar.update_idletasks()
+	App.after(100, UpdateCanvasOverlay)
+	
 
 def UpdateCanvasOverlay():
 	# Si se elimina el primer elemento de un lista en un ciclo for, entonces
@@ -317,6 +339,9 @@ def UpdateZoomGizmo(scale, xrange, yrange):
 def ChangeLevels():
 		global level_perc
 
+		if implot is None:
+			return
+			
 		if levelFrame.getMin() > levelFrame.getMax():
 			levelFrame.setMin(levelFrame.getMax() - 1)
 
@@ -347,10 +372,13 @@ def Destroy():
 	img_offset = (0, 0)
 
 	#ViewerFrame.destroy()
-	App.pack_forget()
+	
 	Sidebar.grid_remove()
 	Viewport.grid_remove()
 	levelFrame.grid_remove()
+	sidebar_buttons.grid_remove()
+
+	App.pack_forget()
 	#gc.collect()
 
 def Apply(root):
@@ -517,7 +545,7 @@ def OnMouseRelease(event):
 	
 def OnImageClick(event):
 	loc = (int(event.ydata), int(event.xdata))
-	SetStar.Awake(App, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
+	SetStar.Awake(App, Data, Stars, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
 
 def OnStarChange():
 	UpdateStarList()

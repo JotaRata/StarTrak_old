@@ -22,7 +22,7 @@ XLoc= YLoc = None
 #endregion
 
 
-def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20), radius = 15, bounds = 40, Type = 0, threshold = 50, sigma = 2):
+def Awake(root, Data, Stars, OnStarChange, OnStarAdd = None, starIndex = -1, name = "Nueva Estrella", location = (20, 20), radius = 15, bounds = 40, Type = 0, threshold = 50, sigma = 2):
 	global Window, Image, ImageCanvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
 	if Window is not None:
 		return
@@ -106,7 +106,7 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 						 radius=StarRadius.get() , Type=1,
 						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get(), back_median)
 						 , threshold=StarThreshold.get(),
-						 stars=Stars, OnStarChange= OnStarChange,starIndex=starIndex, sigma = SigmaFactor.get())
+						 stars=Stars, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sigma = SigmaFactor.get())
 
 	controlButtons = ttk.Frame(rightPanel)
 	controlButtons.grid(row =3)
@@ -155,7 +155,7 @@ def UpdateCanvas(data, stLoc, radius, mean):
 	ConfIcon.config(image = icons.Icons["conf"+_conf])
 	ImageCanvas.draw_idle()
 
-def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, starIndex, sigma):
+def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, OnStarAdd, starIndex, sigma):
 
 	st = StarItem()
 	st.name = name
@@ -168,7 +168,8 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.threshold = (threshold * 0.01)
 	st.bsigma = sigma
 	if starIndex == -1:
-		stars.append(st)
+		if OnStarAdd is not None:
+			OnStarAdd(st)
 		STCore.Tracker.DataChanged = True
 	else:
 		stars[starIndex] = st

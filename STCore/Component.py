@@ -1,3 +1,4 @@
+from scipy.stats.stats import ranksums
 from STCore import SetStar
 from STCore.item.Star import StarItem
 from STCore.utils.Icons import GetIcon
@@ -50,12 +51,18 @@ class StarElement(tk.Frame):
 
 		delete_icon = GetIcon("delete")
 		self.config(bg="gray8")
+		self.grid_columnconfigure(tuple(range(1)), weight=1)
+		self.grid_columnconfigure(6, weight=0)
 
-		cmd_del = lambda: command_delete() + self.destroy()
+		cmd_del = lambda: (command_delete(), self.destroy())
 
 		self.main_button = ttk.Button(self, text=star.name, command=command_setstar)
 		self.deleteButton = ttk.Button(self, image = delete_icon, width = 1, command = cmd_del)
 		self.deleteButton.image = delete_icon   
 		
-		self.main_button.grid(row=0, column=0, columnspan=5)
-		self.deleteButton.grid(row=0, column=6)
+		self.main_button.grid(row=0, column=0, sticky="news")
+		self.deleteButton.grid(row=0, column=1)
+	
+	def update_star(self, star : StarItem):
+		self.main_button.config(text=star.name)
+
