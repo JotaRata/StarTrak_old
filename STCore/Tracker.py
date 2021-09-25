@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from astropy.io.fits import column
 from astropy.io.fits.column import FORMATORDER
 from item import ResultSettings
 import numpy
@@ -40,7 +41,7 @@ SidebarList : ttk.Frame = None
 BrightestStar = None
 TrackedStars = []
 DataChanged = False
-buttonsFrame = None
+sidebar_buttons = None
 lock = Lock()
 
 IsTracking = False
@@ -83,13 +84,13 @@ def Awake(root, stars, ItemList):
 			TrackedStars.append(item)
 			OnFinishTrack()
 	
-	Sidebar.config(scrollregion=(0,0, 300, 64 * len(TrackedStars)))
 	FileLabel.config(text = "Imagen: "+ basename(ItemList[CurrentFile].path))
 
 	#BuildLayout(root)
-
-	App.after(10, DrawCanvas)
-	App.after(20, UpdateSidebar, ItemList[CurrentFile].data)
+	if implot is None:
+		App.after(10, DrawCanvas)
+	App.after(100, UpdateSidebar, ItemList[CurrentFile].data)
+	
 	CurrentFile = 0
 	if len(TrackedStars) > 0:
 		if DataChanged == True:
@@ -114,7 +115,7 @@ def Awake(root, stars, ItemList):
 def CreateCanvas():
 	global canvas, axis, CurrentFile, Viewport
 
-	ImageFigure = figure.Figure(figsize = (7,4), dpi = 100)
+	ImageFigure = figure.Figure(figsize = (7,3.6), dpi = 100)
 	ImageFigure.set_facecolor("black")
 	if CurrentFile >= len(DataManager.FileItemList):
 		CurrentFile = 0
@@ -141,7 +142,7 @@ def BuildLayout(root):
 	fresh = Viewport is None
 	# Check whether the layout hadn't been built yet
 	if IsInitialized == False:
-		App = ttk.Frame(root, name="tracker")
+		App = ttk.Frame(root, width=root.winfo_width(), height=root.winfo_height(), name="tracker")
 		App.pack(fill = tk.BOTH, expand = 1)
 
 		App.columnconfigure(tuple(range(2)), weight=1)
@@ -153,8 +154,9 @@ def BuildLayout(root):
 		CreateSidebar(root)
 
 		Viewport.grid(row=0, column=0, rowspan=2, sticky=tk.NSEW)
-		Sidebar.grid(row=0, column=1, rowspan=3, sticky=tk.NSEW)
+		Sidebar.grid(row=0, column=1, rowspan=2, sticky=tk.NSEW)
 		FooterFrame.grid(row=2, column=0, sticky="ew")
+		sidebar_buttons.grid(row=2, column=1, sticky="ew")
 
 		if fresh:
 			Destroy()
@@ -183,7 +185,7 @@ def DrawCanvas():
 
 # Creates the sidebar, but doesn't draw it to the UI
 def CreateSidebar(root):
-	global App, SidebarList, Sidebar, applyButton, TrackButton, buttonsFrame
+	global App, SidebarList, Sidebar, applyButton, TrackButton, sidebar_buttons
 
 	Sidebar = tk.Canvas(App, width = 300, relief = "flat", bg = "gray16")
 	Sidebar.config(scrollregion=(0,0, 300, 1))
@@ -205,7 +207,7 @@ def CreateSidebar(root):
 
 	cmdNext = lambda: Apply(root)
 
-	ApplyMenu = tk.Menu(Sidebar, tearoff=0)
+	ApplyMenu = tk.Menu(App, tearoff=0)
 	ApplyMenu.add_command(label="Analizar", command=cmdNext)
 
 	if ResultsConfigurator.SettingsObject is not None:
@@ -213,20 +215,20 @@ def CreateSidebar(root):
 		
 	ApplyMenu.add_command(label="Componer imagen", command=lambda : CompositeNow(root))
 
-	buttonsFrame = ttk.Frame(Sidebar, width = 200)
-	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
-	PrevButton = ttk.Button(buttonsFrame, text = " Volver", command = CommandBack, image = icons.Icons["prev"], compound = "left")
+	sidebar_buttons = ttk.Frame(App, width = 300)
+
+	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", command = CommandBack, image = icons.Icons["prev"], compound = "left")
 	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
 	if DataManager.RuntimeEnabled == False:
-		TrackButton = ttk.Button(buttonsFrame)
+		TrackButton = ttk.Button(sidebar_buttons)
 		TrackButton.config(text = "Iniciar",image = icons.Icons["play"], compound = "left", command = lambda: (StartTracking(), SwitchTrackButton()))	
-		applyButton = ttk.Button(buttonsFrame, text = "Continuar",image = icons.Icons["next"], compound = "right", command = cmdNext, state = tk.DISABLED)
+		applyButton = ttk.Button(sidebar_buttons, text = "Continuar",image = icons.Icons["next"], compound = "right", command = cmdNext, state = tk.DISABLED)
 		applyButton.bind("<Button-1>", lambda event: PopupMenu(event, ApplyMenu))
 		applyButton.grid(row = 0, column = 2, sticky = tk.EW)
 	else:
-		TrackButton = ttk.Button(buttonsFrame)
+		TrackButton = ttk.Button(sidebar_buttons)
 		TrackButton.config(text = "Detener Analisis", image = icons.Icons["stop"], compound = "left", command = lambda: (StopTracking(), SwitchTrackButton(True)))
-		RestartButton = ttk.Button(buttonsFrame, text = "Reiniciar", image = icons.Icons["restart"], compound = "left", command = lambda: StartTracking())
+		RestartButton = ttk.Button(sidebar_buttons, text = "Reiniciar", image = icons.Icons["restart"], compound = "left", command = lambda: StartTracking())
 		RestartButton.grid(row = 0, column = 2, sticky = tk.EW)
 	TrackButton.grid(row = 0, column = 1, sticky = tk.EW)
 
@@ -252,6 +254,8 @@ def Destroy():
 	
 	App.pack_forget()
 
+	for child in SidebarList.winfo_children():
+		child.destroy()
 	#implot = None
 	#axis = None
 
@@ -259,7 +263,7 @@ def Destroy():
 def OnRuntimeWindowClosed(root):
 	if DataManager.RuntimeEnabled == False:
 		return
-	CreateButton = ttk.Button(buttonsFrame, text = "Mostrar Grafico", image = icons.Icons["plot"], compound = "left")
+	CreateButton = ttk.Button(sidebar_buttons, text = "Mostrar Grafico", image = icons.Icons["plot"], compound = "left")
 	cmd = lambda: (CreateButton.destroy(), ResultsConfigurator.Awake(root, RuntimeAnalysis.filesList, TrackedStars))
 	DataManager.CurrentWindow = 3
 	CreateButton.grid(row = 0, column = 3, sticky = tk.EW)
@@ -335,6 +339,8 @@ def StartTracking():
 def UpdateSidebar(data):
 	global SidebarList
 	index = 0
+	Sidebar.config(scrollregion=(0,0, 300, 64 * len(TrackedStars)))
+
 	for child in SidebarList.winfo_children():
 		child.destroy()
 	for track in TrackedStars:

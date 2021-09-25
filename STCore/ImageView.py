@@ -99,8 +99,8 @@ def Awake(root):
 		STCore.DataManager.Levels = level_perc
 	
 	#BuildLayout(root)
-
-	App.after(10, DrawCanvas)
+	if implot is None:
+		App.after(10, DrawCanvas)
 
 	levelFrame.set_limits(numpy.nanmin(Data), numpy.nanmax(Data))
 	levelFrame.setMax(level_perc[0])
