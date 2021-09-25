@@ -199,8 +199,8 @@ def Apply(root):
 		item.path = i.path
 		item.active = i.active
 		LightList.append(item)
-	DataManager.FileItemList = LightList
-	ImageView.Awake(root, FilteredList)
+	DataManager.FileItemList = FilteredList
+	ImageView.Awake(root)
 
 def ClearList(root):
 	

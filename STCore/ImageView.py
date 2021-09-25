@@ -81,7 +81,7 @@ isInitialized = False
 
 #region Main Body
 
-def Awake(root, items):
+def Awake(root):
 	global ViewerFrame, Data, Stars, canvas, implot, ImageFrame, axis, Sidebar, SidebarList, SliderLabel, level_perc, levelFrame, isInitialized
 
 	STCore.DataManager.CurrentWindow = 2
@@ -90,7 +90,7 @@ def Awake(root, items):
 
 	#ViewerFrame = tk.Frame(root)
 	#ttk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
-	Data =  items[0].data
+	Data =  DataManager.FileItemList[0].data
 	level_perc = STCore.DataManager.Levels
 
 	# Setting Levels
@@ -110,41 +110,46 @@ def Awake(root, items):
 	OnStarChange()
 	isInitialized = True
 
+# Draws the layout in a single pass
 def BuildLayout(root : tk.Tk):
 	global App, Viewport, Sidebar, levelFrame, isInitialized
 
+	# Checks if Viewport object hasn't been destroyed or unloaded
 	fresh = Viewport is None
+
+	# Check whether the layout hadn't been built yet
 	if isInitialized == False:
-		App = ttk.Frame(root, width=root.winfo_width(), height=root.winfo_height())
+		App = ttk.Frame(root, width=root.winfo_width(), height=root.winfo_height(), name="imageview")
 		App.pack(fill=tk.BOTH, expand=1)
 
 		App.columnconfigure(tuple(range(2)), weight=1)
 		App.columnconfigure(1, weight=0)
-
 		App.rowconfigure(tuple(range(2)), weight=1)
 
-		CreateCanvas(App)
-		CreateLevels(App)
-		CreateSidebar(App, root)
+		CreateCanvas()
+		CreateLevels()
+		CreateSidebar(root)
 			
 		#Sidebar.grid_propagate(0)
 
-		Viewport.grid(row=0, column=0, rowspan=2, sticky=tk.NSEW)
-		Sidebar.grid(row=0, column=1, rowspan=2, sticky=tk.NSEW)
+		Viewport.grid(row=0, column=0, rowspan=2, sticky="nsew")
+		Sidebar.grid(row=0, column=1, rowspan=2, sticky="nsew")
 		levelFrame.grid(row=2, column=0, sticky=tk.EW)
 		sidebar_buttons.grid(row=2, column=1, sticky="ew")
 		
 		if fresh:
 			Destroy()
 		isInitialized = True
-	else:	# No need to rebuild
-		Viewport.grid()
-		Sidebar.grid()
-		levelFrame.grid()
-		sidebar_buttons.grid()
+	#else:	# No need to rebuild
+		#Viewport.grid()
+		#Sidebar.grid()
+		#levelFrame.grid()
+		#sidebar_buttons.grid()
 
 #region Create Funcions
-def CreateCanvas(app):
+
+# Creates the viewport, but doesn't draw it to the UI
+def CreateCanvas():
 	global canvas, implot, ImageFrame, axis, Viewport
 	
 	#ImageFrame = ttk.Frame(app, width = 700, height = 350)
@@ -154,7 +159,7 @@ def CreateCanvas(app):
 	fig.set_facecolor("black")
 
 	# Create Canvas before any complex calculations
-	canvas = FigureCanvasTkAgg(fig, master=app)
+	canvas = FigureCanvasTkAgg(fig, master=App)
 	
 	Viewport = canvas.get_tk_widget()
 	Viewport.configure(bg="black")
@@ -168,6 +173,7 @@ def CreateCanvas(app):
 	canvas.mpl_connect("button_release_event", OnMouseRelease) 
 	canvas.mpl_connect('scroll_event',OnMouseScroll)
 
+# Fill the Canvas window for the viewport
 def DrawCanvas():
 	global canvas, implot, ImageFrame, axis
 
@@ -185,12 +191,11 @@ def DrawCanvas():
 	img_limits = (axis.get_xlim(), axis.get_ylim())
 	UpdateCanvasOverlay()
 
-def CreateSidebar(app, root):
-	global Sidebar, SidebarList, sidebar_buttons
+# Creates the siderbar, but does not draw it to the UI
+def CreateSidebar(root):
+	global App, Sidebar, SidebarList, sidebar_buttons
 	
-	#import STCore.ImageSelector
-
-	Sidebar = tk.Canvas(app, width = 300, relief = "flat", bg = "gray16")
+	Sidebar = tk.Canvas(App, width = 300, relief = "flat", bg = "gray16")
 	Sidebar.config(scrollregion=(0,0, 300, 1))
 
 	SidebarList = ttk.Frame(Sidebar, width=300,height=root.winfo_height())
@@ -207,13 +212,13 @@ def CreateSidebar(app, root):
 		if Data is None:
 			return
 		loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
-		SetStar.Awake(app, Data, Stars, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
+		SetStar.Awake(App, Data, Stars, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
 	def CommandBack():
 		import STCore.ImageSelector
 		Destroy()
 		STCore.ImageSelector.Awake(root, [])
 
-	sidebar_buttons = ttk.Frame(app)
+	sidebar_buttons = ttk.Frame(App)
 	
 	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = icons.GetIcon("prev"), command = CommandBack, compound="left")
 	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
@@ -223,35 +228,36 @@ def CreateSidebar(app, root):
 	NextButton.grid(row = 0, column = 2, sticky = tk.EW)
 
 
-def CreateLevels(app):
+def CreateLevels():
 	global levelFrame
-	levelFrame = Levels(app, ChangeLevels)
+	levelFrame = Levels(App, ChangeLevels)
 
 #endregion
 
 
 
 #region Update Funcions
-def AddStar(star : StarItem):
+
+def AddStar(star : StarItem, onlyUI = False):
 	global Stars
 	global sidebar_elements
 	global SidebarList
 	
 	index = len(Stars)
-	Stars.append(star)
+
+	# onlyUI flag tells whether the program is adding new stars to the list, or just refreshing their UI elements
+	if not onlyUI:
+		Stars.append(star)
 
 	def SetTrackerDirty():
 		Tracker.DataChanged = True
 
-	cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, i, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold, bsg=s.bsigma)
-	
+	cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, i, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold, bsg=s.bsigma)	
 	cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty())
 
 	element = StarElement(SidebarList, star, cmd_star, cmd_delete)
-	
 	sidebar_elements.append(element)
-
-	element.grid(row=index, column=0, sticky= tk.NSEW)
+	element.grid(row=index, column=0, sticky= "nsew")
 
 
 def UpdateStarList():
@@ -260,6 +266,12 @@ def UpdateStarList():
 
 	index = 0
 	
+	# Recreate the list of elements if its size doesn't match the Stars (i.e. Load a trak file)
+	if len(sidebar_elements) != len(Stars):
+		for star in Stars:
+			AddStar(star, onlyUI=True)
+
+	# Update elements if necessary
 	for star in Stars:
 		element :StarElement = sidebar_elements[index]
 		element.update_star(star)
@@ -270,7 +282,7 @@ def UpdateStarList():
 	Sidebar.config(scrollregion=SidebarList.bbox())
 	#Sidebar.after(10, lambda:Sidebar.config(scrollregion=(0,0, 250, 32 * index)))
 	#Sidebar.update_idletasks()
-	App.after(100, UpdateCanvasOverlay)
+	App.after(10, UpdateCanvasOverlay)
 	
 
 def UpdateCanvasOverlay():
@@ -371,18 +383,12 @@ def Destroy():
 	img_limits, zoom_factor = None, 1
 	img_offset = (0, 0)
 
-	#ViewerFrame.destroy()
-	
-	Sidebar.grid_remove()
-	Viewport.grid_remove()
-	levelFrame.grid_remove()
-	sidebar_buttons.grid_remove()
-
 	App.pack_forget()
 	#gc.collect()
 
 def Apply(root):
 	items = DataManager.FileItemList
+	
 	from tkinter import messagebox
 	if len(Stars) > 0:
 		Destroy()

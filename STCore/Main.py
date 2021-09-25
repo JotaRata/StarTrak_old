@@ -200,7 +200,7 @@ def LoadData(window):
 
 	if (window == 2) and DataManager.RuntimeEnabled == True:
 		Destroy()
-		ImageView.Awake(win, DataManager.FileItemList)
+		ImageView.Awake(win)
 		return
 
 	if window == 2:
@@ -406,6 +406,7 @@ def NewSessionTopLevel(root):
 def PreloadComponents():
 	print ("Preloading components..")
 	ImageView.BuildLayout(Window)
+	Tracker.BuildLayout(Window)
 
 if __name__ == "__main__":
 	Window = tk.Tk()
@@ -436,11 +437,12 @@ if __name__ == "__main__":
 	except:
 		pass
 	
+	PreloadComponents()
 
-	Awake(Window)
+	Window.after(20, Awake, Window)
 	
 	# Pre-initialize UI components
-	Window.after(10, PreloadComponents)
+	
 	if len(sys.argv) > 1:
 		_helperLoadData(str(sys.argv[1]), Window)
 	
