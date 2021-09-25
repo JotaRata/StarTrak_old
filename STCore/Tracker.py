@@ -1,7 +1,6 @@
 # coding=utf-8
 
-from astropy.io.fits import column
-from astropy.io.fits.column import FORMATORDER
+from STCore.Component import TrackElement
 from item import ResultSettings
 import numpy
 from matplotlib import use, figure
@@ -37,6 +36,7 @@ axis = None
 Viewport : tk.Canvas = None
 Sidebar : tk.Canvas = None
 SidebarList : ttk.Frame = None
+sidebar_elements = []
 
 BrightestStar = None
 TrackedStars = []
@@ -62,12 +62,28 @@ IsInitialized = False
 
 #endregion
 def Awake(root, stars, ItemList):
-	global App, FileLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile, DataChanged, IsTracking, ScrollFileLbd
+	global App, FileLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile, DataChanged, IsTracking, ScrollFileLbd, sidebar_elements
 	
 	DataManager.CurrentWindow = 3
 	IsTracking = False
 
 	App.pack(fill=tk.BOTH, expand=1)
+	
+	CurrentFile = 0
+	if len(TrackedStars) > 0:
+		if DataChanged == True:
+			messagebox.showwarning("Aviso", "La lista de estrellas ha sido modificada\nNo se podrán usar los datos de rastreo anteriores.")
+			TrackedStars = []
+			Results.MagData = None
+			if DataManager.RuntimeEnabled == True:
+				StartTracking()
+			else:
+				for i in sidebar_elements:
+					i.destroy()
+				sidebar_elements = []
+				OnFinishTrack()
+		else:
+			OnFinishTrack()
 
 	if len(TrackedStars) == 0 and len(stars) != 0:
 		TrackedStars =[]
@@ -77,6 +93,7 @@ def Awake(root, stars, ItemList):
 			item.lastValue = s.value
 			item.currPos = s.location
 			item.trackedPos = []
+			item.active = -1
 			
 			for i in ItemList:
 				item.trackedPos.append(list(reversed(s.location)))
@@ -91,18 +108,6 @@ def Awake(root, stars, ItemList):
 		App.after(10, DrawCanvas)
 	App.after(100, UpdateSidebar, ItemList[CurrentFile].data)
 	
-	CurrentFile = 0
-	if len(TrackedStars) > 0:
-		if DataChanged == True:
-			messagebox.showwarning("Aviso", "La lista de estrellas ha sido modificada\nNo se podrán usar los datos de rastreo anteriores.")
-			TrackedStars = []
-			Results.MagData = None
-			if DataManager.RuntimeEnabled == True:
-				StartTracking()
-			else:
-				OnFinishTrack()
-		else:
-			OnFinishTrack()
 	brightestStarValue = 0
 	for s in stars:
 		if s.value > brightestStarValue:
@@ -254,8 +259,6 @@ def Destroy():
 	
 	App.pack_forget()
 
-	for child in SidebarList.winfo_children():
-		child.destroy()
 	#implot = None
 	#axis = None
 
@@ -336,47 +339,41 @@ def StartTracking():
 		UpdateTrack(DataManager.FileItemList, DataManager.StarItemList)
 
 
-def UpdateSidebar(data):
-	global SidebarList
-	index = 0
-	Sidebar.config(scrollregion=(0,0, 300, 64 * len(TrackedStars)))
+def UpdateSidebar(data=None):
+	global TrackedStars, SidebarList, sidebar_elements
+	
+	# Create elements if they dont exist
+	if len(sidebar_elements) == 0:
+		Sidebar.config(scrollregion=(0,0, 300, 64 * len(TrackedStars)))
+		index = 0
+		for track in TrackedStars:
+			track_element = TrackElement(SidebarList, track)
+			track_element.grid(row = index, column=0, sticky="ew", ipady=2)
 
-	for child in SidebarList.winfo_children():
-		child.destroy()
-	for track in TrackedStars:
-		trackFrame = ttk.Frame(SidebarList, style="TButton")
-		col = "black"
-		if CurrentFile in track.lostPoints:
-			col = "red"
-		#frame.config(highlightbackground = col, borderwidth = 2, highlightthickness = 2)
-		tk.Grid.columnconfigure(trackFrame, 2, weight=0)
-		trackFrame.pack(fill = tk.X, anchor = tk.N, pady=4)
-		ttk.Label(trackFrame, text = track.star.name,font="-weight bold").grid(row = 0, column = 0,sticky = tk.W, columnspan = 2)
-		if len(track.trackedPos) > 0:
-			
-			_trust = 100 *  numpy.clip(1 - numpy.abs(-GetMaxima(data, track, CurrentFile) + track.star.value) / track.star.threshold, 0, 1) 
-			_trust = int(_trust)
+			sidebar_elements.append(track_element)
+			index += 1
+	else:
+		index = 0
+		for track in TrackedStars:
 
-			ttk.Label(trackFrame, text = "Posicion: " + str(track.trackedPos[CurrentFile]), width = 18).grid(row = 1, column = 0,sticky = tk.W)
-			ttk.Label(trackFrame, text = "Confianza: " + str(_trust)+"%", width = 18).grid(row = 1, column = 1,sticky = tk.W)
-			ttk.Label(trackFrame, text = "Rastreados: " + str(len(track.trackedPos) - len(track.lostPoints)), width = 15).grid(row = 2, column = 0,sticky = tk.W)
-			ttk.Label(trackFrame, text = "Perdidos: " + str(len(track.lostPoints)), width = 15).grid(row = 2, column = 1,sticky = tk.W)
-		clipLoc = (track.currPos[1], track.currPos[0]) 
-		if len(track.trackedPos) > 0:
-			clipLoc = numpy.clip(track.trackedPos[CurrentFile], track.star.radius, (data.shape[1] - track.star.radius, data.shape[0] - track.star.radius))
-		
-		crop = data[clipLoc[1]-track.star.radius : clipLoc[1]+track.star.radius,clipLoc[0]-track.star.radius : clipLoc[0]+track.star.radius].astype(float)
-		minv = DataManager.Levels[1]
-		maxv = DataManager.Levels[0]
-		noisy = numpy.clip(255 * (crop - minv) / (maxv - minv), 0 , 255).astype(numpy.uint8)	
-		Pic = Image.fromarray(noisy, mode='L')
-		Pic = Pic.resize((50, 50))
-		Img = ImageTk.PhotoImage(Pic)
-		ImageLabel = ttk.Label(trackFrame, image = Img, width = 50)
-		ImageLabel.image = Img
-		ImageLabel.grid(row = 0, column = 3, columnspan = 1, rowspan = 3, padx = 20)
-		index += 1
+			# Active can take the following values:
+			# -1   - Waiting state
+			#  0   - Lost track
+			#  1   - Active track
+			#  2   - Tracking done
+			#active = -1
+			if IsTracking:
+				track.active = 1
+				if CurrentFile in track.lostPoints:
+					track.active = 0
+			else:
+				if track.active == 1:
+					track.active = 2
+				elif track.active != 0:
+					track.active = -1
 
+			sidebar_elements[index].update_track(track)
+			index += 1
 
 def OnFinishTrack():
 	global DataChanged, applyButton, TrackButton, IsTracking
@@ -387,7 +384,9 @@ def OnFinishTrack():
 			if DataManager.RuntimeEnabled == False:
 				applyButton.config(state = tk.NORMAL)
 				TrackButton.config(state = tk.NORMAL, image = icons.Icons["play"])
-	IsTracking = False
+	if IsTracking:
+		IsTracking = False
+		UpdateSidebar()
 
 def Track(index, ItemList, stars):
 	global TrackedStars, BrightestStar

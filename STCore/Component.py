@@ -1,10 +1,14 @@
-from scipy.stats.stats import ranksums
-from STCore import SetStar
+from os import stat
+from STCore.item.Track import TrackItem
 from STCore.item.Star import StarItem
 from STCore.utils.Icons import GetIcon
 import tkinter as tk
 from tkinter import ttk
 
+# This file contains different UI elements which are repeated along the program
+
+# Levels creates two sliders on the bottom of the ImageView viewport
+# It allow to control the brightness and contrast of an image
 class Levels(tk.Frame):
 	
 	def __init__(self, master, command, *args, **kwargs):
@@ -44,10 +48,14 @@ class Levels(tk.Frame):
 		self._LEVEL_MAX_.set(lvl)
 		self.maxScale.set(lvl)
 
-
+# This class is instancesmin the sidebar of ImageView
+# It shows status and properties of the stars created
+# Also it allows the user to edit the star
 class StarElement(tk.Frame):
 	def __init__(self, master, star : StarItem, command_setstar, command_delete, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
+
+		self.config(bg="gray10")
 
 		delete_icon = GetIcon("delete")
 		self.config(bg="gray8")
@@ -66,3 +74,54 @@ class StarElement(tk.Frame):
 	def update_star(self, star : StarItem):
 		self.main_button.config(text=star.name)
 
+# TrackElelement displays some information about the curent tracking status
+# It is instanced in the sidebar of Tracker
+class TrackElement(tk.Frame):
+	def __init__(self, master, track : TrackItem, *args, **kwargs):
+		tk.Frame.__init__(self, master , *args, **kwargs)
+
+		self.config(bg="gray8")
+		self.grid_columnconfigure(tuple(range(2)), weight=1)
+
+		nameLabel = ttk.Label(self, text = track.star.name, font=(None, 15))
+		posLabel = ttk.Label(self, text = "Posicion")
+		lostLabel = ttk.Label(self, text = "Perdidos")
+		trustLabel = ttk.Label(self, text = "Confianza")
+
+		variation = 100 * (1 - int(abs(track.currValue - track.star.value) / track.star.value))
+		self.lastPos = ttk.Label(self, text = str(track.lastPos))
+		self.lost = ttk.Label(self, text = str(len(track.lostPoints)))
+		self.trust = ttk.Label(self, text = str(variation))
+		self.active = tk.Label(self, text = "Esperando", bg="gray15", fg="green")
+
+		nameLabel.grid(row=0, column=0, sticky="ew")
+		posLabel.grid(row=1, column=0, padx=4)
+		lostLabel.grid(row=2, column=0, padx=4)
+		trustLabel.grid(row=3, column=0, padx=4)
+
+		self.active.grid(row=0, column=1, sticky="ew")
+		self.lost.grid(row=2, column=1, padx=4)
+		self.lastPos.grid(row=1, column=1, padx=4)
+		self.trust.grid(row=3, column=1, padx=4)
+
+
+	def update_track(self, track : TrackItem):
+		variation = int(100 * (1 - abs(track.currValue - track.star.value) / track.star.value))
+
+		if track.active == 1:
+			status = "Activo"
+			self.active.config(fg = "green")
+		elif track.active == 0:
+			status = "Perdido"
+			self.active.config(fg = "red")
+		elif track.active == 2:
+			status = "Listo"
+			self.active.config(fg = "green")
+		elif track.active == -1:
+			status = "Esperando"
+			self.active.config(fg = "green")
+
+		self.active.config(text= status)
+		self.lastPos.config(text = str(track.lastPos))
+		self.lost.config(text = str(len(track.lostPoints)))
+		self.trust.config(text = str(variation))

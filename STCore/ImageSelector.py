@@ -216,7 +216,7 @@ def ClearList(root):
 
 def AddFiles(root):
 	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
-	print (paths)
+	#print (paths)
 	Tracker.DataChanged = True
 	LoadFiles(paths, root)
 

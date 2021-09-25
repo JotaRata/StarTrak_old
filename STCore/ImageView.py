@@ -250,7 +250,7 @@ def AddStar(star : StarItem, onlyUI = False):
 	def SetTrackerDirty():
 		Tracker.DataChanged = True
 
-	cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, i, name = s.name, location = s.location, radius = s.radius, bounds = s.bounds, Type = s.type, threshold = 100 * s.threshold, sigma=s.bsigma)	
+	cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, None, i, name = s.name, location = s.location, radius = s.radius, bounds = s.bounds, Type = s.type, threshold = 100 * s.threshold, sigma=s.bsigma)	
 	cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty())
 
 	element = StarElement(SidebarList, star, cmd_star, cmd_delete)
@@ -448,10 +448,14 @@ def OnMouseScroll(event):
 	canvas.draw_idle() # force re-draw
 
 	
+#drag displacement = lastX, lastY, dispX, dispY
+drag_displacement = (0, 0, 0, 0)
 
 def OnMousePress(event):
-	global canvas, MousePress, SelectedStar, axis, MousePressTime
+	global canvas, MousePress, SelectedStar, axis, drag_displacement
 	MousePress = 0, 0, event.xdata, event.ydata
+	drag_displacement = event.xdata, event.ydata, 0, 0
+
 	for a in axis.artists:
 		contains, attrd = a.contains(event)
 		if contains:
@@ -469,10 +473,9 @@ def OnMousePress(event):
 		else:
 			setp(a, linewidth = 1)
 	canvas.draw_idle()
-	MousePressTime = time()
 
 def OnMouseDrag(event):
-	global MousePress, Stars
+	global MousePress, Stars, drag_displacement
 	if MousePress is None or event.inaxes is None:
 		return
 	x0, y0, xpress, ypress = MousePress
@@ -521,15 +524,17 @@ def OnMouseDrag(event):
 		Stars[SelectedStar].location = (int(y0 + dy + Stars[SelectedStar].bounds), int(x0 + dx + Stars[SelectedStar].bounds))
 	canvas.draw_idle()
 
+	sx = drag_displacement[2] + abs(event.xdata - drag_displacement[0])
+	sy = drag_displacement[3] + abs(event.ydata - drag_displacement[1])
+	drag_displacement = event.xdata, event.ydata, sx, sy
+
 def OnMouseRelease(event):
-	global MousePress, SelectedStar
+	global MousePress, SelectedStar, drag_displacement
 	
-	dx = event.xdata - MousePress[2]
-	dy = event.ydata - MousePress[3]
 	# Change this value for lower/higher drag tolerance
 	drag_tolerance = 0.2
 
-	if  dx < drag_tolerance and dy < drag_tolerance:
+	if  drag_displacement[2] < drag_tolerance and drag_displacement[3] < drag_tolerance:
 		OnImageClick(event)
 		return
 
