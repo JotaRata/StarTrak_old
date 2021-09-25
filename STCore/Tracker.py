@@ -27,7 +27,7 @@ from scipy.ndimage import median_filter
 
 #region Variables
 App = None
-TitleLabel = None
+FileLabel = None
 ImgFrame = None
 canvas = None
 implot = None
@@ -61,7 +61,7 @@ IsInitialized = False
 
 #endregion
 def Awake(root, stars, ItemList):
-	global App, TitleLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile, DataChanged, IsTracking, ScrollFileLbd
+	global App, FileLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile, DataChanged, IsTracking, ScrollFileLbd
 	
 	DataManager.CurrentWindow = 3
 	IsTracking = False
@@ -75,13 +75,14 @@ def Awake(root, stars, ItemList):
 			item.star = s
 			item.lastValue = s.value
 			item.currPos = s.location
-			item.trackedPos = []
+			item.trackedPos = [list(reversed(s.location))]
 			TrackedStars.append(item)
 			OnFinishTrack()
 	
 	ScrollFileLbd = lambda: PrevFile(ItemList, stars), lambda: NextFile(ItemList, stars)
 	
 	Sidebar.config(scrollregion=(0,0, 300, 64 * len(TrackedStars)))
+	FileLabel.config(text = "Imagen: "+ basename(ItemList[CurrentFile].path))
 
 	BuildLayout(root)
 
@@ -160,13 +161,13 @@ def BuildLayout(root):
 
 # Fill the Canvas window for the viewport
 def DrawCanvas():
-	from STCore.ImageView import level_perc, ColorMaps, Modes
+	from STCore.ImageView import ColorMaps, Modes
 	global canvas, implot, ImageFrame, axis
 
 	data = DataManager.FileItemList[CurrentFile].data
 
 	axis.clear()
-	implot = axis.imshow(data, vmin = level_perc[1], vmax = level_perc[0], cmap=ColorMaps[Settings._VISUAL_COLOR_.get()], norm = Modes[Settings._VISUAL_MODE_.get()])
+	implot = axis.imshow(data, vmin = DataManager.Levels[1], vmax = DataManager.Levels[0], cmap=ColorMaps[Settings._VISUAL_COLOR_.get()], norm = Modes[Settings._VISUAL_MODE_.get()])
 
 	axis.relim()
 	canvas.draw()
@@ -229,12 +230,13 @@ def CreateSidebar(root):
 
 # Creates the footer
 def CreateNavigationBar():
-	global FooterFrame
+	global FooterFrame, FileLabel
 
 	FooterFrame = ttk.Frame(App)
 	FooterFrame.grid_columnconfigure(1, weight=1)
 	ttk.Button(FooterFrame, image = icons.Icons["prev"], command = ScrollFileLbd[0]).grid(row=0, column=0)
-	ttk.Label(FooterFrame, text="Archivo",justify="center", width=4, name = "filelabel").grid(row=0, column=1, sticky="ew")
+	FileLabel = ttk.Label(FooterFrame, text="Imagen",justify="center", width=20)
+	FileLabel.grid(row=0, column=1)
 	ttk.Button(FooterFrame, image = icons.Icons["next"], command = ScrollFileLbd[1]).grid(row=0, column=2)
 
 def Destroy():
@@ -316,7 +318,7 @@ def StartTracking(root, ItemList, stars):
 			item.lastValue = s.value
 			item.currValue = s.value
 			item.currPos = s.location
-			item.trackedPos = []
+			item.trackedPos = [list(reversed(s.location))]
 			TrackedStars.append(item)
 		if DataManager.RuntimeEnabled == False:
 			applyButton.config(state = tk.DISABLED)
@@ -439,7 +441,7 @@ def StopTracking():
 		RuntimeAnalysis.StopRuntime()
 
 
-def UpdateTrack(root, ItemList, stars, index = 0, auto = True):
+def UpdateTrack(root, ItemList, stars, index = 1, auto = True):
 	global TrackedStars, SidebarList, CurrentFile, IsTracking, TrackButton
 	if (index >= len(ItemList) or IsTracking == False) and auto:
 		OnFinishTrack()
@@ -463,7 +465,7 @@ def UpdateTrack(root, ItemList, stars, index = 0, auto = True):
 	#updsThread.join()
 	#UpdateSidebar(ItemList[index].data, stars)
 	ScrollFileLbd = lambda: PrevFile(ItemList, stars), lambda: NextFile(ItemList, stars)
-	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[index].path))
+	FileLabel.config(text = "Imagen: "+ basename(ItemList[index].path))
 	if auto:
 		App.after(50, lambda: UpdateTrack(root, ItemList, stars, index + 1))
 
@@ -504,7 +506,7 @@ def UpdateCanvasOverlay():
 		text = axis.annotate(ts.star.name, text_pos, color=col, weight='bold',fontsize=6, ha='center', va='center')
 		text.label = "Text"+str(stIndex)
 		stIndex += 1
-	canvas.draw()
+	canvas.draw_idle()
 
 def UpdateZoomGizmo(scale, xrange, yrange):
 	global axis, zoom_factor, img_offset, z_container, z_box
@@ -601,7 +603,7 @@ def OnMouseScroll(event):
 					img_offset[1] + yrange * scale])
 	
 	UpdateZoomGizmo(scale, xrange, yrange)
-	canvas.draw() # force re-draw
+	canvas.draw_idle() # force re-draw
 
 MousePressTime=0	# Global
 def OnMousePress(event):
@@ -627,7 +629,7 @@ def OnMousePress(event):
 				setp(a, linewidth = 4)
 			else:
 				setp(a, linewidth = 1)
-	canvas.draw()
+	canvas.draw_idle()
 	MousePressTime = time()
 
 def OnMouseDrag(event):
@@ -661,7 +663,7 @@ def OnMouseDrag(event):
 			axis.set_ylim([ycenter - yrange * scale,
 						ycenter + yrange * scale])
 			UpdateZoomGizmo(scale, xrange, yrange)
-			canvas.draw() # fo
+			canvas.draw_idle() # fo
 
 		return # Stop the function here
 	
@@ -680,7 +682,7 @@ def OnMouseDrag(event):
 		TrackedStars[SelectedTrack].currPos = list(reversed(TrackedStars[SelectedTrack].trackedPos[CurrentFile]))
 	poly = next(filter(lambda obj: obj.label == "Poly"+str(SelectedTrack), axis.artists))
 	poly.set_xy(TrackedStars[SelectedTrack].trackedPos[max(CurrentFile - 4, 0):CurrentFile + 1])
-	canvas.draw()
+	canvas.draw_idle()
 
 def OnMouseRelase(event):
 	global MousePress, SelectedTrack
@@ -693,7 +695,7 @@ def OnMouseRelase(event):
 		if z_box is not None:
 			setp(z_box, alpha = 0.5)
 			setp(z_box, edgecolor = None)
-		canvas.draw()
+		canvas.draw_idle()
 		return
 
 
@@ -711,11 +713,10 @@ def OnMouseRelase(event):
 		UpdateSidebar(ItemList[CurrentFile].data)
 
 	SelectedTrack = -1
-	canvas.draw()
 	for a in axis.artists:
 		if a.label != "Poly":
 			setp(a, linewidth = 1)
-	canvas.draw()
+	canvas.draw_idle()
 
 def NextFile(ItemList, stars):
 	global CurrentFile
@@ -725,7 +726,7 @@ def NextFile(ItemList, stars):
 	UpdateSidebar(ItemList[CurrentFile].data)
 	implot.set_array(ItemList[CurrentFile].data)
 	UpdateCanvasOverlay(stars, CurrentFile)
-	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[CurrentFile].path))
+	FileLabel.config(text = "Imagen: "+ basename(ItemList[CurrentFile].path))
 
 def PrevFile(ItemList, stars):
 	global CurrentFile
@@ -735,4 +736,4 @@ def PrevFile(ItemList, stars):
 	UpdateSidebar(ItemList[CurrentFile].data)
 	implot.set_array(ItemList[CurrentFile].data)
 	UpdateCanvasOverlay(stars, CurrentFile)
-	TitleLabel.config(text = "Analizando imagen: "+ basename(ItemList[CurrentFile].path))
+	FileLabel.config(text = "Imagen: "+ basename(ItemList[CurrentFile].path))

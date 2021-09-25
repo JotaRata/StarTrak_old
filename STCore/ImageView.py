@@ -252,7 +252,7 @@ def AddStar(star : StarItem, onlyUI = False):
 	def SetTrackerDirty():
 		Tracker.DataChanged = True
 
-	cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, i, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold, bsg=s.bsigma)	
+	cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, i, name = s.name, location = s.location, radius = s.radius, bounds = s.bounds, Type = s.type, threshold = 100 * s.threshold, sigma=s.bsigma)	
 	cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty())
 
 	element = StarElement(SidebarList, star, cmd_star, cmd_delete)
