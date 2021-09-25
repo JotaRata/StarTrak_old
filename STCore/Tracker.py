@@ -75,19 +75,21 @@ def Awake(root, stars, ItemList):
 			item.star = s
 			item.lastValue = s.value
 			item.currPos = s.location
-			item.trackedPos = [list(reversed(s.location))]
+			item.trackedPos = []
+			
+			for i in ItemList:
+				item.trackedPos.append(list(reversed(s.location)))
+
 			TrackedStars.append(item)
 			OnFinishTrack()
-	
-	ScrollFileLbd = lambda: PrevFile(ItemList, stars), lambda: NextFile(ItemList, stars)
 	
 	Sidebar.config(scrollregion=(0,0, 300, 64 * len(TrackedStars)))
 	FileLabel.config(text = "Imagen: "+ basename(ItemList[CurrentFile].path))
 
-	BuildLayout(root)
+	#BuildLayout(root)
 
 	App.after(10, DrawCanvas)
-
+	App.after(20, UpdateSidebar, ItemList[CurrentFile].data)
 	CurrentFile = 0
 	if len(TrackedStars) > 0:
 		if DataChanged == True:
@@ -95,7 +97,7 @@ def Awake(root, stars, ItemList):
 			TrackedStars = []
 			Results.MagData = None
 			if DataManager.RuntimeEnabled == True:
-				StartTracking(root, RuntimeAnalysis.filesList, stars)
+				StartTracking()
 			else:
 				OnFinishTrack()
 		else:
@@ -106,7 +108,7 @@ def Awake(root, stars, ItemList):
 			BrightestStar = s
 			brightestStarValue = s.value
 	
-	UpdateSidebar(ItemList[CurrentFile].data)
+	
 
 # Creates the viewport, but doesn't draw it to the UI
 def CreateCanvas():
@@ -217,14 +219,14 @@ def CreateSidebar(root):
 	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
 	if DataManager.RuntimeEnabled == False:
 		TrackButton = ttk.Button(buttonsFrame)
-		TrackButton.config(text = "Iniciar",image = icons.Icons["play"], compound = "left", command = lambda: (StartTracking(root), SwitchTrackButton(root)))	
+		TrackButton.config(text = "Iniciar",image = icons.Icons["play"], compound = "left", command = lambda: (StartTracking(), SwitchTrackButton()))	
 		applyButton = ttk.Button(buttonsFrame, text = "Continuar",image = icons.Icons["next"], compound = "right", command = cmdNext, state = tk.DISABLED)
 		applyButton.bind("<Button-1>", lambda event: PopupMenu(event, ApplyMenu))
 		applyButton.grid(row = 0, column = 2, sticky = tk.EW)
 	else:
 		TrackButton = ttk.Button(buttonsFrame)
-		TrackButton.config(text = "Detener Analisis", image = icons.Icons["stop"], compound = "left", command = lambda: (StopTracking(), SwitchTrackButton(root, True)))
-		RestartButton = ttk.Button(buttonsFrame, text = "Reiniciar", image = icons.Icons["restart"], compound = "left", command = lambda: StartTracking(root, RuntimeAnalysis))
+		TrackButton.config(text = "Detener Analisis", image = icons.Icons["stop"], compound = "left", command = lambda: (StopTracking(), SwitchTrackButton(True)))
+		RestartButton = ttk.Button(buttonsFrame, text = "Reiniciar", image = icons.Icons["restart"], compound = "left", command = lambda: StartTracking())
 		RestartButton.grid(row = 0, column = 2, sticky = tk.EW)
 	TrackButton.grid(row = 0, column = 1, sticky = tk.EW)
 
@@ -234,6 +236,9 @@ def CreateNavigationBar():
 
 	FooterFrame = ttk.Frame(App)
 	FooterFrame.grid_columnconfigure(1, weight=1)
+
+	ScrollFileLbd = PrevFile, NextFile
+
 	ttk.Button(FooterFrame, image = icons.Icons["prev"], command = ScrollFileLbd[0]).grid(row=0, column=0)
 	FileLabel = ttk.Label(FooterFrame, text="Imagen",justify="center", width=20)
 	FileLabel.grid(row=0, column=1)
@@ -260,15 +265,15 @@ def OnRuntimeWindowClosed(root):
 	CreateButton.grid(row = 0, column = 3, sticky = tk.EW)
 	CreateButton.config(command = cmd)
 
-def SwitchTrackButton(root, ItemList, stars, RuntimeEnd = False):
+def SwitchTrackButton(RuntimeEnd = False):
 	global TrackButton, IsTracking
 	if RuntimeEnd == True:
 		TrackButton.config(text = "Componer Imagen", command = lambda: CompositeNow(root, ItemList), state = tk.NORMAL, image = icons.Icons["image"], compound = "left")
 		return;
 	if not IsTracking:
-		TrackButton.config(text = "Iniciar", image = icons.Icons["play"],command = lambda: (StartTracking(root, ItemList, stars), SwitchTrackButton(root, ItemList, stars)))
+		TrackButton.config(text = "Iniciar", image = icons.Icons["play"],command = lambda: (StartTracking(), SwitchTrackButton( )))
 	else:
-		TrackButton.config(text = "Detener",image = icons.Icons["stop"], command = lambda: (StopTracking(), SwitchTrackButton(root, ItemList, stars)))
+		TrackButton.config(text = "Detener",image = icons.Icons["stop"], command = lambda: (StopTracking(), SwitchTrackButton()))
 def PopupMenu(event, ApplyMenu):
 	ApplyMenu.post(event.x_root, event.y_root)
 
@@ -303,27 +308,28 @@ def UpdateImage():
 	implot.set_norm(Modes[Settings._VISUAL_MODE_.get()])
 	canvas.draw_idle()
 
-def StartTracking(root, ItemList, stars):
+def StartTracking():
 	global TrackedStars, IsTracking, applyButton, CurrentFile
 	if len(TrackedStars) > 0:
-		condition = (len(TrackedStars[0].trackedPos) > 0 and messagebox.askyesno("Confirmar sobreescritura", "Ya existen datos de rastreo, desea sobreescribirlos?")) or len(TrackedStars[0].trackedPos) == 0
+		#condition = (len(TrackedStars[0].trackedPos) > 0 and messagebox.askyesno("Confirmar sobreescritura", "Ya existen datos de rastreo, desea sobreescribirlos?")) or len(TrackedStars[0].trackedPos) == 0
+		condition = True
 	else:
 		condition = True
 	if condition:
 		TrackedStars =[]
 		CurrentFile = 0
-		for s in stars:
+		for ts in DataManager.StarItemList:
 			item = TrackItem()
-			item.star = s
-			item.lastValue = s.value
-			item.currValue = s.value
-			item.currPos = s.location
-			item.trackedPos = [list(reversed(s.location))]
+			item.star = ts
+			item.lastValue = ts.value
+			item.currValue = ts.value
+			item.currPos = ts.location
+			item.trackedPos = [list(reversed(ts.location))]
 			TrackedStars.append(item)
 		if DataManager.RuntimeEnabled == False:
 			applyButton.config(state = tk.DISABLED)
 		IsTracking = True
-		UpdateTrack(root, ItemList, stars)
+		UpdateTrack(DataManager.FileItemList, DataManager.StarItemList)
 
 
 def UpdateSidebar(data):
@@ -441,12 +447,12 @@ def StopTracking():
 		RuntimeAnalysis.StopRuntime()
 
 
-def UpdateTrack(root, ItemList, stars, index = 1, auto = True):
+def UpdateTrack(ItemList, stars, index = 1, auto = True):
 	global TrackedStars, SidebarList, CurrentFile, IsTracking, TrackButton
 	if (index >= len(ItemList) or IsTracking == False) and auto:
 		OnFinishTrack()
 		if DataManager.RuntimeEnabled == False:
-			TrackButton.config(text = "Iniciar", command = lambda: (StartTracking(root, ItemList, stars), SwitchTrackButton(root, ItemList, stars)))
+			TrackButton.config(text = "Iniciar", command = lambda: (StartTracking(), SwitchTrackButton()))
 		for ts in TrackedStars:
 			ts.PrintData()
 		return
@@ -458,16 +464,16 @@ def UpdateTrack(root, ItemList, stars, index = 1, auto = True):
 	#trackThread.join()
 
 	Track(index,ItemList, stars)	 # Se elimino mutlithreading por ahora..
-	UpdateCanvasOverlay(stars, index)
+	UpdateCanvasOverlay()
 	UpdateSidebar(ItemList[index].data)
 	#updsThread = Thread(target = UpdateSidebar, args = (ItemList[index].data, stars))
 	#updsThread.start()
 	#updsThread.join()
 	#UpdateSidebar(ItemList[index].data, stars)
-	ScrollFileLbd = lambda: PrevFile(ItemList, stars), lambda: NextFile(ItemList, stars)
+
 	FileLabel.config(text = "Imagen: "+ basename(ItemList[index].path))
 	if auto:
-		App.after(50, lambda: UpdateTrack(root, ItemList, stars, index + 1))
+		App.after(50, lambda: UpdateTrack(ItemList, stars, index + 1))
 
 def UpdateCanvasOverlay():
 	for a in reversed(axis.artists):
@@ -718,22 +724,26 @@ def OnMouseRelase(event):
 			setp(a, linewidth = 1)
 	canvas.draw_idle()
 
-def NextFile(ItemList, stars):
+def NextFile():
 	global CurrentFile
+
+	ItemList = DataManager.FileItemList
 	if CurrentFile + 1 >= len(ItemList):
 		return
 	CurrentFile += 1
 	UpdateSidebar(ItemList[CurrentFile].data)
 	implot.set_array(ItemList[CurrentFile].data)
-	UpdateCanvasOverlay(stars, CurrentFile)
+	UpdateCanvasOverlay()
 	FileLabel.config(text = "Imagen: "+ basename(ItemList[CurrentFile].path))
 
-def PrevFile(ItemList, stars):
+def PrevFile():
 	global CurrentFile
+
+	ItemList = DataManager.FileItemList
 	if CurrentFile - 1 < 0:
 		return
 	CurrentFile -= 1
 	UpdateSidebar(ItemList[CurrentFile].data)
 	implot.set_array(ItemList[CurrentFile].data)
-	UpdateCanvasOverlay(stars, CurrentFile)
+	UpdateCanvasOverlay()
 	FileLabel.config(text = "Imagen: "+ basename(ItemList[CurrentFile].path))

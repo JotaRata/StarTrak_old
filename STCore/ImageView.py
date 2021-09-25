@@ -31,7 +31,7 @@ import STCore.RuntimeAnalysis
 import gc
 from PIL import Image
 import STCore.utils.Icons as icons
-from STCore import DataManager
+from STCore import DataManager, RuntimeAnalysis
 from Component import Levels, StarElement
 
 #region Messages and Events
@@ -98,7 +98,7 @@ def Awake(root):
 		level_perc = (numpy.percentile(Data, 99.8), numpy.percentile(Data, 1))
 		STCore.DataManager.Levels = level_perc
 	
-	BuildLayout(root)
+	#BuildLayout(root)
 
 	App.after(10, DrawCanvas)
 
@@ -106,7 +106,6 @@ def Awake(root):
 	levelFrame.setMax(level_perc[0])
 	levelFrame.setMin(level_perc[1])
 	
-
 	OnStarChange()
 	isInitialized = True
 
@@ -239,11 +238,10 @@ def CreateLevels():
 #region Update Funcions
 
 def AddStar(star : StarItem, onlyUI = False):
-	global Stars
-	global sidebar_elements
+	global Stars, sidebar_elements
 	global SidebarList
 	
-	index = len(Stars)
+	index = len(sidebar_elements)
 
 	# onlyUI flag tells whether the program is adding new stars to the list, or just refreshing their UI elements
 	if not onlyUI:
@@ -261,8 +259,7 @@ def AddStar(star : StarItem, onlyUI = False):
 
 
 def UpdateStarList():
-	global SidebarList
-	global sidebar_elements
+	global SidebarList, sidebar_elements
 
 	index = 0
 	
@@ -270,7 +267,7 @@ def UpdateStarList():
 	if len(sidebar_elements) != len(Stars):
 		for star in Stars:
 			AddStar(star, onlyUI=True)
-
+	
 	# Update elements if necessary
 	for star in Stars:
 		element :StarElement = sidebar_elements[index]
@@ -393,11 +390,13 @@ def Apply(root):
 	if len(Stars) > 0:
 		Destroy()
 		Tracker.Awake(root, Stars, items)
-		if STCore.DataManager.RuntimeEnabled == True:
-			STCore.RuntimeAnalysis.StartRuntime(root)
+		if DataManager.RuntimeEnabled == True:
+			RuntimeAnalysis.StartRuntime(root)
 	else:
 		messagebox.showerror("Error", "Debe tener al menos una estrella para comenzar el analisis")
 		return
+	DataManager.StarItemList = Stars
+
 def ClearStars():
 	global Stars
 	Stars = []
