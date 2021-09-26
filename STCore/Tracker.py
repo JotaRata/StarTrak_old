@@ -91,6 +91,7 @@ def Awake(root, stars, ItemList):
 			item = TrackItem()
 			item.star = s
 			item.lastValue = s.value
+			item.lastPos = s.location
 			item.currPos = s.location
 			item.trackedPos = []
 			item.active = -1
@@ -210,7 +211,7 @@ def CreateSidebar(root):
 		Destroy()
 		STCore.ImageView.Awake(root)
 
-	cmdNext = lambda: Apply(root)
+	cmdNext = lambda: Apply(root, DataManager.FileItemList)
 
 	ApplyMenu = tk.Menu(App, tearoff=0)
 	ApplyMenu.add_command(label="Analizar", command=cmdNext)
@@ -330,6 +331,7 @@ def StartTracking():
 			item.star = ts
 			item.lastValue = ts.value
 			item.currValue = ts.value
+			item.lastPos = ts.location
 			item.currPos = ts.location
 			item.trackedPos = [list(reversed(ts.location))]
 			TrackedStars.append(item)
@@ -419,7 +421,6 @@ def Track(index, ItemList, stars):
 		SearchIndices = numpy.swapaxes(numpy.array(indices), 0, 1)
 		RegPositions = numpy.empty((0,2), int)
 
-		print (s.name, lvalue,"||", crop.max(), "||", numpy.sum(indices), "||b", back)
 		i = 0
 
 		while i < SearchIndices.shape[0]:
@@ -431,6 +432,7 @@ def Track(index, ItemList, stars):
 			TrackedStars[starIndex].lastPos = TrackedStars[starIndex].currPos
 			TrackedStars[starIndex].lastValue = TrackedStars[starIndex].currValue 
 			TrackedStars[starIndex].currPos = MeanPos.tolist()
+
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].currPos)))
 			TrackedStars[starIndex].currValue = GetMaxima(data, TrackedStars[starIndex], index, back)
 			if TrackedStars[starIndex].lastSeen != -1:
@@ -440,6 +442,7 @@ def Track(index, ItemList, stars):
 				TrackedStars[starIndex].lastSeen = index
 			TrackedStars[starIndex].lostPoints.append(index)
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].lastPos)))
+		print (TrackedStars[starIndex].trackedPos)
 		if BrightestStar == s:
 			deltaPos = numpy.array(TrackedStars[starIndex].currPos) - Pos
 		#starIndex += 1

@@ -13,6 +13,6 @@ class StarItem(object):
 
 	def PrintData(self):
 
-		print("Nombre\t\tUbicacion\tBrillo\tTamaño\tVariabilidad")
-		print(self.name,self.location, self.value, self.radius, self.threshold, sep="\t")
+		print("Nombre\t\tUbicacion\tBrillo\tTamaño\tVariabilidad\tSeñal a ruido")
+		print(self.name,self.location, self.value, self.radius, self.threshold,"", "%.3f" % self.std, sep="\t")
 		

@@ -356,7 +356,6 @@ def NewSessionTopLevel(root):
 		if sessionType == 1:
 			CloseLevel(False)
 			Destroy()
-			print (file_paths)
 			ImageSelector.Awake(root, file_paths)
 
 	ttk.Label(TopFrame, text="Crear nueva sesion", font="-weight bold").pack(side=tk.TOP, anchor=tk.NW, fill=tk.X, pady=16, padx=8)

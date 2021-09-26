@@ -211,7 +211,7 @@ def CreateSidebar(root):
 		if Data is None:
 			return
 		loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
-		SetStar.Awake(App, Data, Stars, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
+		SetStar.Awake(Data, None, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
 	def CommandBack():
 		import STCore.ImageSelector
 		Destroy()
@@ -250,7 +250,7 @@ def AddStar(star : StarItem, onlyUI = False):
 	def SetTrackerDirty():
 		Tracker.DataChanged = True
 
-	cmd_star = lambda s=star, i=index: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, None, i, name = s.name, location = s.location, radius = s.radius, bounds = s.bounds, Type = s.type, threshold = 100 * s.threshold, sigma=s.bsigma)	
+	cmd_star = lambda s=star, i=index: SetStar.Awake(Data, s, OnStarChange, None, i)	
 	cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty())
 
 	element = StarElement(SidebarList, star, cmd_star, cmd_delete)
@@ -555,9 +555,13 @@ def OnMouseRelease(event):
 	
 def OnImageClick(event):
 	loc = (int(event.ydata), int(event.xdata))
-	SetStar.Awake(App, Data, Stars, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
+	SetStar.Awake(Data, None, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
 
-def OnStarChange():
+def OnStarChange(star : StarItem = None, index = -1):
+	global Stars
+
+	if index >= 0:
+		Stars[index] = star
 	UpdateStarList()
 	#UpdateCanvasOverlay()
 	STCore.DataManager.StarItemList = Stars
