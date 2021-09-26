@@ -349,10 +349,10 @@ def UpdateZoomGizmo(scale, xrange, yrange):
 	size = 320
 
 	if zoom_factor > 1:
-		gizmo_pos = img_offset[0] - xrange * scale, img_offset[1] - yrange * scale
 		gizmo_w = size  * scale
 		gizmo_h = size * scale * aspect
-
+		gizmo_pos = img_offset[0] - xrange * scale, img_offset[1] + yrange * scale - gizmo_h
+		
 		if z_container is None:
 			z_container = Rectangle(gizmo_pos, gizmo_w, gizmo_h, edgecolor = "w", facecolor='none')
 			z_container.label = "zoom_container"
@@ -408,12 +408,20 @@ def ChangeLevels():
 
 
 def Destroy():
-	global img_limits, zoom_factor
+	global img_limits, zoom_factor, img_offset, z_container, z_box
 
 	# Reset current viewport
-	img_limits, zoom_factor = None, 1
-	img_offset = (0, 0)
-
+	zoom_factor =  1
+	axis.relim()
+	axis.autoscale()
+	if z_container is not None:
+		z_container.remove()
+		z_box.remove()
+		z_container = None
+		z_box = None
+	
+	img_offset = (0,0)
+	img_limits = (axis.get_xlim(), axis.get_ylim())
 	App.pack_forget()
 	#gc.collect()
 
@@ -441,11 +449,12 @@ def ClearStars():
 #endregion
 def OnMouseScroll(event):
 	global Data, canvas, axis, zoom_factor, img_limits, img_offset
-
+	print (img_limits)
 	# Check if for some reason, no limits were defined
 	if img_limits is None:
 		axis.relim()
-		img_limits = (axis.get_xlim(), axis.get_ylim())
+		axis.autoscale(True)
+		img_limits = (axis.get_xlim(), axis.get_ylim())  # By some reason mpl axis are inverted
 	# Modify this for faster/slower increments
 	increment = 0.5
 
@@ -454,11 +463,9 @@ def OnMouseScroll(event):
 	# If we are outside the viewport, then stop the function
 	if xdata is None or ydata is None:
 		return
-	xcenter = 0.5 * (img_limits[0][1] + img_limits[0][0])
-	ycenter = 0.5 * (img_limits[1][1] + img_limits[1][0])
 
 	xrange = 0.5 * (img_limits[0][1] - img_limits[0][0])
-	yrange = 0.5 * (img_limits[1][0] - img_limits[1][1]) # By some reason, matplotlib y-axis is inverted
+	yrange = 0.5 * (img_limits[1][0] - img_limits[1][1])
 
 	if event.button == 'up':
 		# deal with zoom in
@@ -475,12 +482,12 @@ def OnMouseScroll(event):
 	scale = 1. / zoom_factor
 
 	# Set the offset to the current mouse position
-	img_offset = numpy.clip(xdata * scale + (1-scale)*img_offset[0], xrange * scale, img_limits[0][1] - xrange * scale), numpy.clip(ydata * scale + (1-scale)*img_offset[1], yrange * scale, img_limits[1][0] - yrange * scale)
+	img_offset = numpy.clip(xdata * scale + (1-scale)*img_offset[0], xrange * scale, img_limits[0][1] - xrange * scale), numpy.clip(ydata * scale + (1-scale)*img_offset[1], yrange*scale, img_limits[1][0] - yrange * scale)
 	
 	axis.set_xlim([img_offset[0] - xrange * scale,
 					img_offset[0] + xrange * scale])
-	axis.set_ylim([img_offset[1] - yrange * scale,
-					img_offset[1] + yrange * scale])
+	axis.set_ylim([img_offset[1] + yrange * scale,
+					img_offset[1] - yrange * scale])
 	
 	UpdateZoomGizmo(scale, xrange, yrange)
 	canvas.draw_idle() # force re-draw
@@ -539,8 +546,8 @@ def OnMouseDrag(event):
 			img_offset = xcenter, ycenter
 			axis.set_xlim([xcenter - xrange * scale,
 						xcenter + xrange * scale])
-			axis.set_ylim([ycenter - yrange * scale,
-						ycenter + yrange * scale])
+			axis.set_ylim([ycenter + yrange * scale,
+						ycenter - yrange * scale])
 			UpdateZoomGizmo(scale, xrange, yrange)
 			canvas.draw_idle() # fo
 
@@ -572,17 +579,18 @@ def OnMouseRelease(event):
 	# Change this value for lower/higher drag tolerance
 	drag_tolerance = 0.2
 
-	if  drag_displacement[2] < drag_tolerance and drag_displacement[3] < drag_tolerance:
-		OnImageClick(event)
-
 	if SelectedStar == -100:
 		if z_box is not None:
 			setp(z_box, alpha = 0.5)
 			setp(z_box, edgecolor = None)
+		SelectedStar = -1
+		return
 	if SelectedStar >= 0:
 		OnStarChange()
 	SelectedStar = -1
-	
+
+	if  drag_displacement[2] < drag_tolerance and drag_displacement[3] < drag_tolerance:
+		OnImageClick(event)
 	for a in axis.artists:
 		setp(a, linewidth = 1)
 	

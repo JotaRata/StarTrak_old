@@ -106,7 +106,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	back_median = float(GetBackgroundMean(Data))
 	
 	area = (2 * radius) ** 2
-	snr = (Image.get_array().sum() / (area * back_median))
+	snr = (Image.get_array()[radius:3*radius, radius:3*radius].sum() / (area * back_median))
 
 	BrightLabel = ttk.Label(App, text = "Señal a Ruido: %.2f " % snr,font="-weight bold", width = 18, anchor = "w")
 	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
@@ -154,7 +154,8 @@ def DrawCanvas(stLoc, radius, data):
 	fig.set_facecolor("black")
 
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
-	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
+	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
+
 	levels = STCore.DataManager.Levels
 	Image = axis.imshow(crop, vmin = levels[1], vmax = levels[0], cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
 	canvas = FigureCanvasTkAgg(fig, master=App)
@@ -168,7 +169,7 @@ def DrawCanvas(stLoc, radius, data):
 	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
 	canvas.mpl_connect("button_release_event", OnMouseRelase) 
 
-	circle = Circle((radius - 0.5, radius - 0.5), radius, facecolor = "none", edgecolor = "lime")
+	circle = Circle((radius*2 - 0.5, radius*2 - 0.5), radius, facecolor = "none", edgecolor = "lime")
 
 	axis.add_artist(circle)
 	Viewport.grid(row = 0, column=3, rowspan=3)
@@ -177,11 +178,11 @@ def UpdateCanvas(data, stLoc, radius, bkgMedian):
 	global Image, canvas, BrightLabel, ConfIcon
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
-	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
+	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
 	Image.set_array(crop)
 	
 	area = (2 * radius) ** 2
-	snr = (crop.sum() / (area * bkgMedian))
+	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkgMedian))
 	BrightLabel.config(text = "Señal a Ruido: %.2f " % snr)
 
 	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))

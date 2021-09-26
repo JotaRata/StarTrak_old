@@ -247,11 +247,23 @@ def CreateNavigationBar():
 	ttk.Button(FooterFrame, image = icons.Icons["next"], command = ScrollFileLbd[1]).grid(row=0, column=2)
 
 def Destroy():
-	global TrackedStars, implot, axis
+	global TrackedStars, implot, axis, zoom_factor, img_limits, img_offset, z_container, z_box
 	if DataManager.RuntimeEnabled == True:
 			if ResultsConfigurator.CheckWindowClear() == False:
 				ResultsConfigurator.PlotWindow.destroy()
 	
+	# Reset current viewport
+	zoom_factor =  1
+	
+	axis.relim()
+	axis.autoscale(	)
+	if z_container is not None:
+		z_container.remove()
+		z_box.remove()
+		z_container = None
+		z_box = None
+	img_limits = (axis.get_xlim(), axis.get_ylim())
+	img_offset = (0,0)
 	App.pack_forget()
 
 	#implot = None
@@ -517,7 +529,7 @@ def UpdateCanvasOverlay():
 
 def ClearData():
 	global sidebar_elements, implot
-	
+
 	implot = None
 	for s in sidebar_elements:
 		s.destroy()
@@ -528,12 +540,12 @@ def UpdateZoomGizmo(scale, xrange, yrange):
 	aspect = yrange/xrange
 
 	# Change the size of the Gizmo
-	size = 120
+	size = 320
 
 	if zoom_factor > 1:
-		gizmo_pos = img_offset[0] - xrange * scale, img_offset[1] - yrange * scale
 		gizmo_w = size  * scale
 		gizmo_h = size * scale * aspect
+		gizmo_pos = img_offset[0] - xrange * scale, img_offset[1] + yrange * scale - gizmo_h
 
 		if z_container is None:
 			z_container = Rectangle(gizmo_pos, gizmo_w, gizmo_h, edgecolor = "w", facecolor='none')
@@ -613,8 +625,8 @@ def OnMouseScroll(event):
 	
 	axis.set_xlim([img_offset[0] - xrange * scale,
 					img_offset[0] + xrange * scale])
-	axis.set_ylim([img_offset[1] - yrange * scale,
-					img_offset[1] + yrange * scale])
+	axis.set_ylim([img_offset[1] + yrange * scale,
+					img_offset[1] - yrange * scale])
 	
 	UpdateZoomGizmo(scale, xrange, yrange)
 	canvas.draw_idle() # force re-draw
@@ -674,8 +686,8 @@ def OnMouseDrag(event):
 			img_offset = xcenter, ycenter
 			axis.set_xlim([xcenter - xrange * scale,
 						xcenter + xrange * scale])
-			axis.set_ylim([ycenter - yrange * scale,
-						ycenter + yrange * scale])
+			axis.set_ylim([ycenter + yrange * scale,
+						ycenter - yrange * scale])
 			UpdateZoomGizmo(scale, xrange, yrange)
 			canvas.draw_idle() # fo
 
