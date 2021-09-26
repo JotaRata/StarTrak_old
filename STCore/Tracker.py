@@ -407,7 +407,8 @@ def Track(index, ItemList, stars):
 
 	for starIndex in sortedIndices:
 		s = stars[starIndex]
-		Pos = numpy.array(TrackedStars[starIndex].currPos)
+		ts = TrackedStars[starIndex]
+		Pos = numpy.array(ts.currPos)
 		clipLoc = numpy.clip(Pos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
 		if s.type == 0 and Settings._TRACK_PREDICTION_.get() == 1:
 			clipLoc = numpy.clip(Pos + deltaPos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
@@ -434,22 +435,22 @@ def Track(index, ItemList, stars):
 			i += 1
 		if len(RegPositions) != 0:
 			MeanPos = numpy.mean(RegPositions, axis = 0).astype(int)
-			TrackedStars[starIndex].lastPos = TrackedStars[starIndex].currPos
-			TrackedStars[starIndex].lastValue = TrackedStars[starIndex].currValue 
-			TrackedStars[starIndex].currPos = MeanPos.tolist()
+			ts.lastPos = ts.currPos
+			ts.lastValue = ts.currValue 
+			ts.currPos = MeanPos.tolist()
 
-			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].currPos)))
-			TrackedStars[starIndex].currValue = GetMaxima(data, TrackedStars[starIndex], index, back)
-			if TrackedStars[starIndex].lastSeen != -1:
-				TrackedStars[starIndex].lastSeen = -1
+			ts.trackedPos.append(list(reversed(ts.currPos)))
+			ts.currValue = GetMaxima(data, ts, index, back)
+			if ts.lastSeen != -1:
+				ts.lastSeen = -1
 		else:
-			if TrackedStars[starIndex].lastSeen == -1:
-				TrackedStars[starIndex].lastSeen = index
-			TrackedStars[starIndex].lostPoints.append(index)
-			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].lastPos)))
+			if ts.lastSeen == -1:
+				ts.lastSeen = index
+			ts.lostPoints.append(index)
+			ts.trackedPos.append(list(reversed(ts.lastPos)))
 
 		if s.type == 1:
-			deltaPos = numpy.array(TrackedStars[starIndex].currPos) - Pos
+			deltaPos = numpy.array(ts.currPos) - Pos
 		#starIndex += 1
 	
 def StopTracking():
@@ -497,9 +498,9 @@ def UpdateCanvasOverlay():
 		t.remove()
 	stIndex = 0
 	for ts in TrackedStars:
-		trackPos = (TrackedStars[stIndex].currPos[1], TrackedStars[stIndex].currPos[0])
-		if len(TrackedStars[stIndex].trackedPos) > 0:
-			trackPos = TrackedStars[stIndex].trackedPos[CurrentFile]
+		trackPos = (ts.currPos[1], ts.currPos[0])
+		if len(ts.trackedPos) > 0:
+			trackPos = ts.trackedPos[CurrentFile]
 		
 		col = "w"
 		if ts.star.type == 1:
@@ -507,11 +508,11 @@ def UpdateCanvasOverlay():
 		
 		if len(trackPos) == 0:
 			continue
-		if CurrentFile in TrackedStars[stIndex].lostPoints:
+		if CurrentFile in ts.lostPoints:
 			col = "r"
 		if Settings._SHOW_TRACKEDPOS_.get() == 1:
 			try:
-				points = TrackedStars[stIndex].trackedPos[max(CurrentFile - 4, 0):CurrentFile + 1]
+				points = ts.trackedPos[max(CurrentFile - 4, 0):CurrentFile + 1]
 				poly = Polygon(points , closed = False, fill = False, edgecolor = "w", linewidth = 2)
 				poly.label = "Poly"+str(stIndex)
 				axis.add_artist(poly)
