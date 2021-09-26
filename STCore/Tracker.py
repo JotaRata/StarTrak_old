@@ -108,8 +108,7 @@ def Awake(root, stars, ItemList):
 	if implot is None:
 		App.after(10, DrawCanvas)
 	App.after(100, UpdateSidebar, ItemList[CurrentFile].data)
-	
-	
+
 
 # Creates the viewport, but doesn't draw it to the UI
 def CreateCanvas():
@@ -497,11 +496,12 @@ def UpdateCanvasOverlay():
 	for t in reversed(axis.texts):
 		t.remove()
 	stIndex = 0
-	for ts in TrackedStars:
+
+  for ts in TrackedStars:
 		trackPos = (ts.currPos[1], ts.currPos[0])
 		if len(ts.trackedPos) > 0:
 			trackPos = ts.trackedPos[CurrentFile]
-		
+
 		col = "w"
 		if ts.star.type == 1:
 			col = "y"
