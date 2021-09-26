@@ -52,27 +52,31 @@ class Levels(tk.Frame):
 # It shows status and properties of the stars created
 # Also it allows the user to edit the star
 class StarElement(tk.Frame):
-	def __init__(self, master, star : StarItem, command_setstar, command_delete, *args, **kwargs):
+	def __init__(self, master, star : StarItem, index, command_setstar, command_setguide, command_delete, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
 
 		self.config(bg="gray10")
 
 		delete_icon = GetIcon("delete")
 		self.config(bg="gray8")
-		self.grid_columnconfigure(tuple(range(1)), weight=1)
-		self.grid_columnconfigure(6, weight=0)
+		self.grid_columnconfigure(1, weight=1)
 
 		cmd_del = lambda: (command_delete(), self.destroy())
 
+		self.gvar = tk.IntVar(value=0)
+		self.guide_button = ttk.Radiobutton(self, variable=self.gvar,  value = 1, command=lambda: command_setguide(index))
 		self.main_button = ttk.Button(self, text=star.name, command=command_setstar)
 		self.deleteButton = ttk.Button(self, image = delete_icon, width = 1, command = cmd_del)
 		self.deleteButton.image = delete_icon   
 		
-		self.main_button.grid(row=0, column=0, sticky="news")
-		self.deleteButton.grid(row=0, column=1)
+		self.guide_button.grid(row=0, column=0, sticky="news")
+		self.main_button.grid(row=0, column=1, sticky="news")
+		self.deleteButton.grid(row=0, column=2)
 	
 	def update_star(self, star : StarItem):
 		self.main_button.config(text=star.name)
+		self.gvar.set(star.type)
+	
 
 # TrackElelement displays some information about the curent tracking status
 # It is instanced in the sidebar of Tracker
@@ -83,7 +87,8 @@ class TrackElement(tk.Frame):
 		self.config(bg="gray8")
 		self.grid_columnconfigure(tuple(range(2)), weight=1)
 
-		nameLabel = ttk.Label(self, text = track.star.name, font=(None, 15))
+		guide = " *" if track.star.type == 1 else ""
+		nameLabel = ttk.Label(self, text = track.star.name + guide, font=(None, 15))
 		posLabel = ttk.Label(self, text = "Posicion")
 		lostLabel = ttk.Label(self, text = "Perdidos")
 		trustLabel = ttk.Label(self, text = "Confianza")

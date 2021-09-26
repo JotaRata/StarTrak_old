@@ -39,7 +39,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 
 	bounds = 60
 	radius = 10
-	threshold = 0.5
+	threshold = 0.75
 	sigma = 2
 	if star is not None:
 		name = star.name
@@ -126,10 +126,10 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	controlButtons.grid(row =4, column=3)
 
 	CancelButton = ttk.Button(controlButtons, text = "Cancelar", command = CloseWindow, image = icons.Icons["delete"], compound = "left")
-	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = applycmd, image = icons.Icons["check"], compound = "right")
+	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = applycmd, image = icons.Icons["check"], compound = "right", style="Highlight.TButton")
 	
 	CancelButton.grid(row = 0, column = 0)
-	ApplyButton.grid(row = 0, column = 1)
+	ApplyButton.grid(row = 0, column = 1, padx=4)
 
 
 def GetMax(data, xloc, yloc, radius, background):
@@ -188,14 +188,13 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 
 	st = StarItem()
 	st.name = name
-	st.type = Type
 	st.location = loc
 	st.bounds = bounds
 	st.radius = radius
 	st.value = value[0]
 	st.std = value[1]
-	st.threshold = (threshold * 0.01)
-	st.bsigma = sigma
+	st.threshold = 1#(threshold * 0.01)
+	st.bsigma = 2#sigma
 	
 	if starIndex == -1:
 		if OnStarAdd is not None:

@@ -237,6 +237,7 @@ def CreateLevels():
 
 #region Update Funcions
 
+sidebar_dirty = False
 def AddStar(star : StarItem, onlyUI = False):
 	global Stars, sidebar_elements
 	global SidebarList
@@ -249,37 +250,70 @@ def AddStar(star : StarItem, onlyUI = False):
 
 	def SetTrackerDirty():
 		Tracker.DataChanged = True
+	def SetSidebarDirty():
+		global sidebar_dirty
+		sidebar_dirty = True
 
-	cmd_star = lambda s=star, i=index: SetStar.Awake(Data, s, OnStarChange, None, i)	
-	cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty())
+	cmd_star = lambda i=index: SetStar.Awake(Data, Stars[index], OnStarChange, None, i)	
+	cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty(), SetSidebarDirty())
 
-	element = StarElement(SidebarList, star, cmd_star, cmd_delete)
-	sidebar_elements.append(element)
+	element = StarElement(SidebarList, star, index, cmd_star, SetGuideStar, cmd_delete)
 	element.grid(row=index, column=0, sticky= "nsew")
-
-
+	sidebar_elements.append(element)
+def SetGuideStar(index):
+	i = 0
+	for star in Stars:
+		star.type = 1 if i == index else 0
+		i += 1
+	UpdateStarList()
+	
 def UpdateStarList():
-	global SidebarList, sidebar_elements
+	global SidebarList, sidebar_elements, sidebar_dirty
 
 	index = 0
-	
+	# Checks if sidebar is dirty
+	if sidebar_dirty:
+		for s in sidebar_elements:
+			s.destroy()
+		sidebar_elements = []
+		sidebar_dirty = False
+
 	# Recreate the list of elements if its size doesn't match the Stars (i.e. Load a trak file)
 	if len(sidebar_elements) != len(Stars):
 		for star in Stars:
 			AddStar(star, onlyUI=True)
 	
+	# Assing the guide star if all or none  of them are already set
+	# brightest star index, guide star count, brightest star value
+	if len(Stars) > 0:
+		bsi, gs, bs = 0, 0, 0
+		for star in Stars:
+			if star.type == 1:
+				gs += 1
+			if star.value > bs:
+				bsi = index
+				bs = star.value
+			index += 1
+
+		if gs > 1 or gs == 0:
+			print (gs, bsi)
+			SetGuideStar(bsi)
+			return
+		
+	index = 0
 	# Update elements if necessary
 	for star in Stars:
 		element :StarElement = sidebar_elements[index]
 		element.update_star(star)
 		index += 1
+		
 
 	SidebarList.config(height=32 * index)
 	Sidebar.update_idletasks()
 	Sidebar.config(scrollregion=SidebarList.bbox())
 	#Sidebar.after(10, lambda:Sidebar.config(scrollregion=(0,0, 250, 32 * index)))
 	#Sidebar.update_idletasks()
-	App.after(10, UpdateCanvasOverlay)
+	App.after(40, UpdateCanvasOverlay)
 	
 
 def UpdateCanvasOverlay():
@@ -398,8 +432,12 @@ def Apply(root):
 	DataManager.StarItemList = Stars
 
 def ClearStars():
-	global Stars
+	global Stars, sidebar_elements
 	Stars = []
+	for s in sidebar_elements:
+		s.destroy()
+	sidebar_elements = []
+
 #endregion
 def OnMouseScroll(event):
 	global Data, canvas, axis, zoom_factor, img_limits, img_offset
@@ -536,7 +574,6 @@ def OnMouseRelease(event):
 
 	if  drag_displacement[2] < drag_tolerance and drag_displacement[3] < drag_tolerance:
 		OnImageClick(event)
-		return
 
 	if SelectedStar == -100:
 		if z_box is not None:
@@ -560,7 +597,7 @@ def OnImageClick(event):
 def OnStarChange(star : StarItem = None, index = -1):
 	global Stars
 
-	if index >= 0:
+	if star is not None:
 		Stars[index] = star
 	UpdateStarList()
 	#UpdateCanvasOverlay()

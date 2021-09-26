@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from tkinter.constants import S
 from STCore.Component import TrackElement
 from item import ResultSettings
 import numpy
@@ -38,7 +39,6 @@ Sidebar : tk.Canvas = None
 SidebarList : ttk.Frame = None
 sidebar_elements = []
 
-BrightestStar = None
 TrackedStars = []
 DataChanged = False
 sidebar_buttons = None
@@ -62,7 +62,7 @@ IsInitialized = False
 
 #endregion
 def Awake(root, stars, ItemList):
-	global App, FileLabel, ImgFrame, TrackedStars, pool, BrightestStar, CurrentFile, DataChanged, IsTracking, ScrollFileLbd, sidebar_elements
+	global App, FileLabel, ImgFrame, TrackedStars, pool, CurrentFile, DataChanged, IsTracking, ScrollFileLbd, sidebar_elements
 	
 	DataManager.CurrentWindow = 3
 	IsTracking = False
@@ -108,12 +108,6 @@ def Awake(root, stars, ItemList):
 	if implot is None:
 		App.after(10, DrawCanvas)
 	App.after(100, UpdateSidebar, ItemList[CurrentFile].data)
-	
-	brightestStarValue = 0
-	for s in stars:
-		if s.value > brightestStarValue:
-			BrightestStar = s
-			brightestStarValue = s.value
 	
 	
 
@@ -391,20 +385,19 @@ def OnFinishTrack():
 		UpdateSidebar()
 
 def Track(index, ItemList, stars):
-	global TrackedStars, BrightestStar
-	#starIndex = 0
-	#print ("Tracking Thread started")
+	global TrackedStars
+	
 	data = ItemList[index].data
 	back, bgStD =  GetBackground(data)
 	deltaPos = numpy.array([0,0])
 	indices = range(len(stars))
-	sortedIndices = sorted(indices, key = lambda e: stars[e].value, reverse = True)
+	sortedIndices = sorted(indices, key = lambda e: stars[e].type, reverse = True)
 
 	for starIndex in sortedIndices:
 		s = stars[starIndex]
 		Pos = numpy.array(TrackedStars[starIndex].currPos)
 		clipLoc = numpy.clip(Pos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
-		if BrightestStar != s and Settings._TRACK_PREDICTION_.get() == 1:
+		if s.type == 0 and Settings._TRACK_PREDICTION_.get() == 1:
 			clipLoc = numpy.clip(Pos + deltaPos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
 		crop = data[clipLoc[0]-s.bounds : clipLoc[0]+s.bounds,clipLoc[1]-s.bounds : clipLoc[1]+s.bounds]
 		crop = median_filter(crop, 2)
@@ -442,8 +435,8 @@ def Track(index, ItemList, stars):
 				TrackedStars[starIndex].lastSeen = index
 			TrackedStars[starIndex].lostPoints.append(index)
 			TrackedStars[starIndex].trackedPos.append(list(reversed(TrackedStars[starIndex].lastPos)))
-		print (TrackedStars[starIndex].trackedPos)
-		if BrightestStar == s:
+
+		if s.type == 1:
 			deltaPos = numpy.array(TrackedStars[starIndex].currPos) - Pos
 		#starIndex += 1
 	
@@ -497,7 +490,7 @@ def UpdateCanvasOverlay():
 			trackPos = TrackedStars[stIndex].trackedPos[CurrentFile]
 		
 		col = "w"
-		if ts.star == BrightestStar:
+		if ts.star.type == 1:
 			col = "y"
 		
 		if len(trackPos) == 0:
@@ -528,7 +521,7 @@ def UpdateZoomGizmo(scale, xrange, yrange):
 	aspect = yrange/xrange
 
 	# Change the size of the Gizmo
-	size = 320
+	size = 120
 
 	if zoom_factor > 1:
 		gizmo_pos = img_offset[0] - xrange * scale, img_offset[1] - yrange * scale

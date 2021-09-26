@@ -232,12 +232,15 @@ def Reset():
 	win = Window
 	ResultsConfigurator.SettingsObject = None
 	ImageSelector.ItemList = []
-	ImageView.ClearStars()
 	Tracker.TrackedStars = []
 	Tracker.CurrentFile = 0
 	ImageView.level_perc = -1
+	ImageView.ClearStars()
+	ImageView.implot = None
 	Results.MagData = None
 	DataManager.RuntimeEnabled = False
+	DataManager.Levels = -1
+	DataManager.FileItemList = []
 	Results.Constant = 0
 	Results.BackgroundFlux = 0
 	RuntimeAnalysis.directoryPath = ""
@@ -245,6 +248,7 @@ def Reset():
 	RuntimeAnalysis.filesList = []
 	RuntimeAnalysis.startFile = ""
 	Tracker.DataChanged = False
+
 	print ("Window Reset")
 	if DataManager.CurrentWindow == 0:
 		# No hacer nada #
