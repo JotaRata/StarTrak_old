@@ -104,10 +104,12 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	DrawCanvas(location, radius, Data)
 	
 	back_median = float(GetBackgroundMean(Data))
-	confidence = int(min((numpy.max(Image.get_array()) - back_median)/ back_median - 1, 1.0)*100)
 	
-	BrightLabel = ttk.Label(App, text = "Calidad: " + str(confidence)+"%",font="-weight bold", width = 18, anchor = "w")
-	_conf = str(numpy.clip(int(confidence/30 + 1), 1, 3))
+	area = (2 * radius) ** 2
+	snr = (Image.get_array().sum() / (area * back_median))
+
+	BrightLabel = ttk.Label(App, text = "Señal a Ruido: %.2f " % snr,font="-weight bold", width = 18, anchor = "w")
+	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
 	ConfIcon = ttk.Label(App, image = icons.Icons["conf"+ _conf])
 
 	ConfIcon.grid(row = 4, column = 2)

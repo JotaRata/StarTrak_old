@@ -217,8 +217,8 @@ def RegisterSignal(TrackList, TrackedStars):
 			crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 			StarFlux = numpy.sum(crop)
 
-			BackgroundFlux = BackgroundMedian * (radius **2)
-			values.append(StarFlux / numpy.sqrt(StarFlux + BackgroundFlux))
+			BackgroundFlux = BackgroundMedian * (2*radius)**2
+			values.append(StarFlux / BackgroundFlux)
 		return values
 	
 	i = 0
