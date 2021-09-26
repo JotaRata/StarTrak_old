@@ -234,20 +234,25 @@ def Reset():
 	ImageSelector.ItemList = []
 	Tracker.TrackedStars = []
 	Tracker.CurrentFile = 0
+	Tracker.DataChanged = False
+	Tracker.ClearData()
+
 	ImageView.level_perc = -1
 	ImageView.ClearStars()
 	ImageView.implot = None
 	Results.MagData = None
+	
 	DataManager.RuntimeEnabled = False
 	DataManager.Levels = -1
 	DataManager.FileItemList = []
+	DataManager.StarItemList = []
+	
 	Results.Constant = 0
 	Results.BackgroundFlux = 0
 	RuntimeAnalysis.directoryPath = ""
 	RuntimeAnalysis.dirState = []
 	RuntimeAnalysis.filesList = []
 	RuntimeAnalysis.startFile = ""
-	Tracker.DataChanged = False
 
 	print ("Window Reset")
 	if DataManager.CurrentWindow == 0:

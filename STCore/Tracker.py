@@ -279,7 +279,7 @@ def SwitchTrackButton(RuntimeEnd = False):
 def PopupMenu(event, ApplyMenu):
 	ApplyMenu.post(event.x_root, event.y_root)
 
-def CompositeNow(root, ItemList):
+def CompositeNow(root):
 	if len(TrackedStars[0].trackedPos) == 0:
 		messagebox.showerror("Error", "No hay estrellas restreadas.")
 		return
@@ -287,7 +287,7 @@ def CompositeNow(root, ItemList):
 		messagebox.showerror("Error", "Se necesitan al menos dos estrellas para iniciar una composicion.")
 		return
 	Destroy()
-	Composite.Awake(root, ItemList, TrackedStars)
+	Composite.Awake(root, DataManager.FileItemList, TrackedStars)
 def OpenResults(root, ItemList):
 	if len(TrackedStars[0].trackedPos) > 0:
 		Results.Awake(root, ItemList, TrackedStars)
@@ -515,6 +515,13 @@ def UpdateCanvasOverlay():
 		stIndex += 1
 	canvas.draw_idle()
 
+def ClearData():
+	global sidebar_elements, implot
+	
+	implot = None
+	for s in sidebar_elements:
+		s.destroy()
+	sidebar_elements = []
 def UpdateZoomGizmo(scale, xrange, yrange):
 	global axis, zoom_factor, img_offset, z_container, z_box
 

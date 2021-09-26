@@ -23,6 +23,8 @@ ConfIcon = None
 MousePress = None
 XLoc= YLoc = None
 #endregion
+lastRadius = 10
+lastBounds = 60
 
 def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1, location = (0,0), name = ""):
 	global App, Image, canvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
@@ -37,8 +39,8 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	App.grid_columnconfigure(tuple(range(3)), weight=1)
 	App.grid_rowconfigure(tuple(range(3)), weight=1)
 
-	bounds = 60
-	radius = 10
+	bounds = lastBounds
+	radius = lastRadius
 	threshold = 0.75
 	sigma = 2
 	if star is not None:
@@ -204,7 +206,12 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	OnStarChange(st, starIndex)
 	st.PrintData()
 	CloseWindow()
+
+	global XLoc, YLoc, lastRadius, lastBounds
+	lastBounds = bounds
+	lastRadius = radius
 	XLoc = YLoc = None
+	
 
 def CloseWindow():
 	global App, BrightLabel, ConfIcon
