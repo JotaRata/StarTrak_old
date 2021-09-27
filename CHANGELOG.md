@@ -21,6 +21,7 @@ Changes unreleased.
 ### Bug Fixes
 
 - General:
+  - Tracker window drawing before initializating Tracking data (#6) ([d83f949](https://github.com/JotaRata/StarTrak/commit/d83f949403c1178bc99710fa8326f320a1c3c0b1))
   - MousePress data is None when there are no artists in mpl viewport ([7bf6cb5](https://github.com/JotaRata/StarTrak/commit/7bf6cb540b50687c63ebd4d01932185350a5907d))
   - fixed ImageView not invoking click event
 ImageView is using a spatial drag detection now, instead of temporal ([fe0c7d7](https://github.com/JotaRata/StarTrak/commit/fe0c7d74123ba360e1a2a0475495725abf65a478))
