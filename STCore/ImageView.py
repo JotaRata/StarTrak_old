@@ -449,7 +449,7 @@ def ClearStars():
 #endregion
 def OnMouseScroll(event):
 	global Data, canvas, axis, zoom_factor, img_limits, img_offset
-	print (img_limits)
+
 	# Check if for some reason, no limits were defined
 	if img_limits is None:
 		axis.relim()
