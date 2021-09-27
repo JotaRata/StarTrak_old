@@ -1,8 +1,5 @@
 # coding=utf-8
 
-from sys import winver
-
-
 try:
 	print("Cargando modulos principales..", end=" ")
 	import sys
