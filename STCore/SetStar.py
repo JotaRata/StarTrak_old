@@ -4,99 +4,117 @@ import matplotlib
 import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from numpy.lib.function_base import append
 from STCore.item.Star import StarItem
 import STCore.Tracker
 import STCore.utils.Icons as icons
+from matplotlib.patches import Circle, Polygon
+
 from STCore.utils.backgroundEstimator import GetBackgroundMean
 #region Variables
-Window = None
+App = None
 leftPanel = None
 rightPanel = None
 Image = None
-ImageCanvas = None
+canvas = None
 ImageViewer = None
 BrightLabel = None
 ConfIcon = None
 MousePress = None
 XLoc= YLoc = None
 #endregion
+lastRadius = 10
+lastBounds = 60
 
-
-def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrella", location = (20, 20), radius = 15, bounds = 40, Type = 0, threshold = 50, sigma = 2):
-	global Window, Image, ImageCanvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
-	if Window is not None:
+def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1, location = (0,0), name = ""):
+	global App, Image, canvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
+	if App is not None:
 		return
-	Window = tk.Toplevel(root)
-	Window.configure(bg= "black")
-	Window.wm_title(string = "Configurar Estrella")
-	Window.protocol("WM_DELETE_WINDOW", CloseWindow)
-	Window.attributes('-topmost', 'true')
-	Window.resizable(False, False)
+	App = tk.Toplevel()
+	App.configure(bg= "gray15")
+	App.wm_title(string = "Configurar Estrella")
+	App.protocol("WM_DELETE_WINDOW", CloseWindow)
+	App.attributes('-topmost', 'true')
+	App.resizable(False, False)
+	App.grid_columnconfigure(tuple(range(3)), weight=1)
+	App.grid_rowconfigure(tuple(range(3)), weight=1)
 
-	leftPanel = ttk.Frame(Window)
-	leftPanel.grid(row = 0,column = 0, sticky=tk.NS)
-	rightPanel = ttk.Frame(Window)
-	rightPanel.grid(row=0,column = 1, sticky=tk.NS, padx = 20)
+	bounds = lastBounds
+	radius = lastRadius
+	threshold = 0.75
+	sigma = 2
+	if star is not None:
+		name = star.name
+		location = star.location
+		bounds = star.bounds
+		radius = star.radius
+		threshold = star.threshold
+		sigma = star.bsigma
 
-	nameFrame = ttk.Frame(leftPanel)
-	nameFrame.grid(row = 0, column = 0, sticky = tk.W)
-	ttk.Label(nameFrame, text = "Nombre de la estrella: ").grid(row = 0, column = 0, sticky = tk.W)
-	StarName = tk.StringVar(Window, value = name)
-	nameEntry = ttk.Entry(nameFrame, textvariable = StarName)
-	nameEntry.grid (row =0,column = 1, sticky = tk.EW)
-	
+	StarName = tk.StringVar(value = name)
+	XLoc = tk.IntVar(value = location[1])
+	YLoc= tk.IntVar(value = location[0])
+	StarBounds = tk.IntVar(value = bounds)
+	StarRadius = tk.IntVar(value = radius)
+	StarThreshold = tk.IntVar(value = threshold)
+	SigmaFactor = tk.IntVar(value = sigma)
+
+	nameLabel = ttk.Label(App, text = "Nombre de la estrella: ")
+	nameEntry = ttk.Entry(App, textvariable = StarName)
+
+	posLabel = ttk.Label(App, text = "Posicion:")
+	XLocSpinBox = ttk.Spinbox(App, from_ = 0, to = Data.shape[1], textvariable = XLoc, width = 10)
+	YLocSpinBox = ttk.Spinbox(App, from_ = 0, to = Data.shape[0], textvariable = YLoc, width = 10)
+
+	radiusLabel = ttk.Label(App, text = "Tamaño de la estrella:")
+	RadiusSpinBox = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = StarRadius, width = 10, increment = 1)
+
+	boundsLabel = ttk.Label(App, text = "Radio de búsqueda:")
+	BoundSpinBox = ttk.Spinbox(App, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10, increment = 10)
+
+	nameLabel.grid(row = 0, column = 0, columnspan=2, sticky="w")
+	nameEntry.grid (row =0,column = 2)
+	posLabel.grid(row = 1, column = 0, sticky="w")
+	XLocSpinBox.grid(row = 1, column = 1)
+	YLocSpinBox.grid(row = 1, column = 2, padx = 20)
+	radiusLabel.grid(row = 2, column = 0, columnspan=2, sticky="w")
+	RadiusSpinBox.grid(row = 2, column = 2)
+	boundsLabel.grid(row = 3, column = 0, columnspan=2, sticky="w")
+	BoundSpinBox.grid(row = 3, column = 2)
+
 	#typeSelection = tk.IntVar(Window, value = Type)
 	#typeFrame = tk.LabelFrame(leftPanel,text = "Tipo de Estrella")
 	#typeFrame.grid(row = 1, column = 0, columnspan = 1, sticky = tk.W + tk.E)
 	#ttk.Radiobutton(typeFrame, text = "Variable", variable = typeSelection, value = 0).grid(row = 0, sticky = tk.W)
 	#ttk.Radiobutton(typeFrame, text = "Referencia", variable = typeSelection, value = 1).grid (row = 1, sticky = tk.W)
+
 	
-	ImageViewer = ttk.LabelFrame(rightPanel,text = "Vista previa")
-	ImageViewer.grid(row = 0, column = 0, rowspan=2, sticky = tk.NSEW)
-
-	locFrame = ttk.Frame(leftPanel)
-	locFrame.grid(row = 2, column = 0, sticky = tk.EW)
-	trackFrame = ttk.LabelFrame(leftPanel, text = "Opciones de rastreo")
-	trackFrame.grid(row = 3, column = 0, sticky = tk.EW)
-
-	XLoc = tk.IntVar(locFrame, value = location[1])
-	YLoc= tk.IntVar(locFrame, value = location[0])
-	StarBounds = tk.IntVar(locFrame, value = bounds)
-	StarRadius = tk.IntVar(locFrame, value = radius)
-	StarThreshold = tk.IntVar(locFrame, value = threshold)
-	SigmaFactor = tk.IntVar(locFrame, value = sigma)
-
-	ttk.Label(locFrame, text = "Posicion:").grid(row = 3, column = 2, sticky = tk.W)
-	XLocSpinBox = ttk.Spinbox(locFrame, from_ = 0, to = Data.shape[1], textvariable = XLoc, width = 10)
-	YLocSpinBox = ttk.Spinbox(locFrame, from_ = 0, to = Data.shape[0], textvariable = YLoc, width = 10)
-	RadiusSpinBox = ttk.Spinbox(locFrame, from_ = 0, to = min(Data.shape), textvariable = StarRadius, width = 10, increment = 5)
 	
-	BoundSpinBox = ttk.Spinbox(trackFrame, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10, increment = 10)
-	ThreSpinBox = ttk.Scale(trackFrame, from_ = 0, to = 100, variable = StarThreshold, orient=tk.HORIZONTAL)
-	SigSpinBox = ttk.Spinbox(trackFrame, from_ = 0, to = 4, textvariable = SigmaFactor, width=10, increment= 0.5)
-
-	XLocSpinBox.grid(row = 3, column = 3)
-	YLocSpinBox.grid(row = 3, column = 4, padx = 20)
-	ttk.Label(locFrame, text = "Tamaño de la estrella:").grid(row = 4, column = 2, sticky = tk.W)
-	RadiusSpinBox.grid(row = 4, column = 3, columnspan = 2, sticky = tk.EW)
 	
+	#ThreSpinBox = ttk.Scale(trackFrame, from_ = 0, to = 100, variable = StarThreshold, orient=tk.HORIZONTAL)
+	#SigSpinBox = ttk.Spinbox(trackFrame, from_ = 0, to = 4, textvariable = SigmaFactor, width=10, increment= 0.5)
 
-	ttk.Label(trackFrame, text = "Radio de búsqueda:").grid(row = 5, column = 2, sticky = tk.W)
-	BoundSpinBox.grid(row = 5, column = 3, columnspan = 1, sticky = tk.EW)
-	ttk.Label(trackFrame, text = "Variabilidad:").grid(row = 6, column = 2, sticky = tk.W)
-	ThreSpinBox.grid(row = 6, column = 3, columnspan = 2, sticky = tk.EW)
 	
-	ttk.Label(trackFrame, text = "Rechazar si Sigma es menor a:").grid(row = 7, column = 2, sticky = tk.W)
-	SigSpinBox.grid(row = 7, column = 3, columnspan = 1, sticky = tk.EW)
+	#ttk.Label(trackFrame, text = "Variabilidad:").grid(row = 6, column = 2, sticky = tk.W)
+	#ThreSpinBox.grid(row = 6, column = 3, columnspan = 2, sticky = tk.EW)
+	
+	#ttk.Label(trackFrame, text = "Rechazar si Sigma es menor a:").grid(row = 7, column = 2, sticky = tk.W)
+	#SigSpinBox.grid(row = 7, column = 3, columnspan = 1, sticky = tk.EW)
 
 	DrawCanvas(location, radius, Data)
+	
 	back_median = float(GetBackgroundMean(Data))
-	confidence = int(min((numpy.max(Image.get_array()))/ back_median - 1, 1.0)*100)
-	BrightLabel = ttk.Label(trackFrame, text = "Confidencia: " + str(confidence)+"%",font="-weight bold", width = 18, anchor = "w")
-	_conf = str(numpy.clip(int(confidence/30 + 1), 1, 3))
-	ConfIcon = ttk.Label(trackFrame, image = icons.Icons["conf"+ _conf])
-	ConfIcon.grid(row = 8, column = 3)
-	BrightLabel.grid(row = 8, column = 2, sticky = tk.W)
+	
+	area = (2 * radius) ** 2
+	snr = (Image.get_array()[radius:3*radius, radius:3*radius].sum() / (area * back_median))
+
+	BrightLabel = ttk.Label(App, text = "Señal a Ruido: %.2f " % snr,font="-weight bold", width = 18, anchor = "w")
+	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
+	ConfIcon = ttk.Label(App, image = icons.Icons["conf"+ _conf])
+
+	ConfIcon.grid(row = 4, column = 2)
+	BrightLabel.grid(row = 4, column = 0, columnspan=2)
+
 	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), back_median)
 	XLoc.trace("w",cmd)
 	YLoc.trace("w",cmd)
@@ -106,81 +124,102 @@ def Awake(root, Data, Stars, OnStarChange, starIndex = -1, name = "Nueva Estrell
 						 radius=StarRadius.get() , Type=1,
 						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get(), back_median)
 						 , threshold=StarThreshold.get(),
-						 stars=Stars, OnStarChange= OnStarChange,starIndex=starIndex, sigma = SigmaFactor.get())
+						 stars=star, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sigma = SigmaFactor.get())
 
-	controlButtons = ttk.Frame(rightPanel)
-	controlButtons.grid(row =3)
-	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = applycmd, image = icons.Icons["check"], compound = "right")
-	ApplyButton.grid(row = 0, column = 1)
+	controlButtons = ttk.Frame(App)
+	controlButtons.grid(row =4, column=3)
+
 	CancelButton = ttk.Button(controlButtons, text = "Cancelar", command = CloseWindow, image = icons.Icons["delete"], compound = "left")
+	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = applycmd, image = icons.Icons["check"], compound = "right", style="Highlight.TButton")
+	
 	CancelButton.grid(row = 0, column = 0)
+	ApplyButton.grid(row = 0, column = 1, padx=4)
 
 
 def GetMax(data, xloc, yloc, radius, background):
 	stLoc = (yloc, xloc)
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
-	return int(numpy.max(crop) - background), numpy.std(crop)
+
+	area = (2 * radius)**2
+	snr = (crop.sum() / (area * background))
+	return int(numpy.max(crop) - background), snr
 
 def DrawCanvas(stLoc, radius, data):
-	global Image, ImageCanvas, rig
-	ImageFigure = matplotlib.figure.Figure(figsize = (2,2), dpi = 100)
-	ImageAxis = ImageFigure.add_subplot(111)
-	ImageAxis.set_axis_off()
-	ImageFigure.subplots_adjust(0,0,1,1)
-	ImageFigure.set_facecolor("black")
-	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
-	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
-	levels = STCore.DataManager.Levels
-	Image = ImageAxis.imshow(crop, vmin = levels[1], vmax = levels[0], cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
-	ImageCanvas = FigureCanvasTkAgg(ImageFigure,master=ImageViewer)
-	ImageCanvas.draw()
-	wdg = ImageCanvas.get_tk_widget()
-	wdg.configure(bg="black")
-	wdg.config(cursor = "fleur")
-	ImageCanvas.mpl_connect("button_press_event", OnMousePress) 
-	ImageCanvas.mpl_connect("motion_notify_event", OnMouseDrag) 
-	ImageCanvas.mpl_connect("button_release_event", OnMouseRelase) 
-	wdg.grid(sticky = tk.NSEW)
+	global Image, canvas, rig
+	fig = matplotlib.figure.Figure(figsize = (2,2), dpi = 100)
+	axis = fig.add_subplot(111)
+	axis.set_axis_off()
+	fig.subplots_adjust(0,0,1,1)
+	fig.set_facecolor("black")
 
-def UpdateCanvas(data, stLoc, radius, mean):
-	global Image, ImageCanvas, BrightLabel, ConfIcon
+	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
+	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
+
+	levels = STCore.DataManager.Levels
+	Image = axis.imshow(crop, vmin = levels[1], vmax = levels[0], cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
+	canvas = FigureCanvasTkAgg(fig, master=App)
+	canvas.draw()
+
+	Viewport = canvas.get_tk_widget()
+	Viewport.configure(bg="black")
+	Viewport.config(cursor = "fleur")
+
+	canvas.mpl_connect("button_press_event", OnMousePress) 
+	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
+	canvas.mpl_connect("button_release_event", OnMouseRelase) 
+
+	circle = Circle((radius*2 - 0.5, radius*2 - 0.5), radius, facecolor = "none", edgecolor = "lime")
+
+	axis.add_artist(circle)
+	Viewport.grid(row = 0, column=3, rowspan=3)
+
+def UpdateCanvas(data, stLoc, radius, bkgMedian):
+	global Image, canvas, BrightLabel, ConfIcon
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
-	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
+	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
 	Image.set_array(crop)
-	confidence = int(min((numpy.max(crop))/ mean - 1, 1.0)*100)
-	BrightLabel.config(text = "Confidencia: "+str(confidence)+"%")
-	_conf = str(numpy.clip(int(confidence/30 + 1), 1, 3))
-	ConfIcon.config(image = icons.Icons["conf"+_conf])
-	ImageCanvas.draw()
+	
+	area = (2 * radius) ** 2
+	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkgMedian))
+	BrightLabel.config(text = "Señal a Ruido: %.2f " % snr)
 
-def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, starIndex, sigma):
+	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
+	ConfIcon.config(image = icons.Icons["conf"+_conf])
+	canvas.draw_idle()
+
+def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, OnStarAdd, starIndex, sigma):
 
 	st = StarItem()
 	st.name = name
-	st.type = Type
 	st.location = loc
 	st.bounds = bounds
 	st.radius = radius
 	st.value = value[0]
 	st.std = value[1]
-	st.threshold = (threshold * 0.01)
-	st.bsigma = sigma
+	st.threshold = 1#(threshold * 0.01)
+	st.bsigma = 2#sigma
+	
 	if starIndex == -1:
-		stars.append(st)
+		if OnStarAdd is not None:
+			OnStarAdd(st)
 		STCore.Tracker.DataChanged = True
-	else:
-		stars[starIndex] = st
-	OnStarChange()
+
+	OnStarChange(st, starIndex)
 	st.PrintData()
 	CloseWindow()
+
+	global XLoc, YLoc, lastRadius, lastBounds
+	lastBounds = bounds
+	lastRadius = radius
 	XLoc = YLoc = None
+	
 
 def CloseWindow():
-	global Window, BrightLabel, ConfIcon
-	Window.destroy()
-	Window = None
+	global App, BrightLabel, ConfIcon
+	App.destroy()
+	App = None
 	BrightLabel = None
 	ConfIcon = None
 

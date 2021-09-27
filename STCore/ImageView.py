@@ -1,12 +1,18 @@
 # coding=utf-8
 
+from STCore.Component import StarElement
+from logging import root
 from operator import contains
 from os import scandir
+from tkinter.constants import W
 import matplotlib
 from matplotlib import axes
 import numpy
 from matplotlib import use, figure
 from matplotlib.axes import Axes
+from numpy.lib.histograms import histogram
+
+from STCore.item import Star
 use("TkAgg")
 
 import matplotlib as plt
@@ -25,6 +31,9 @@ import STCore.RuntimeAnalysis
 import gc
 from PIL import Image
 import STCore.utils.Icons as icons
+from STCore import DataManager, RuntimeAnalysis
+from Component import Levels, StarElement
+
 #region Messages and Events
 params = {"ytick.color" : "w",
 			"xtick.color" : "w",
@@ -33,35 +42,279 @@ params = {"ytick.color" : "w",
 plt.rcParams.update(params)
 #endregion
 
+#region Global Variables
+ViewerFrame = None
+Data = None
+level_perc = (0,0)
+Stars = []
+canvas = None
+implot = None 
+ImageFrame = None 
+axis : Axes = None
+
+SidebarList = None
+SliderLabel = None
+ColorMaps = {"Escala de grises" : "gray", "Temperatura" : "seismic", "Arcoiris" : "rainbow", "Negativo" : "binary"}
+Modes = {"Linear" : Normalize(), "Raiz cuadrada": PowerNorm(gamma = 0.5), "Logaritmico" : LogNorm()}
+
+SelectedStar = -1
+MousePress = None
+MousePressTime = -1
+
+img_limits : tuple = None
+img_offset : tuple = (0,0)
+zoom_factor = 1
+
+z_container : Rectangle = None
+z_box : Rectangle = None
+
+App : ttk.Frame = None
+levelFrame : Levels = None
+Viewport : tk.Canvas = None
+Sidebar : tk.Canvas = None 
+sidebar_buttons : tk.Frame = None
+
+sidebar_elements = []
+
+isInitialized = False
+#endregion
+
+#region Main Body
+
+def Awake(root):
+	global ViewerFrame, Data, Stars, canvas, implot, ImageFrame, axis, Sidebar, SidebarList, SliderLabel, level_perc, levelFrame, isInitialized
+
+	STCore.DataManager.CurrentWindow = 2
+	
+	App.pack(fill=tk.BOTH, expand=1)
+
+	#ViewerFrame = tk.Frame(root)
+	#ttk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
+	Data =  DataManager.FileItemList[0].data
+	level_perc = STCore.DataManager.Levels
+
+	# Setting Levels
+	if not isinstance(level_perc, tuple):
+		level_perc = (numpy.percentile(Data, 99.8), numpy.percentile(Data, 1))
+		STCore.DataManager.Levels = level_perc
+	
+	#BuildLayout(root)
+	if implot is None:
+		App.after(10, DrawCanvas)
+
+	levelFrame.set_limits(numpy.nanmin(Data), numpy.nanmax(Data))
+	levelFrame.setMax(level_perc[0])
+	levelFrame.setMin(level_perc[1])
+	
+	OnStarChange()
+	isInitialized = True
+
+# Draws the layout in a single pass
+def BuildLayout(root : tk.Tk):
+	global App, Viewport, Sidebar, levelFrame, isInitialized
+
+	# Checks if Viewport object hasn't been destroyed or unloaded
+	fresh = Viewport is None
+
+	# Check whether the layout hadn't been built yet
+	if isInitialized == False:
+		App = ttk.Frame(root, width=root.winfo_width(), height=root.winfo_height(), name="imageview")
+		App.pack(fill=tk.BOTH, expand=1)
+
+		App.columnconfigure(tuple(range(2)), weight=1)
+		App.columnconfigure(1, weight=0)
+		App.rowconfigure(tuple(range(2)), weight=1)
+
+		CreateCanvas()
+		CreateLevels()
+		CreateSidebar(root)
+			
+		#Sidebar.grid_propagate(0)
+
+		Viewport.grid(row=0, column=0, rowspan=2, sticky="nsew")
+		Sidebar.grid(row=0, column=1, rowspan=2, sticky="nsew")
+		levelFrame.grid(row=2, column=0, sticky=tk.EW)
+		sidebar_buttons.grid(row=2, column=1, sticky="ew")
+		
+		if fresh:
+			Destroy()
+		isInitialized = True
+	#else:	# No need to rebuild
+		#Viewport.grid()
+		#Sidebar.grid()
+		#levelFrame.grid()
+		#sidebar_buttons.grid()
+
+#region Create Funcions
+
+# Creates the viewport, but doesn't draw it to the UI
+def CreateCanvas():
+	global canvas, implot, ImageFrame, axis, Viewport
+	
+	#ImageFrame = ttk.Frame(app, width = 700, height = 350)
+	#ImageFrame.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)	
+
+	fig = figure.Figure(figsize = (7,3.6), dpi = 100)
+	fig.set_facecolor("black")
+
+	# Create Canvas before any complex calculations
+	canvas = FigureCanvasTkAgg(fig, master=App)
+	
+	Viewport = canvas.get_tk_widget()
+	Viewport.configure(bg="black")
+	Viewport.config(cursor = "fleur")
+
+	axis = fig.add_subplot(111)
+	fig.subplots_adjust(0.0,0.05,1,1)
+	
+	canvas.mpl_connect("button_press_event", OnMousePress) 
+	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
+	canvas.mpl_connect("button_release_event", OnMouseRelease) 
+	canvas.mpl_connect('scroll_event',OnMouseScroll)
+
+# Fill the Canvas window for the viewport
+def DrawCanvas():
+	global canvas, implot, ImageFrame, axis
+
+	axis.clear()
+	implot = axis.imshow(Data, vmin = level_perc[1], vmax = level_perc[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
+	if STCore.Settings._SHOW_GRID_.get() == 1:
+		axis.grid()
+	
+	axis.relim()
+	canvas.draw()
+
+	# Get axis limits and save it as a tuple
+	global img_limits
+
+	img_limits = (axis.get_xlim(), axis.get_ylim())
+	UpdateCanvasOverlay()
+
+# Creates the siderbar, but does not draw it to the UI
+def CreateSidebar(root):
+	global App, Sidebar, SidebarList, sidebar_buttons
+	
+	Sidebar = tk.Canvas(App, width = 300, relief = "flat", bg = "gray16")
+	Sidebar.config(scrollregion=(0,0, 300, 1))
+
+	SidebarList = ttk.Frame(Sidebar, width=300,height=root.winfo_height())
+	Sidebar.create_window(300, 0, anchor=tk.NE, window=SidebarList, width=300, height=600)
+
+	SidebarList.grid_columnconfigure(0, weight=1)
+
+	ScrollBar = ttk.Scrollbar(App, command=Sidebar.yview)
+	ScrollBar.grid(row=0, column=2, rowspan=2, sticky=tk.NS)
+	Sidebar.config(yscrollcommand=ScrollBar.set)  
+
+	cmdTrack = lambda : Apply(root)
+	def CommandCreate():
+		if Data is None:
+			return
+		loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
+		SetStar.Awake(Data, None, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
+	def CommandBack():
+		import STCore.ImageSelector
+		Destroy()
+		STCore.ImageSelector.Awake(root, [])
+
+	sidebar_buttons = ttk.Frame(App)
+	
+	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = icons.GetIcon("prev"), command = CommandBack, compound="left")
+	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
+	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, image = icons.GetIcon("add"), compound="left")
+	AddButton.grid(row = 0, column = 1, sticky = tk.EW)
+	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = icons.GetIcon("next"), compound = "right")
+	NextButton.grid(row = 0, column = 2, sticky = tk.EW)
+
+
+def CreateLevels():
+	global levelFrame
+	levelFrame = Levels(App, ChangeLevels)
+
+#endregion
+
+
+
 #region Update Funcions
 
-def UpdateStarList():
+sidebar_dirty = False
+def AddStar(star : StarItem, onlyUI = False):
+	global Stars, sidebar_elements
 	global SidebarList
-	for child in SidebarList.winfo_children():
-		child.destroy()
-	index = 0
-	icon = icons.Icons["delete"]
-	#Las funciones lambda no se pueden llamar dentro de un loop for o while,
-	## para eso hay que crear una funcion que retorne un lambda
-	def __helperCreateWindow(index, stName, stLoc, stRadius, stBound, stType,stThr, bsg):
-		return lambda: SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, index, stName, stLoc, stRadius, stBound, stType, stThr)
-	def __helperPop (list, index):
-		return lambda: (list.pop(index), OnStarChange(), __helperTrackedChanged())
-	def __helperTrackedChanged():
+	
+	index = len(sidebar_elements)
+
+	# onlyUI flag tells whether the program is adding new stars to the list, or just refreshing their UI elements
+	if not onlyUI:
+		Stars.append(star)
+
+	def SetTrackerDirty():
 		Tracker.DataChanged = True
+	def SetSidebarDirty():
+		global sidebar_dirty
+		sidebar_dirty = True
 
-	for s in Stars:
-		ListFrame = ttk.Frame(SidebarList)
-		ListFrame.pack(fill = tk.X, expand = 1, anchor = tk.N, pady = 5)
+	cmd_star = lambda i=index: SetStar.Awake(Data, Stars[index], OnStarChange, None, i)	
+	cmd_delete = lambda i=index: (Stars.pop(i), sidebar_elements.pop(i), OnStarChange(), SetTrackerDirty(), SetSidebarDirty())
 
-		cmd = __helperCreateWindow(index, stName = s.name, stLoc = s.location, stRadius = s.radius, stBound = s.bounds, stType = s.type, stThr = 100 * s.threshold, bsg=s.bsigma)
-		cmd2= __helperPop(Stars, index)
-		ttk.Button(ListFrame, text = s.name, width = 10, command = cmd).pack(side = tk.LEFT, fill = tk.X, expand = 1)
-		deleteButton = ttk.Button(ListFrame, image = icon, width = 1, command = cmd2)
-		deleteButton.image = icon   #se necesita una referencia
-		deleteButton.pack(side = tk.RIGHT)
+	element = StarElement(SidebarList, star, index, cmd_star, SetGuideStar, cmd_delete)
+	element.grid(row=index, column=0, sticky= "nsew")
+	sidebar_elements.append(element)
+def SetGuideStar(index):
+	i = 0
+	for star in Stars:
+		star.type = 1 if i == index else 0
+		i += 1
+	UpdateStarList()
+	
+def UpdateStarList():
+	global SidebarList, sidebar_elements, sidebar_dirty
+
+	index = 0
+	# Checks if sidebar is dirty
+	if sidebar_dirty:
+		for s in sidebar_elements:
+			s.destroy()
+		sidebar_elements = []
+		sidebar_dirty = False
+
+	# Recreate the list of elements if its size doesn't match the Stars (i.e. Load a trak file)
+	if len(sidebar_elements) != len(Stars):
+		for star in Stars:
+			AddStar(star, onlyUI=True)
+	
+	# Assing the guide star if all or none  of them are already set
+	# brightest star index, guide star count, brightest star value
+	if len(Stars) > 0:
+		bsi, gs, bs = 0, 0, 0
+		for star in Stars:
+			if star.type == 1:
+				gs += 1
+			if star.value > bs:
+				bsi = index
+				bs = star.value
+			index += 1
+
+		if gs > 1 or gs == 0:
+			print (gs, bsi)
+			SetGuideStar(bsi)
+			return
+		
+	index = 0
+	# Update elements if necessary
+	for star in Stars:
+		element :StarElement = sidebar_elements[index]
+		element.update_star(star)
 		index += 1
-	UpdateCanvasOverlay()
+		
+
+	SidebarList.config(height=32 * index)
+	Sidebar.update_idletasks()
+	Sidebar.config(scrollregion=SidebarList.bbox())
+	#Sidebar.after(10, lambda:Sidebar.config(scrollregion=(0,0, 250, 32 * index)))
+	#Sidebar.update_idletasks()
+	App.after(40, UpdateCanvasOverlay)
+	
 
 def UpdateCanvasOverlay():
 	# Si se elimina el primer elemento de un lista en un ciclo for, entonces
@@ -85,7 +338,7 @@ def UpdateCanvasOverlay():
 		text_pos = (s.location[1], s.location[0] - s.bounds - 6)
 		text = axis.annotate(s.name, text_pos, color='w', weight='bold',fontsize=6, ha='center', va='center')
 		text.label = "Text"+str(Stars.index(s))
-	canvas.draw()
+	canvas.draw_idle()
 
 def UpdateZoomGizmo(scale, xrange, yrange):
 	global axis, zoom_factor, img_offset, z_container, z_box
@@ -96,10 +349,10 @@ def UpdateZoomGizmo(scale, xrange, yrange):
 	size = 320
 
 	if zoom_factor > 1:
-		gizmo_pos = img_offset[0] - xrange * scale, img_offset[1] - yrange * scale
 		gizmo_w = size  * scale
 		gizmo_h = size * scale * aspect
-
+		gizmo_pos = img_offset[0] - xrange * scale, img_offset[1] + yrange * scale - gizmo_h
+		
 		if z_container is None:
 			z_container = Rectangle(gizmo_pos, gizmo_w, gizmo_h, edgecolor = "w", facecolor='none')
 			z_container.label = "zoom_container"
@@ -127,164 +380,72 @@ def UpdateZoomGizmo(scale, xrange, yrange):
 			z_box = None
 
 def ChangeLevels():
-		global Levels
-		if _LEVEL_MIN_.get() >_LEVEL_MAX_.get():
-			_LEVEL_MIN_.set(_LEVEL_MAX_.get() + 1)
-		implot.norm.vmax = _LEVEL_MAX_.get()
-		implot.norm.vmin = _LEVEL_MIN_.get() + 0.01
+		global level_perc
+
+		if implot is None:
+			return
+			
+		if levelFrame.getMin() > levelFrame.getMax():
+			levelFrame.setMin(levelFrame.getMax() - 1)
+
+		if levelFrame.getMax() <= levelFrame.getMin():
+			levelFrame.setMax(levelFrame.getMin() + 1)
+
+
+		_min = levelFrame.getMin()
+		_max = levelFrame.getMax()
+		
+		implot.norm.vmax = _max
+		implot.norm.vmin = _min + 0.01
 		implot.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
 		implot.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
-		STCore.DataManager.Levels = (_LEVEL_MAX_.get(), _LEVEL_MIN_.get())
-		Levels = (_LEVEL_MAX_.get(), _LEVEL_MIN_.get())
+
+		STCore.DataManager.Levels =  (_max, _min)
 		canvas.draw_idle()
 
 #endregion
 
-#region Create Funcions
-def CreateCanvas(app, ImageClick):
-	global canvas, implot, ImageFrame, axis
-	ImageFrame = ttk.Frame(app, width = 700, height = 350)
-	ImageFrame.pack(side=tk.LEFT, fill = tk.BOTH, expand = True, anchor = tk.W)	
 
-	ImageFigure = figure.Figure(figsize = (7,3.6), dpi = 100)
-	axis = ImageFigure.add_subplot(111)
-	
-	ImageFigure.subplots_adjust(0.0,0.05,1,1)
-	implot = axis.imshow(Data, vmin = Levels[1], vmax = Levels[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
-	if STCore.Settings._SHOW_GRID_.get() == 1:
-		axis.grid()
-	ImageFigure.set_facecolor("black")
-	
-	canvas = FigureCanvasTkAgg(ImageFigure,master=ImageFrame)
-	canvas.draw()
-	wdg = canvas.get_tk_widget()
-	wdg.configure(bg="black")
-	wdg.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-	wdg.config(cursor = "fleur")
-
-	# Get axis limits and save it as a tuple
-	global img_limits
-
-	img_limits = (axis.get_xlim(), axis.get_ylim())
-
-	#ImageCanvas.mpl_connect('button_press_event',ImageClick)
-	canvas.mpl_connect("button_press_event", OnMousePress) 
-	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
-	canvas.mpl_connect("button_release_event", OnMouseRelease) 
-	canvas.mpl_connect('scroll_event',OnMouseScroll)
-
-	UpdateCanvasOverlay()
-
-def CreateSidebar(app, root, items):
-	global Sidebar, SidebarList
-	import STCore.ImageSelector
-
-	Sidebar = ttk.LabelFrame(app, relief=tk.RIDGE, width = 200, height = 400, text = "Opciones de Análisis")
-	Sidebar.pack(side = tk.RIGHT, expand = 0, fill = tk.BOTH, anchor = tk.NE)
-
-	SidebarList = ttk.Frame(Sidebar)
-	SidebarList.pack(expand = 1, fill = tk.X, anchor = tk.NW)
-	loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
-	
-	cmdBack = lambda : 	(Destroy(), STCore.ImageSelector.Awake(root, []))
-	cmdCreate = lambda : 	SetStar.Awake(app, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
-	cmdTrack = lambda : Apply(root, items)
-	
-	buttonsFrame = ttk.Frame(Sidebar)
-	buttonsFrame.pack(anchor = tk.S, expand = 1, fill = tk.X)
-	PrevButton = ttk.Button(buttonsFrame, text = " Volver", image = icons.Icons["prev"], command = cmdBack, compound="left")
-	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
-	AddButton = ttk.Button(buttonsFrame, text = "Agregar estrella", command = cmdCreate, image = icons.Icons["add"], compound="left")
-	AddButton.grid(row = 0, column = 1, sticky = tk.EW)
-	NextButton = ttk.Button(buttonsFrame, text = "Continuar", command = cmdTrack, image = icons.Icons["next"], compound = "right")
-	NextButton.grid(row = 0, column = 2, sticky = tk.EW)
-
-#endregion
-
-#region Global Variables
-ViewerFrame = None
-Data = None
-Levels = (0,0)
-Stars = []
-canvas = None
-implot = None 
-ImageFrame = None 
-axis : Axes = None
-Sidebar = None 
-SidebarList = None
-SliderLabel = None
-ColorMaps = {"Escala de grises" : "gray", "Temperatura" : "seismic", "Arcoiris" : "rainbow", "Negativo" : "binary"}
-Modes = {"Linear" : Normalize(), "Raiz cuadrada": PowerNorm(gamma = 0.5), "Logaritmico" : LogNorm()}
-
-SelectedStar = -1
-MousePress = None
-MousePressTime = -1
-
-img_limits : tuple = None
-img_offset : tuple = (0,0)
-zoom_factor = 1
-
-z_container : Rectangle = None
-z_box : Rectangle = None
-#endregion
-
-#region Main Body
-
-def Awake(root, items):
-	global ViewerFrame, Data, Stars, canvas, implot, ImageFrame, axis, Sidebar, SidebarList, SliderLabel, _LEVEL_MAX_, _LEVEL_MIN_, Levels
-
-	STCore.DataManager.CurrentWindow = 2
-	ViewerFrame = tk.Frame(root)
-	ViewerFrame.pack( fill = tk.BOTH, expand = 1)
-	ttk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
-	Data =  items[0].data
-	Levels = STCore.DataManager.Levels
-
-	# Setting Levels
-	if not isinstance(Levels, tuple):
-		Levels = (numpy.percentile(Data, 99.8), numpy.percentile(Data, 1))
-		STCore.DataManager.Levels = Levels
-
-	_LEVEL_MIN_ = tk.IntVar(value = Levels[1])
-	_LEVEL_MAX_ = tk.IntVar(value = Levels[0])
-	_LEVEL_MIN_.trace("w", lambda a,b,c: ChangeLevels())
-	_LEVEL_MAX_.trace("w", lambda a,b,c: ChangeLevels())
-	CreateCanvas(ViewerFrame, OnImageClick)
-
-	levelFrame = ttk.LabelFrame(ImageFrame, text = "Niveles:")
-	levelFrame.pack(fill = tk.X, anchor = tk.S, side = tk.BOTTOM)
-	ttk.Label(levelFrame, text = "Maximo:").grid(row = 0,column = 0)
-	ttk.Scale(levelFrame, from_= numpy.min(Data), to= numpy.max(Data), orient=tk.HORIZONTAL, variable = _LEVEL_MAX_).grid(row = 0, column = 1, columnspan = 10, sticky = tk.EW)
-	ttk.Label(levelFrame, text = "Minimo:").grid(row = 1,column = 0)
-	ttk.Scale(levelFrame, from_= numpy.min(Data), to= numpy.max(Data), orient=tk.HORIZONTAL, variable = _LEVEL_MIN_).grid(row = 1, column = 1, columnspan = 10, sticky = tk.EW)
-	for x in range(10):
-		tk.Grid.columnconfigure(levelFrame, x, weight=1)
-	CreateSidebar(ViewerFrame, root, items)
-	OnStarChange()
 
 def Destroy():
-	global img_limits, zoom_factor
+	global img_limits, zoom_factor, img_offset, z_container, z_box
 
 	# Reset current viewport
-	img_limits, zoom_factor = None, 1
-	img_offset = (0, 0)
+	zoom_factor =  1
+	axis.relim()
+	axis.autoscale()
+	if z_container is not None:
+		z_container.remove()
+		z_box.remove()
+		z_container = None
+		z_box = None
+	
+	img_offset = (0,0)
+	img_limits = (axis.get_xlim(), axis.get_ylim())
+	App.pack_forget()
+	#gc.collect()
 
-	ViewerFrame.destroy()
-	gc.collect()
-
-def Apply(root, items):
+def Apply(root):
+	items = DataManager.FileItemList
+	
 	from tkinter import messagebox
 	if len(Stars) > 0:
 		Destroy()
 		Tracker.Awake(root, Stars, items)
-		if STCore.DataManager.RuntimeEnabled == True:
-			STCore.RuntimeAnalysis.StartRuntime(root)
+		if DataManager.RuntimeEnabled == True:
+			RuntimeAnalysis.StartRuntime(root)
 	else:
 		messagebox.showerror("Error", "Debe tener al menos una estrella para comenzar el analisis")
 		return
+	DataManager.StarItemList = Stars
+
 def ClearStars():
-	global Stars
+	global Stars, sidebar_elements
 	Stars = []
+	for s in sidebar_elements:
+		s.destroy()
+	sidebar_elements = []
+
 #endregion
 def OnMouseScroll(event):
 	global Data, canvas, axis, zoom_factor, img_limits, img_offset
@@ -292,7 +453,8 @@ def OnMouseScroll(event):
 	# Check if for some reason, no limits were defined
 	if img_limits is None:
 		axis.relim()
-		img_limits = (axis.get_xlim(), axis.get_ylim())
+		axis.autoscale(True)
+		img_limits = (axis.get_xlim(), axis.get_ylim())  # By some reason mpl axis are inverted
 	# Modify this for faster/slower increments
 	increment = 0.5
 
@@ -301,11 +463,9 @@ def OnMouseScroll(event):
 	# If we are outside the viewport, then stop the function
 	if xdata is None or ydata is None:
 		return
-	xcenter = 0.5 * (img_limits[0][1] + img_limits[0][0])
-	ycenter = 0.5 * (img_limits[1][1] + img_limits[1][0])
 
 	xrange = 0.5 * (img_limits[0][1] - img_limits[0][0])
-	yrange = 0.5 * (img_limits[1][0] - img_limits[1][1]) # By some reason, matplotlib y-axis is inverted
+	yrange = 0.5 * (img_limits[1][0] - img_limits[1][1])
 
 	if event.button == 'up':
 		# deal with zoom in
@@ -322,21 +482,25 @@ def OnMouseScroll(event):
 	scale = 1. / zoom_factor
 
 	# Set the offset to the current mouse position
-	img_offset = numpy.clip(xdata * scale + (1-scale)*img_offset[0], xrange * scale, img_limits[0][1] - xrange * scale), numpy.clip(ydata * scale + (1-scale)*img_offset[1], yrange * scale, img_limits[1][0] - yrange * scale)
+	img_offset = numpy.clip(xdata * scale + (1-scale)*img_offset[0], xrange * scale, img_limits[0][1] - xrange * scale), numpy.clip(ydata * scale + (1-scale)*img_offset[1], yrange*scale, img_limits[1][0] - yrange * scale)
 	
 	axis.set_xlim([img_offset[0] - xrange * scale,
 					img_offset[0] + xrange * scale])
-	axis.set_ylim([img_offset[1] - yrange * scale,
-					img_offset[1] + yrange * scale])
+	axis.set_ylim([img_offset[1] + yrange * scale,
+					img_offset[1] - yrange * scale])
 	
 	UpdateZoomGizmo(scale, xrange, yrange)
-	canvas.draw() # force re-draw
+	canvas.draw_idle() # force re-draw
 
 	
+#drag displacement = lastX, lastY, dispX, dispY
+drag_displacement = (0, 0, 0, 0)
 
 def OnMousePress(event):
-	global canvas, MousePress, SelectedStar, axis, MousePressTime
+	global canvas, MousePress, SelectedStar, axis, drag_displacement
 	MousePress = 0, 0, event.xdata, event.ydata
+	drag_displacement = event.xdata, event.ydata, 0, 0
+
 	for a in axis.artists:
 		contains, attrd = a.contains(event)
 		if contains:
@@ -353,11 +517,10 @@ def OnMousePress(event):
 			setp(a, linewidth = 4)
 		else:
 			setp(a, linewidth = 1)
-	canvas.draw()
-	MousePressTime = time()
+	canvas.draw_idle()
 
 def OnMouseDrag(event):
-	global MousePress, Stars
+	global MousePress, Stars, drag_displacement
 	if MousePress is None or event.inaxes is None:
 		return
 	x0, y0, xpress, ypress = MousePress
@@ -383,10 +546,10 @@ def OnMouseDrag(event):
 			img_offset = xcenter, ycenter
 			axis.set_xlim([xcenter - xrange * scale,
 						xcenter + xrange * scale])
-			axis.set_ylim([ycenter - yrange * scale,
-						ycenter + yrange * scale])
+			axis.set_ylim([ycenter + yrange * scale,
+						ycenter - yrange * scale])
 			UpdateZoomGizmo(scale, xrange, yrange)
-			canvas.draw() # fo
+			canvas.draw_idle() # fo
 
 		return # Stop the function here
 	
@@ -404,41 +567,46 @@ def OnMouseDrag(event):
 		text[0].set_x(x0 + dx + Stars[SelectedStar].bounds)
 		text[0].set_y(y0 -6 +dy )
 		Stars[SelectedStar].location = (int(y0 + dy + Stars[SelectedStar].bounds), int(x0 + dx + Stars[SelectedStar].bounds))
-	canvas.draw()
+	canvas.draw_idle()
+
+	sx = drag_displacement[2] + abs(event.xdata - drag_displacement[0])
+	sy = drag_displacement[3] + abs(event.ydata - drag_displacement[1])
+	drag_displacement = event.xdata, event.ydata, sx, sy
 
 def OnMouseRelease(event):
-	global MousePress, SelectedStar
-	UpdateStarList()
+	global MousePress, SelectedStar, drag_displacement
 	
+	# Change this value for lower/higher drag tolerance
+	drag_tolerance = 0.2
+
 	if SelectedStar == -100:
 		if z_box is not None:
 			setp(z_box, alpha = 0.5)
 			setp(z_box, edgecolor = None)
+		SelectedStar = -1
+		return
 	if SelectedStar >= 0:
 		OnStarChange()
 	SelectedStar = -1
 
-	dx = event.xdata - MousePress[2]
-	dy = event.ydata - MousePress[3]
-
-	print(dx, dy)
-	# Change this value for lower/higher drag tolerance
-	drag_tolerance = 0.2
-
-	if  dx < drag_tolerance and dy < drag_tolerance:
+	if  drag_displacement[2] < drag_tolerance and drag_displacement[3] < drag_tolerance:
 		OnImageClick(event)
 	for a in axis.artists:
 		setp(a, linewidth = 1)
 	
 	MousePress = None
-	canvas.draw()
+	canvas.draw_idle()
 	
 	
 def OnImageClick(event):
 	loc = (int(event.ydata), int(event.xdata))
-	SetStar.Awake(ViewerFrame, Data, Stars, OnStarChange, location = loc, name = "Estrella " + str(len(Stars) + 1))
+	SetStar.Awake(Data, None, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
 
-def OnStarChange():
+def OnStarChange(star : StarItem = None, index = -1):
+	global Stars
+
+	if star is not None:
+		Stars[index] = star
 	UpdateStarList()
 	#UpdateCanvasOverlay()
 	STCore.DataManager.StarItemList = Stars

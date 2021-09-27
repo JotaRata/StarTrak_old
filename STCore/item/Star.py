@@ -12,9 +12,7 @@ class StarItem(object):
 		self.bsigma = 2
 
 	def PrintData(self):
-		print ("-"*30 + "Datos de la estrella"+ "-"*30)
-		print ("Nombre: ", self.name, "\t\t\t Tipo: ", self.type)
-		print ("Ubicacion: ", self.location, "\t\t\t Brillo: ", self.value)
-		print ("Radio: ", self.bounds,"\t\t\t Variabilidad: ", self.threshold*100,"%")
-		print ("Bkg-Sigma: ", self.bsigma)
-		print ("----------------------------------------------------------")
+
+		print("Nombre\tGuia\tUbicacion\tBrillo\tTamaño\tVariabilidad\tSeñal a ruido")
+		print(self.name, "*" if self.type == 1 else "",self.location, self.value, self.radius, self.threshold,"", "%.3f" % self.std, sep="\t")
+		

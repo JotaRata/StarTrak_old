@@ -1,7 +1,10 @@
 
+from STCore.item.Star import StarItem
+
+
 class TrackItem(object):
 	def __init__(self):
-		self.star = None
+		self.star : StarItem = None
 		self.lastPos = (0,0)
 		self.lastSeen = -1
 		self.lastValue = 0
@@ -9,6 +12,7 @@ class TrackItem(object):
 		self.currValue = 0
 		self.trackedPos = []
 		self.lostPoints = []
+		self.active = -1
 	def PrintData(self):
 		print ("")
 		print (self.star.name, " Track Info: ")

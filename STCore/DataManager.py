@@ -1,7 +1,13 @@
+from STCore.item.Track import TrackItem
+from STCore.item.Star import StarItem
+from STCore.item.File import FileItem
+
 import __main__ as Main
 import pickle
 from os.path import isfile
 WorkingPath = ""
+
+
 def Awake():
 	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, SessionName
 	global TkWindowRef, ResultSetting, Levels, RecentFiles, ResultData, RuntimeEnabled, ResultConstant, RuntimeDirectory, RuntimeDirState
