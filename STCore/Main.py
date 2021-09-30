@@ -1,7 +1,9 @@
 # coding=utf-8
-
+#en esta linea se cargan los modulos principales
+#en esta linea se cargan los modulos principales
+#en esta linea se cargan los modulos principales
 try:
-	print("Cargando modulos principales..", end=" ")
+	print("Cargando modulos principales..", end=" ") #en esta linea se cargan los modulos principales
 	import sys
 	if sys.version_info < (3, 0):
 		raise  SystemError("StarTrak debe ser ejecutado usando  Python3")
