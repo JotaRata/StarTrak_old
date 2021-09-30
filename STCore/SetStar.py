@@ -112,7 +112,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	BrightLabel = ttk.Label(App,font="-weight bold", width = 18, anchor = "w")
 	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
 	ConfIcon = ttk.Label(App, image = icons.Icons["conf"+ _conf])
-	UpdateCanvas(Data, location, radius, 0)
+	UpdateCanvas(Data, location, radius)
 
 
 	ConfIcon.grid(row = 4, column = 2)
@@ -120,14 +120,14 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 
 
 
-	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), back_median)
+	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()))
 	XLoc.trace("w",cmd)
 	YLoc.trace("w",cmd)
 	StarRadius.trace("w",cmd)
 	
 	applycmd = lambda: Apply(name=StarName.get(),loc=(YLoc.get(), XLoc.get()), bounds=StarBounds.get(),
 						 radius=StarRadius.get() , Type=1,
-						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get(), 0)
+						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get())
 						 , threshold=StarThreshold.get(),
 						 stars=star, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sigma = SigmaFactor.get())
 
@@ -141,7 +141,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	ApplyButton.grid(row = 0, column = 1, padx=4)
 
 
-def GetMax(data, xloc, yloc, radius, background):
+def GetMax(data, xloc, yloc, radius):
 	stLoc = (yloc, xloc)
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
@@ -185,7 +185,7 @@ def Get_BackgroundMean(crop):
 	Background_Samples_Mean = numpy.mean([Background_Sample_1, Background_Sample_2, Background_Sample_3, Background_Sample_4])
 	return Background_Samples_Mean
 
-def UpdateCanvas(data, stLoc, radius, bkgMedian):
+def UpdateCanvas(data, stLoc, radius):
 	global Image, canvas, BrightLabel, ConfIcon, snr, Background_Mean
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
