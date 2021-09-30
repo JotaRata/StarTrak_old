@@ -287,8 +287,8 @@ def NewSessionTopLevel(root):
 	top = tk.Toplevel(root)
 	top.geometry("720x480+%d+%d" % (root.winfo_width()/2 + root.winfo_x() - 360,  root.winfo_height()/2 + root.winfo_y() - 240) )
 	top.wm_title(string = "Nueva Sesion")
-	top.attributes('-topmost', 'true')
-	top.overrideredirect(1)
+	#top.attributes('-topmost', 'true')
+	#top.overrideredirect(1)
 	
 	TopFrame = ttk.Frame(top)
 	TopFrame.pack(expand=1, fill=tk.BOTH)

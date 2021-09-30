@@ -142,8 +142,8 @@ def GetMax(data, xloc, yloc, radius, background):
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 
 	area = (2 * radius)**2
-	snr = (crop.sum() / (area * background))
-	return int(numpy.max(crop) - background), snr
+	snr = (crop.sum() / (area * Get_BackgroundMean(crop)))
+	return int(numpy.max(crop) - Get_BackgroundMean(crop)), snr
 
 def DrawCanvas(stLoc, radius, data):
 	global Image, canvas, rig
@@ -174,6 +174,14 @@ def DrawCanvas(stLoc, radius, data):
 	axis.add_artist(circle)
 	Viewport.grid(row = 0, column=3, rowspan=3)
 
+def Get_BackgroundMean(crop):
+	Background_Sample_1 = numpy.median(crop[:5, :])
+	Background_Sample_2 = numpy.median(crop[:, -5:])
+	Background_Sample_3 = numpy.median(crop[-5:, :])
+	Background_Sample_4 = numpy.median(crop[:, :5])
+	Background_Samples_Mean = numpy.mean([Background_Sample_1, Background_Sample_2, Background_Sample_3, Background_Sample_4])
+	return Background_Samples_Mean
+
 def UpdateCanvas(data, stLoc, radius, bkgMedian):
 	global Image, canvas, BrightLabel, ConfIcon
 	radius = numpy.clip(radius, 2, min(data.shape))
@@ -182,7 +190,7 @@ def UpdateCanvas(data, stLoc, radius, bkgMedian):
 	Image.set_array(crop)
 	
 	area = (2 * radius) ** 2
-	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkgMedian))
+	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * Get_BackgroundMean(crop)))
 	BrightLabel.config(text = "Señal a Ruido: %.2f " % snr)
 
 	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
