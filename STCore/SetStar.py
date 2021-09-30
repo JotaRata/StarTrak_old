@@ -102,18 +102,23 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	#SigSpinBox.grid(row = 7, column = 3, columnspan = 1, sticky = tk.EW)
 
 	DrawCanvas(location, radius, Data)
-	
-	back_median = float(GetBackgroundMean(Data))
-	
-	area = (2 * radius) ** 2
-	snr = (Image.get_array()[radius:3*radius, radius:3*radius].sum() / (area * back_median))
 
-	BrightLabel = ttk.Label(App, text = "Señal a Ruido: %.2f " % snr,font="-weight bold", width = 18, anchor = "w")
+	#back_median = float(GetBackgroundMean(Data))
+	#area = (2 * radius) ** 2
+	#snr = (Image.get_array()[radius:3*radius, radius:3*radius].sum() / (area * back_median))
+
+	snr = 0
+
+	BrightLabel = ttk.Label(App,font="-weight bold", width = 18, anchor = "w")
 	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
 	ConfIcon = ttk.Label(App, image = icons.Icons["conf"+ _conf])
+	UpdateCanvas(Data, location, radius, 0)
+
 
 	ConfIcon.grid(row = 4, column = 2)
 	BrightLabel.grid(row = 4, column = 0, columnspan=2)
+
+
 
 	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), back_median)
 	XLoc.trace("w",cmd)
@@ -122,7 +127,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	
 	applycmd = lambda: Apply(name=StarName.get(),loc=(YLoc.get(), XLoc.get()), bounds=StarBounds.get(),
 						 radius=StarRadius.get() , Type=1,
-						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get(), back_median)
+						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get(), 0)
 						 , threshold=StarThreshold.get(),
 						 stars=star, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sigma = SigmaFactor.get())
 
@@ -141,9 +146,7 @@ def GetMax(data, xloc, yloc, radius, background):
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 
-	area = (2 * radius)**2
-	snr = (crop.sum() / (area * Get_BackgroundMean(crop)))
-	return int(numpy.max(crop) - Get_BackgroundMean(crop)), snr
+	return int(numpy.max(crop) - Background_Mean), snr
 
 def DrawCanvas(stLoc, radius, data):
 	global Image, canvas, rig
@@ -183,14 +186,14 @@ def Get_BackgroundMean(crop):
 	return Background_Samples_Mean
 
 def UpdateCanvas(data, stLoc, radius, bkgMedian):
-	global Image, canvas, BrightLabel, ConfIcon
+	global Image, canvas, BrightLabel, ConfIcon, snr, Background_Mean
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
 	Image.set_array(crop)
-	
+	Background_Mean = Get_BackgroundMean(crop)
 	area = (2 * radius) ** 2
-	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * Get_BackgroundMean(crop)))
+	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * Background_Mean))
 	BrightLabel.config(text = "Señal a Ruido: %.2f " % snr)
 
 	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
