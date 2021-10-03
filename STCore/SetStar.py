@@ -56,10 +56,10 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	YLoc= tk.IntVar(value = location[0])
 	StarBounds = tk.IntVar(value = bounds)
 	StarRadius = tk.IntVar(value = radius)
-	Background_Sample_1 = tk.IntVar(value = 3)
-	Background_Sample_2 = tk.IntVar(value = 3)
-	Background_Sample_3 = tk.IntVar(value = 3)
-	Background_Sample_4 = tk.IntVar(value = 3)
+	Background_Sample_Size_1 = tk.IntVar(value = 3)
+	Background_Sample_Size_2 = tk.IntVar(value = 3)
+	Background_Sample_Size_3 = tk.IntVar(value = 3)
+	Background_Sample_Size_4 = tk.IntVar(value = 3)
 	StarThreshold = tk.IntVar(value = threshold)
 	SigmaFactor = tk.IntVar(value = sigma)
 
@@ -77,11 +77,11 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	radiusLabel = ttk.Label(App, text = "Tamaño de la estrella:")
 	RadiusSpinBox = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = StarRadius, width = 10, increment = 1)
 
-	backgroundLabel = ttk.Label(App, text = "Tamaño de muestras de fondo:")
-	BackgroundSpinBox1 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_1, width = 5, increment = 1)
-	BackgroundSpinBox2 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_2, width = 5, increment = 1)
-	BackgroundSpinBox3 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_3, width = 5, increment = 1)
-	BackgroundSpinBox4 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_4, width = 5, increment = 1)
+	BackgroundSamplesSizesLabel = ttk.Label(App, text = "Tamaño de muestras de fondo:")
+	BackgroundSpinBox1 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_Size_1, width = 5, increment = 1)
+	BackgroundSpinBox2 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_Size_2, width = 5, increment = 1)
+	BackgroundSpinBox3 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_Size_3, width = 5, increment = 1)
+	BackgroundSpinBox4 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_Size_4, width = 5, increment = 1)
 
 	boundsLabel = ttk.Label(App, text = "Radio de búsqueda:")
 	BoundSpinBox = ttk.Spinbox(App, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10, increment = 10)
@@ -96,7 +96,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	posLocs.grid(row = 1, column = 1)
 	radiusLabel.grid(row = 2, column = 0, sticky="w")
 	RadiusSpinBox.grid(row = 2, column = 1)
-	backgroundLabel.grid(row = 3, column = 0, sticky="w")
+	BackgroundSamplesSizesLabel.grid(row = 3, column = 0, sticky="w")
 	BackgroundSpinBox1.grid(row = 4, column = 0)
 	BackgroundSpinBox2.grid(row = 4, column = 1)
 	BackgroundSpinBox3.grid(row = 5, column = 0)
@@ -138,8 +138,10 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	BrightLabel = ttk.Label(App,font="-weight bold", width = 18, anchor = "w")
 	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
 	ConfIcon = ttk.Label(App, image = icons.Icons["conf"+ _conf])
-	UpdateCanvas(Data, location, radius)
 
+	Initial_Background_Sample_1(Background_Sample_Size_1.get(), StarRadius.get())
+	UpdateCanvas(Data, location, radius)
+	
 
 	ConfIcon.grid(row = 9, column = 1)
 	BrightLabel.grid(row = 9, column = 0)
@@ -147,10 +149,16 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 
 
 	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()))
+	draw_background1 = lambda a, b, c : Draw_Background_Sample_1(int(Background_Sample_Size_1.get()), int(StarRadius.get()))
+
 	XLoc.trace("w",cmd)
 	YLoc.trace("w",cmd)
-	StarRadius.trace("w",cmd)
+	StarRadius.trace("w", draw_background1)
+	StarRadius.trace('w', cmd)
 	
+	Background_Sample_Size_1.trace('w', draw_background1)
+	Background_Sample_Size_1.trace('w', cmd)
+
 	applycmd = lambda: Apply(name=StarName.get(),loc=(YLoc.get(), XLoc.get()), bounds=StarBounds.get(),
 						 radius=StarRadius.get() , Type=1,
 						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get())
@@ -175,7 +183,7 @@ def GetMax(data, xloc, yloc, radius):
 	return int(numpy.max(crop) - Background_Mean), snr
 
 def DrawCanvas(stLoc, radius, data):
-	global Image, canvas, rig
+	global Image, canvas, fig, axis
 	fig = matplotlib.figure.Figure(figsize = (2,2), dpi = 100)
 	axis = fig.add_subplot(111)
 	axis.set_axis_off()
@@ -201,6 +209,17 @@ def DrawCanvas(stLoc, radius, data):
 	square = Rectangle((radius - 0.5, radius - 0.5), 2*radius, 2*radius, facecolor = "none", edgecolor = "lime")
 	axis.add_artist(square)
 	Viewport.grid(row = 0, column=7, rowspan=7)
+
+def Initial_Background_Sample_1(A, radius):
+	global sample1
+	sample1 = Rectangle((-0.5, -0.5), 4*radius, A, facecolor = "none", edgecolor = "red")
+	axis.add_artist(sample1)
+
+def Draw_Background_Sample_1(A, radius):
+	global sample1
+	sample1.remove()
+	sample1 = Rectangle((-0.5, -0.5), 39.8, A *10.0/radius, facecolor = "none", edgecolor = "red")
+	axis.add_artist(sample1)
 
 def Get_BackgroundMean(crop):
 	Background_Sample_1 = numpy.median(crop[:5, :])
