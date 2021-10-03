@@ -141,6 +141,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 
 	Initial_Background_Sample_1(Background_Sample_Size_1.get(), StarRadius.get())
 	Initial_Background_Sample_2(Background_Sample_Size_2.get(), StarRadius.get())
+	Initial_Background_Sample_3(Background_Sample_Size_3.get(), StarRadius.get())
 	UpdateCanvas(Data, location, radius)
 	
 
@@ -152,17 +153,21 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()))
 	draw_background1 = lambda a, b, c : Draw_Background_Sample_1(int(Background_Sample_Size_1.get()), int(StarRadius.get()))
 	draw_background2 = lambda a, b, c : Draw_Background_Sample_2(int(Background_Sample_Size_2.get()), int(StarRadius.get()))
+	draw_background3 = lambda a, b, c : Draw_Background_Sample_3(int(Background_Sample_Size_3.get()), int(StarRadius.get()))
 
 	XLoc.trace("w",cmd)
 	YLoc.trace("w",cmd)
 	StarRadius.trace("w", draw_background1)
 	StarRadius.trace("w", draw_background2)
+	StarRadius.trace("w", draw_background3)
 	StarRadius.trace('w', cmd)
 	
 	Background_Sample_Size_1.trace('w', draw_background1)
 	Background_Sample_Size_1.trace('w', cmd)
 	Background_Sample_Size_2.trace('w', draw_background2)
 	Background_Sample_Size_2.trace('w', cmd)
+	Background_Sample_Size_3.trace('w', draw_background3)
+	Background_Sample_Size_3.trace('w', cmd)
 
 	applycmd = lambda: Apply(name=StarName.get(),loc=(YLoc.get(), XLoc.get()), bounds=StarBounds.get(),
 						 radius=StarRadius.get() , Type=1,
@@ -217,25 +222,36 @@ def DrawCanvas(stLoc, radius, data):
 
 def Initial_Background_Sample_1(A, radius):
 	global sample1
-	sample1 = Rectangle((-0.5, -0.5), 4*radius, A, facecolor = "none", edgecolor = "red")
+	sample1 = Rectangle((-0.5, -0.5), 40, A, facecolor = "none", edgecolor = "red")
 	axis.add_artist(sample1)
 
 def Draw_Background_Sample_1(A, radius):
 	global sample1
 	sample1.remove()
-	sample1 = Rectangle((-0.5, -0.5), 39.8, A *10.0/radius, facecolor = "none", edgecolor = "red")
+	sample1 = Rectangle((-0.5, -0.5), 40, A *10.0/radius, facecolor = "none", edgecolor = "red")
 	axis.add_artist(sample1)
 
 def Initial_Background_Sample_2(A, radius):
 	global sample2
-	sample2 = Rectangle((39.5-A, -0.5), A, 39.8, facecolor = "none", edgecolor = "red")
+	sample2 = Rectangle((39.5-A, -0.5), A, 40, facecolor = "none", edgecolor = "red")
 	axis.add_artist(sample2)
 
 def Draw_Background_Sample_2(A, radius):
 	global sample2
 	sample2.remove()
-	sample2 = Rectangle((39.5-(A*10.0/radius), -0.5), A * 10.0/radius, 39.8, facecolor = "none", edgecolor = "red")
+	sample2 = Rectangle((39.5-(A*10.0/radius), -0.5), A * 10.0/radius, 40, facecolor = "none", edgecolor = "red")
 	axis.add_artist(sample2)
+
+def Initial_Background_Sample_3(A, radius):
+	global sample3
+	sample3 = Rectangle((-0.5, 39.5-(A*10.0/radius)), 39.5, A * 10.0/radius, facecolor = "none", edgecolor = "red")
+	axis.add_artist(sample3)
+
+def Draw_Background_Sample_3(A, radius):
+	global sample3
+	sample3.remove()
+	sample3 = Rectangle((-0.5, 39.5-(A*10.0/radius)), 39.5, A * 10.0/radius, facecolor = "none", edgecolor = "red")
+	axis.add_artist(sample3)
 
 def Get_BackgroundMean(crop):
 	Background_Sample_1 = numpy.median(crop[:5, :])
