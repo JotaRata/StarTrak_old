@@ -1,7 +1,9 @@
 # coding=utf-8
-
+#en esta linea se cargan los modulos principales
+#en esta linea se cargan los modulos principales
+#en esta linea se cargan los modulos principales
 try:
-	print("Cargando modulos principales..", end=" ")
+	print("Cargando modulos principales..", end=" ") #en esta linea se cargan los modulos principales
 	import sys
 	if sys.version_info < (3, 0):
 		raise  SystemError("StarTrak debe ser ejecutado usando  Python3")
@@ -285,8 +287,8 @@ def NewSessionTopLevel(root):
 	top = tk.Toplevel(root)
 	top.geometry("720x480+%d+%d" % (root.winfo_width()/2 + root.winfo_x() - 360,  root.winfo_height()/2 + root.winfo_y() - 240) )
 	top.wm_title(string = "Nueva Sesion")
-	top.attributes('-topmost', 'true')
-	top.overrideredirect(1)
+	#top.attributes('-topmost', 'true')
+	#top.overrideredirect(1)
 	
 	TopFrame = ttk.Frame(top)
 	TopFrame.pack(expand=1, fill=tk.BOTH)

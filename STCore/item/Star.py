@@ -8,11 +8,12 @@ class StarItem(object):
 		self.bounds = 0
 		self.threshold = 100
 		self.radius = 0
-		self.std = 0
+		self.snr = 0
+		self.background = 0
 		self.bsigma = 2
 
 	def PrintData(self):
 
-		print("Nombre\tGuia\tUbicacion\tBrillo\tTamaño\tVariabilidad\tSeñal a ruido")
-		print(self.name, "*" if self.type == 1 else "",self.location, self.value, self.radius, self.threshold,"", "%.3f" % self.std, sep="\t")
+		print("Nombre\t\tGuia\tUbicacion\tBrillo\tFondo\t\tTamaño\tArea\tVariabilidad\tSeñal a ruido")
+		print(self.name, "*" if self.type == 1 else "",self.location, self.value, "%.3f"%self.background, self.radius, self.radius**2, self.threshold,"", "%.3f" % self.snr, sep="\t")
 		
