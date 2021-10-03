@@ -209,7 +209,8 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.bounds = bounds #NI IDEA (Alonso)
 	st.radius = radius #"Tamaño"
 	st.value = value[0] #"Brillo"
-	st.std = value[1] #Tanto "Fondo" como "Señal a ruido"
+	st.snr = value[1] #"Señal a ruido"
+	st.background = Background_Mean #"Fondo"
 	st.threshold = 1#(threshold * 0.01)
 	st.bsigma = 2#sigma
 	
