@@ -144,7 +144,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	Initial_Background_Sample_3(Background_Sample_Size_3.get(), StarRadius.get())
 	Initial_Background_Sample_4(Background_Sample_Size_4.get(), StarRadius.get())
 
-	UpdateCanvas(Data, location, radius)
+	UpdateCanvas(Data, location, radius, int(Background_Sample_Size_1.get()), int(Background_Sample_Size_2.get()), int(Background_Sample_Size_3.get()), int(Background_Sample_Size_4.get()))
 	
 
 	ConfIcon.grid(row = 9, column = 1)
@@ -152,7 +152,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 
 
 
-	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()))
+	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), int(Background_Sample_Size_1.get()), int(Background_Sample_Size_2.get()), int(Background_Sample_Size_3.get()), int(Background_Sample_Size_4.get()))
 	draw_background1 = lambda a, b, c : Draw_Background_Sample_1(int(Background_Sample_Size_1.get()), int(StarRadius.get()))
 	draw_background2 = lambda a, b, c : Draw_Background_Sample_2(int(Background_Sample_Size_2.get()), int(StarRadius.get()))
 	draw_background3 = lambda a, b, c : Draw_Background_Sample_3(int(Background_Sample_Size_3.get()), int(StarRadius.get()))
@@ -271,21 +271,21 @@ def Draw_Background_Sample_4(A, radius):
 	sample4 = Rectangle((-0.6, -0.5), A * 10.0/radius, 40, facecolor = "none", edgecolor = "red")
 	axis.add_artist(sample4)
 
-def Get_BackgroundMean(crop):
-	Background_Sample_1 = numpy.median(crop[:5, :])
-	Background_Sample_2 = numpy.median(crop[:, -5:])
-	Background_Sample_3 = numpy.median(crop[-5:, :])
-	Background_Sample_4 = numpy.median(crop[:, :5])
+def Get_BackgroundMean(crop, A, B, C, D):
+	Background_Sample_1 = numpy.median(crop[:A, :])
+	Background_Sample_2 = numpy.median(crop[:, -B:])
+	Background_Sample_3 = numpy.median(crop[-C:, :])
+	Background_Sample_4 = numpy.median(crop[:, :D])
 	Background_Samples_Mean = numpy.mean([Background_Sample_1, Background_Sample_2, Background_Sample_3, Background_Sample_4])
 	return Background_Samples_Mean
 
-def UpdateCanvas(data, stLoc, radius):
+def UpdateCanvas(data, stLoc, radius, A, B, C, D):
 	global Image, canvas, BrightLabel, ConfIcon, snr, Background_Mean
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
 	Image.set_array(crop)
-	Background_Mean = Get_BackgroundMean(crop)
+	Background_Mean = Get_BackgroundMean(crop, A, B, C, D)
 	area = (2 * radius) ** 2
 	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * Background_Mean))
 	BrightLabel.config(text = "Señal a Ruido: %.2f " % snr)
