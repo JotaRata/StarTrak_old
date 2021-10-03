@@ -201,14 +201,15 @@ def UpdateCanvas(data, stLoc, radius):
 	canvas.draw_idle()
 
 def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, OnStarAdd, starIndex, sigma):
-
+	
+	#Entre comillas iran los headers que llevarian en el print
 	st = StarItem()
-	st.name = name
-	st.location = loc
-	st.bounds = bounds
-	st.radius = radius
-	st.value = value[0]
-	st.std = value[1]
+	st.name = name  #"Nombre"
+	st.location = loc #"Ubicacion"
+	st.bounds = bounds #NI IDEA (Alonso)
+	st.radius = radius #"Tamaño"
+	st.value = value[0] #"Brillo"
+	st.std = value[1] #Tanto "Fondo" como "Señal a ruido"
 	st.threshold = 1#(threshold * 0.01)
 	st.bsigma = 2#sigma
 	
