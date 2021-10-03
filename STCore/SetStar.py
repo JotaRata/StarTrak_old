@@ -8,10 +8,10 @@ from numpy.lib.function_base import append
 from STCore.item.Star import StarItem
 import STCore.Tracker
 import STCore.utils.Icons as icons
-from matplotlib.patches import Circle, Polygon
+from matplotlib.patches import Rectangle, Polygon
 
 from STCore.utils.backgroundEstimator import GetBackgroundMean
-#region Variablesss
+#region Variables
 App = None
 leftPanel = None
 rightPanel = None
@@ -172,9 +172,9 @@ def DrawCanvas(stLoc, radius, data):
 	canvas.mpl_connect("motion_notify_event", OnMouseDrag) 
 	canvas.mpl_connect("button_release_event", OnMouseRelase) 
 
-	circle = Circle((radius*2 - 0.5, radius*2 - 0.5), radius, facecolor = "none", edgecolor = "lime")
+	square = Rectangle((radius - 0.5, radius - 0.5), 2*radius, 2*radius, facecolor = "none", edgecolor = "lime")
 
-	axis.add_artist(circle)
+	axis.add_artist(square)
 	Viewport.grid(row = 0, column=3, rowspan=3)
 
 def Get_BackgroundMean(crop):
