@@ -91,7 +91,7 @@ def LoadData(filepath):
 			RuntimeDirectory = pickle.load(inp)
 			RuntimeDirState = pickle.load(inp)
 		except:
-			print ("El archivo seleccionado parece ser de una version antigua..")
+			print ("El archivo seleccionado parece ser de una version incompatible..")
 			pass
 	if filepath not in RecentFiles:
 		RecentFiles.append((SessionName, str(filepath)))

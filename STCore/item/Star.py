@@ -1,4 +1,6 @@
 
+
+CURRENT_VER = 1
 class StarItem(object):
 	def __init__(self):
 		self.name = "Star"
@@ -11,9 +13,11 @@ class StarItem(object):
 		self.snr = 0
 		self.background = 0
 		self.bsigma = 2
+		self.version = 0
 
-	def PrintData(self):
-
-		print("Nombre\t\tGuia\tUbicacion\tBrillo\tFondo\t\tTamaño\tArea\tVariabilidad\tSeñal a ruido")
-		print(self.name, "*" if self.type == 1 else "",self.location, self.value, "%.3f"%self.background, self.radius, self.radius**2, self.threshold,"", "%.3f" % self.snr, sep="\t")
+	def PrintData(self, header=True):
+		if header:
+			name_lenght = max(len(self.name) - 6, 0)
+			print("Nombre" + " "*name_lenght,"", "Ubicacion", "Brillo", "Fondo", "Radio", "Area", "Señal/Fondo", sep="\t")
+		print(self.name,"",self.location, self.value, "%.2f"%self.background, self.radius, self.radius**2, "%.3f" % self.snr, sep="\t")
 		

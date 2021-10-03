@@ -26,7 +26,7 @@ XLoc= YLoc = None
 lastRadius = 10
 lastBounds = 60
 
-def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1, location = (0,0), name = ""):
+def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1, location = (0,0), name = "", skipUI = False):
 	global App, Image, canvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
 	if App is not None:
 		return
@@ -131,6 +131,10 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 						 , threshold=StarThreshold.get(),
 						 stars=star, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sigma = SigmaFactor.get())
 
+	if skipUI:
+		applycmd()
+		CloseWindow()
+		return
 	controlButtons = ttk.Frame(App)
 	controlButtons.grid(row =4, column=3)
 
@@ -204,21 +208,22 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	
 	#Entre comillas iran los headers que llevarian en el print
 	st = StarItem()
-	st.name = name  #"Nombre"
-	st.location = loc #"Ubicacion"
-	st.bounds = bounds #NI IDEA (Alonso)
-	st.radius = radius #"Tamaño"
+	st.name = name  	#"Nombre"
+	st.location = loc 	#"Ubicacion"
+	st.bounds = bounds 	#"Radio de busqueda"
+	st.radius = radius 	#"Tamaño"
 	st.value = value[0] #"Brillo"
-	st.snr = value[1] #"Señal a ruido"
+	st.snr = value[1] 	#"Señal a ruido"
 	st.background = Background_Mean #"Fondo"
-	st.threshold = 1#(threshold * 0.01)
-	st.bsigma = 2#sigma
+	st.threshold = 1	#(threshold * 0.01)
+	st.bsigma = 2		#sigma (deprecated)
+	st.version = 1 		#Version control
 	
 	if starIndex == -1:
 		if OnStarAdd is not None:
 			OnStarAdd(st)
 		STCore.Tracker.DataChanged = True
-
+	
 	OnStarChange(st, starIndex)
 	st.PrintData()
 	CloseWindow()
@@ -231,6 +236,8 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 
 def CloseWindow():
 	global App, BrightLabel, ConfIcon
+	if App is None:
+		return
 	App.destroy()
 	App = None
 	BrightLabel = None
