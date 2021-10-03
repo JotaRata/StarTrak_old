@@ -56,6 +56,10 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	YLoc= tk.IntVar(value = location[0])
 	StarBounds = tk.IntVar(value = bounds)
 	StarRadius = tk.IntVar(value = radius)
+	Background_Sample_1 = tk.IntVar(value = 3)
+	Background_Sample_2 = tk.IntVar(value = 3)
+	Background_Sample_3 = tk.IntVar(value = 3)
+	Background_Sample_4 = tk.IntVar(value = 3)
 	StarThreshold = tk.IntVar(value = threshold)
 	SigmaFactor = tk.IntVar(value = sigma)
 
@@ -63,24 +67,46 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	nameEntry = ttk.Entry(App, textvariable = StarName)
 
 	posLabel = ttk.Label(App, text = "Posicion:")
-	XLocSpinBox = ttk.Spinbox(App, from_ = 0, to = Data.shape[1], textvariable = XLoc, width = 10)
-	YLocSpinBox = ttk.Spinbox(App, from_ = 0, to = Data.shape[0], textvariable = YLoc, width = 10)
+	posLocs = ttk.Frame(App)
+	XLocSpinBox = ttk.Spinbox(posLocs, from_ = 0, to = Data.shape[1], textvariable = XLoc, width = 10)
+	YLocSpinBox = ttk.Spinbox(posLocs, from_ = 0, to = Data.shape[0], textvariable = YLoc, width = 10)
+	XLocSpinBox.grid(row = 0, column = 0)
+	YLocSpinBox.grid(row = 0, column = 1)
+
 
 	radiusLabel = ttk.Label(App, text = "Tamaño de la estrella:")
 	RadiusSpinBox = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = StarRadius, width = 10, increment = 1)
 
+	backgroundLabel = ttk.Label(App, text = "Tamaño de muestras de fondo:")
+	BackgroundSpinBox1 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_1, width = 5, increment = 1)
+	BackgroundSpinBox2 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_2, width = 5, increment = 1)
+	BackgroundSpinBox3 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_3, width = 5, increment = 1)
+	BackgroundSpinBox4 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_4, width = 5, increment = 1)
+
 	boundsLabel = ttk.Label(App, text = "Radio de búsqueda:")
 	BoundSpinBox = ttk.Spinbox(App, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10, increment = 10)
 
-	nameLabel.grid(row = 0, column = 0, columnspan=2, sticky="w")
-	nameEntry.grid (row =0,column = 2)
+	emtpyLabel1 = ttk.Label(App, text = "")
+	emtpyLabel2 = ttk.Label(App, text = "")
+
+
+	nameLabel.grid(row = 0, column = 0, sticky="w")
+	nameEntry.grid (row = 0,column = 1)
 	posLabel.grid(row = 1, column = 0, sticky="w")
-	XLocSpinBox.grid(row = 1, column = 1)
-	YLocSpinBox.grid(row = 1, column = 2, padx = 20)
-	radiusLabel.grid(row = 2, column = 0, columnspan=2, sticky="w")
-	RadiusSpinBox.grid(row = 2, column = 2)
-	boundsLabel.grid(row = 3, column = 0, columnspan=2, sticky="w")
-	BoundSpinBox.grid(row = 3, column = 2)
+	posLocs.grid(row = 1, column = 1)
+	radiusLabel.grid(row = 2, column = 0, sticky="w")
+	RadiusSpinBox.grid(row = 2, column = 1)
+	backgroundLabel.grid(row = 3, column = 0, sticky="w")
+	BackgroundSpinBox1.grid(row = 4, column = 0)
+	BackgroundSpinBox2.grid(row = 4, column = 1)
+	BackgroundSpinBox3.grid(row = 5, column = 0)
+	BackgroundSpinBox4.grid(row = 5, column = 1)
+	emtpyLabel1.grid(row = 6, column = 0)
+	boundsLabel.grid(row = 7, column = 0, sticky="w")
+	BoundSpinBox.grid(row = 7, column = 1)
+	emtpyLabel2.grid(row = 8, column = 0)
+
+
 
 	#typeSelection = tk.IntVar(Window, value = Type)
 	#typeFrame = tk.LabelFrame(leftPanel,text = "Tipo de Estrella")
@@ -115,8 +141,8 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	UpdateCanvas(Data, location, radius)
 
 
-	ConfIcon.grid(row = 4, column = 2)
-	BrightLabel.grid(row = 4, column = 0, columnspan=2)
+	ConfIcon.grid(row = 9, column = 1)
+	BrightLabel.grid(row = 9, column = 0)
 
 
 
@@ -132,7 +158,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 						 stars=star, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sigma = SigmaFactor.get())
 
 	controlButtons = ttk.Frame(App)
-	controlButtons.grid(row =4, column=3)
+	controlButtons.grid(row = 7, column=7)
 
 	CancelButton = ttk.Button(controlButtons, text = "Cancelar", command = CloseWindow, image = icons.Icons["delete"], compound = "left")
 	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = applycmd, image = icons.Icons["check"], compound = "right", style="Highlight.TButton")
@@ -173,9 +199,8 @@ def DrawCanvas(stLoc, radius, data):
 	canvas.mpl_connect("button_release_event", OnMouseRelase) 
 
 	square = Rectangle((radius - 0.5, radius - 0.5), 2*radius, 2*radius, facecolor = "none", edgecolor = "lime")
-
 	axis.add_artist(square)
-	Viewport.grid(row = 0, column=3, rowspan=3)
+	Viewport.grid(row = 0, column=7, rowspan=7)
 
 def Get_BackgroundMean(crop):
 	Background_Sample_1 = numpy.median(crop[:5, :])
