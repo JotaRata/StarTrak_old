@@ -143,6 +143,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	Initial_Background_Sample_2(Background_Sample_Size_2.get(), StarRadius.get())
 	Initial_Background_Sample_3(Background_Sample_Size_3.get(), StarRadius.get())
 	Initial_Background_Sample_4(Background_Sample_Size_4.get(), StarRadius.get())
+
 	UpdateCanvas(Data, location, radius)
 	
 
@@ -228,7 +229,7 @@ def DrawCanvas(stLoc, radius, data):
 
 def Initial_Background_Sample_1(A, radius):
 	global sample1
-	sample1 = Rectangle((-0.5, -0.5), 40, A, facecolor = "none", edgecolor = "red")
+	sample1 = Rectangle((-0.5, -0.5), 40, A*10.0/radius, facecolor = "none", edgecolor = "red")
 	axis.add_artist(sample1)
 
 def Draw_Background_Sample_1(A, radius):
@@ -239,7 +240,7 @@ def Draw_Background_Sample_1(A, radius):
 
 def Initial_Background_Sample_2(A, radius):
 	global sample2
-	sample2 = Rectangle((39.5-A, -0.5), A, 40, facecolor = "none", edgecolor = "red")
+	sample2 = Rectangle((39.5-(A*10.0/radius), -0.5), A*10.0/radius, 40, facecolor = "none", edgecolor = "red")
 	axis.add_artist(sample2)
 
 def Draw_Background_Sample_2(A, radius):
@@ -318,7 +319,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 
 	global XLoc, YLoc, lastRadius, lastBounds
 	lastBounds = bounds
-	lastRadius = radius
+	lastRadius = 10
 	XLoc = YLoc = None
 	
 
