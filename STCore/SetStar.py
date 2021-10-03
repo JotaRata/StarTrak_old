@@ -11,7 +11,7 @@ import STCore.utils.Icons as icons
 from matplotlib.patches import Circle, Polygon
 
 from STCore.utils.backgroundEstimator import GetBackgroundMean
-#region Variables
+#region Variablesss
 App = None
 leftPanel = None
 rightPanel = None
