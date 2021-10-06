@@ -260,7 +260,7 @@ def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 		sample_artists[index].set_height(bounds[2])
 	area = (2 * radius) ** 2
 	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkg_median))
-	BrightLabel.config(text = "Señal a Ruido: %.2f " % snr)
+	BrightLabel.config(text = "Señal / Fondo: %.2f " % snr)
 
 	_conf = numpy.clip(int(snr/2 + 1), 1, 3)
 
