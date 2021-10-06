@@ -47,14 +47,16 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	radius = lastRadius
 	sample = 3
 	threshold = 0.75
-	sigma = 2
 	if star is not None:
 		name = star.name
 		location = star.location
 		bounds = star.bounds
 		radius = star.radius
-		threshold = star.threshold
-		sigma = star.bsigma
+
+		# Recently added variables go here
+		if not skipUI:
+			threshold = star.threshold
+			sample = star.bsample
 
 	StarName = tk.StringVar(value = name)
 	XLoc = tk.IntVar(value = location[1])
@@ -65,7 +67,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	BackgroundSample = tk.IntVar(value = sample)
 
 	StarThreshold = tk.IntVar(value = threshold)
-	SigmaFactor = tk.IntVar(value = sigma)
+	#SigmaFactor = tk.IntVar(value = sigma)
 
 	nameLabel = ttk.Label(App, text = "Nombre de la estrella: ")
 	nameEntry = ttk.Entry(App, textvariable = StarName)
@@ -155,10 +157,10 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 						 radius=StarRadius.get() , Type=1,
 						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get())
 						 , threshold=StarThreshold.get(),
-						 stars=star, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sigma = SigmaFactor.get())
+						 stars=star, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sample_width=BackgroundSample.get())
 
 	if skipUI:
-		applycmd()
+		apply_command()
 		CloseWindow()
 		return
 	controlButtons = ttk.Frame(App)
@@ -233,7 +235,7 @@ def BackgroundMedian(crop, width):
 	sample2 = numpy.median(crop[:, -width:])
 	sample3 = numpy.median(crop[-width:, :])
 	sample4 = numpy.median(crop[:, :width])
-	return numpy.mean([sample1, sample2, sample3, sample4])
+	return numpy.nanmean([sample1, sample2, sample3, sample4])
 
 def UpdateCanvas(data, stLoc, radius, sample_width):
 	global Image, canvas, BrightLabel, ConfIcon, snr, bkg_median, sample_artists, square
@@ -255,14 +257,13 @@ def UpdateCanvas(data, stLoc, radius, sample_width):
 	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkg_median))
 	BrightLabel.config(text = "Señal a Ruido: %.2f " % snr)
 
-	
 	_conf = numpy.clip(int(snr/2 + 1), 1, 3)
 
 	square.set_edgecolor(("red", "yellow", "lime" )[_conf-1])
 	ConfIcon.config(image = icons.Icons["conf"+str(_conf)])
 	canvas.draw_idle()
 
-def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, OnStarAdd, starIndex, sigma):
+def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, OnStarAdd, starIndex, sample_width):
 	
 	#Entre comillas iran los headers que llevarian en el print
 	st = StarItem()
@@ -273,9 +274,9 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.value = value[0] #"Brillo"
 
 	st.snr = value[1] 	#"Señal a ruido"
-	st.background = Background_Mean #"Fondo"
+	st.background = bkg_median #"Fondo"
 	st.threshold = 1	#(threshold * 0.01)
-	st.bsigma = 2		#sigma (deprecated)
+	st.bsample = sample_width		#sigma (deprecated)
 	st.version = 1 		#Version control
 	
 	if starIndex == -1:

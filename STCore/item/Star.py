@@ -11,13 +11,13 @@ class StarItem(object):
 		self.threshold = 100
 		self.radius = 0
 		self.snr = 0
-		self.background = 0
-		self.bsigma = 2
+		self.background = 1
+		self.bsample = 3
 		self.version = 0
 
 	def PrintData(self, header=True):
 		if header:
 			name_lenght = max(len(self.name) - 6, 0)
-			print("Nombre" + " "*name_lenght,"", "Ubicacion", "Brillo", "Fondo", "Radio", "Area", "Señal/Fondo", sep="\t")
-		print(self.name,"",self.location, self.value, "%.2f"%self.background, self.radius, self.radius**2, "%.3f" % self.snr, sep="\t")
+			print("Nombre" + " "*name_lenght,"", "Ubicacion", "Brillo", "Fondo", "Radio", "Area", "Señal/Fondo", "Tamaño de muestra", sep="\t")
+		print(self.name,"",self.location, self.value, int(self.background), self.radius, self.radius**2, "%.3f" % self.snr,"", self.bsample, sep="\t")
 		
