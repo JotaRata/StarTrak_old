@@ -236,11 +236,38 @@ def GetSampleBounds(index, width, radius):
 		raise IndexError("index must be less than 5")
 	
 def BackgroundMedian(crop, width):
-	sample1 = numpy.median(crop[:width, :])
-	sample2 = numpy.median(crop[:, -width:])
-	sample3 = numpy.median(crop[-width:, :])
-	sample4 = numpy.median(crop[:, :width])
-	return numpy.nanmean([sample1, sample2, sample3, sample4])
+	# sample: [ value, std, status: ENABLED, DISABLED ]
+	slice1 = crop[:, :width] 
+	sample1 = [numpy.nanmedian(slice1), numpy.std(slice1), 1]
+
+	slice2 = crop[-width:, :]
+	sample2 = [numpy.nanmedian(slice2), numpy.std(slice2), 1]
+
+	slice3 = crop[:, -width:]
+	sample3 = [numpy.nanmedian(slice3), numpy.std(slice3), 1]
+
+	slice4 = crop[:width, :]
+	sample4 = [numpy.nanmedian(slice4), numpy.std(slice4), 1]
+
+	#mean = numpy.mean([sample1[0], sample2[0], sample3[0], sample4[0]])
+	std = numpy.mean([sample1[1], sample2[1], sample3[1], sample4[1]])
+	# Check whether they deviate from the mean
+	if abs(sample1[0] - numpy.mean([sample2[0], sample3[0], sample4[0]])) > std:
+		sample1[0] = numpy.nan
+		sample1[2] = 0
+	if abs(sample2[0] - numpy.mean([sample1[0], sample3[0], sample4[0]])) > std:
+		sample2[0] = numpy.nan
+		sample2[2] = 0
+	if abs(sample3[0] - numpy.mean([sample1[0], sample2[0], sample4[0]])) > std:
+		sample3[0] = numpy.nan
+		sample3[2] = 0
+	if abs(sample4[0] - numpy.mean([sample1[0], sample2[0], sample3[0]])) > std:
+		sample4[0] = numpy.nan
+		sample4[2] = 0
+
+	# return new computed mean
+	# mean, status
+	return numpy.nanmean([sample1[0], sample2[0], sample3[0], sample4[0]]), [sample1[2], sample2[2], sample3[2], sample4[2]]
 
 def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 	global Image, canvas, BrightLabel, ConfIcon, snr, bkg_median, sample_artists, square
@@ -249,7 +276,10 @@ def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
 	Image.set_array(crop)
 
-	bkg_median = BackgroundMedian(crop, sample_width)
+	bkg_sample = BackgroundMedian(crop, sample_width)
+	bkg_median = bkg_sample[0]
+	bkg_status = bkg_sample[1]
+	print (bkg_status)
 
 	for index in range(4):
 		# Values are divided by radius to keep the units in axis' units
@@ -258,6 +288,7 @@ def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 		sample_artists[index].set_xy(bounds[0])
 		sample_artists[index].set_width(bounds[1])
 		sample_artists[index].set_height(bounds[2])
+		sample_artists[index].set_edgecolor("orange" if bkg_status[index] == 1 else "red")
 	area = (2 * radius) ** 2
 	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkg_median))
 	BrightLabel.config(text = "Señal / Fondo: %.2f " % snr)
