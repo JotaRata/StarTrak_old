@@ -8,9 +8,8 @@ from numpy.lib.function_base import append
 from STCore.item.Star import StarItem
 import STCore.Tracker
 import STCore.utils.Icons as icons
-from matplotlib.patches import Rectangle, Polygon
+from matplotlib.patches import Rectangle
 
-from STCore.utils.backgroundEstimator import GetBackgroundMean
 #region Variables
 App = None
 leftPanel = None
@@ -23,8 +22,15 @@ ConfIcon = None
 MousePress = None
 XLoc= YLoc = None
 #endregion
+
 lastRadius = 10
 lastBounds = 60
+
+# Background sample artists
+sample_artists = []
+square : Rectangle = None
+
+
 
 def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1, location = (0,0), name = ""):
 	global App, Image, canvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
@@ -41,6 +47,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 
 	bounds = lastBounds
 	radius = lastRadius
+	sample = 3
 	threshold = 0.75
 	sigma = 2
 	if star is not None:
@@ -56,10 +63,9 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	YLoc= tk.IntVar(value = location[0])
 	StarBounds = tk.IntVar(value = bounds)
 	StarRadius = tk.IntVar(value = radius)
-	Background_Sample_Size_1 = tk.IntVar(value = 3)
-	Background_Sample_Size_2 = tk.IntVar(value = 3)
-	Background_Sample_Size_3 = tk.IntVar(value = 3)
-	Background_Sample_Size_4 = tk.IntVar(value = 3)
+	
+	BackgroundSample = tk.IntVar(value = sample)
+
 	StarThreshold = tk.IntVar(value = threshold)
 	SigmaFactor = tk.IntVar(value = sigma)
 
@@ -77,18 +83,12 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	radiusLabel = ttk.Label(App, text = "Tamaño de la estrella:")
 	RadiusSpinBox = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = StarRadius, width = 10, increment = 1)
 
-	BackgroundSamplesSizesLabel = ttk.Label(App, text = "Tamaño de muestras de fondo:")
-	BackgroundSpinBox1 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_Size_1, width = 5, increment = 1)
-	BackgroundSpinBox2 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_Size_2, width = 5, increment = 1)
-	BackgroundSpinBox3 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_Size_3, width = 5, increment = 1)
-	BackgroundSpinBox4 = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = Background_Sample_Size_4, width = 5, increment = 1)
+	sample_label = ttk.Label(App, text = "Tamaño de muestras del fondo:")
+	
+	sample_spinbox = ttk.Spinbox(App, from_ = 1, to = StarBounds.get() - 1, textvariable = BackgroundSample, width = 5, increment = 1)
 
 	boundsLabel = ttk.Label(App, text = "Radio de búsqueda:")
 	BoundSpinBox = ttk.Spinbox(App, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10, increment = 10)
-
-	emtpyLabel1 = ttk.Label(App, text = "")
-	emtpyLabel2 = ttk.Label(App, text = "")
-
 
 	nameLabel.grid(row = 0, column = 0, sticky="w")
 	nameEntry.grid (row = 0,column = 1)
@@ -96,15 +96,12 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	posLocs.grid(row = 1, column = 1)
 	radiusLabel.grid(row = 2, column = 0, sticky="w")
 	RadiusSpinBox.grid(row = 2, column = 1)
-	BackgroundSamplesSizesLabel.grid(row = 3, column = 0, sticky="w")
-	BackgroundSpinBox1.grid(row = 4, column = 0)
-	BackgroundSpinBox2.grid(row = 4, column = 1)
-	BackgroundSpinBox3.grid(row = 5, column = 0)
-	BackgroundSpinBox4.grid(row = 5, column = 1)
-	emtpyLabel1.grid(row = 6, column = 0)
+
+	sample_label.grid(row = 3, column = 0, sticky="w")
+	sample_spinbox.grid(row = 3, column = 1)
+	
 	boundsLabel.grid(row = 7, column = 0, sticky="w")
 	BoundSpinBox.grid(row = 7, column = 1)
-	emtpyLabel2.grid(row = 8, column = 0)
 
 
 
@@ -127,7 +124,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	#ttk.Label(trackFrame, text = "Rechazar si Sigma es menor a:").grid(row = 7, column = 2, sticky = tk.W)
 	#SigSpinBox.grid(row = 7, column = 3, columnspan = 1, sticky = tk.EW)
 
-	DrawCanvas(location, radius, Data)
+	DrawCanvas(location, radius, sample, Data)
 
 	#back_median = float(GetBackgroundMean(Data))
 	#area = (2 * radius) ** 2
@@ -139,12 +136,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
 	ConfIcon = ttk.Label(App, image = icons.Icons["conf"+ _conf])
 
-	Initial_Background_Sample_1(Background_Sample_Size_1.get(), StarRadius.get())
-	Initial_Background_Sample_2(Background_Sample_Size_2.get(), StarRadius.get())
-	Initial_Background_Sample_3(Background_Sample_Size_3.get(), StarRadius.get())
-	Initial_Background_Sample_4(Background_Sample_Size_4.get(), StarRadius.get())
-
-	UpdateCanvas(Data, location, radius, int(Background_Sample_Size_1.get()), int(Background_Sample_Size_2.get()), int(Background_Sample_Size_3.get()), int(Background_Sample_Size_4.get()))
+	UpdateCanvas(Data, location, radius, sample)
 	
 
 	ConfIcon.grid(row = 9, column = 1)
@@ -152,31 +144,16 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 
 
 
-	cmd = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), int(Background_Sample_Size_1.get()), int(Background_Sample_Size_2.get()), int(Background_Sample_Size_3.get()), int(Background_Sample_Size_4.get()))
-	draw_background1 = lambda a, b, c : Draw_Background_Sample_1(int(Background_Sample_Size_1.get()), int(StarRadius.get()))
-	draw_background2 = lambda a, b, c : Draw_Background_Sample_2(int(Background_Sample_Size_2.get()), int(StarRadius.get()))
-	draw_background3 = lambda a, b, c : Draw_Background_Sample_3(int(Background_Sample_Size_3.get()), int(StarRadius.get()))
-	draw_background4 = lambda a, b, c : Draw_Background_Sample_4(int(Background_Sample_Size_4.get()), int(StarRadius.get()))
+	update_command = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), int(BackgroundSample.get()))
+	# Removed reduntant functions
 
-	XLoc.trace("w",cmd)
-	YLoc.trace("w",cmd)
-	StarRadius.trace("w", draw_background1)
-	StarRadius.trace("w", draw_background2)
-	StarRadius.trace("w", draw_background3)
-	StarRadius.trace("w", draw_background4)
+	XLoc.trace("w",update_command)
+	YLoc.trace("w",update_command)
 
-	StarRadius.trace('w', cmd)
-	
-	Background_Sample_Size_1.trace('w', draw_background1)
-	Background_Sample_Size_1.trace('w', cmd)
-	Background_Sample_Size_2.trace('w', draw_background2)
-	Background_Sample_Size_2.trace('w', cmd)
-	Background_Sample_Size_3.trace('w', draw_background3)
-	Background_Sample_Size_3.trace('w', cmd)
-	Background_Sample_Size_4.trace('w', draw_background4)
-	Background_Sample_Size_4.trace('w', cmd)
+	StarRadius.trace('w', update_command)
+	BackgroundSample.trace('w', update_command)
 
-	applycmd = lambda: Apply(name=StarName.get(),loc=(YLoc.get(), XLoc.get()), bounds=StarBounds.get(),
+	apply_command = lambda: Apply(name=StarName.get(),loc=(YLoc.get(), XLoc.get()), bounds=StarBounds.get(),
 						 radius=StarRadius.get() , Type=1,
 						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get())
 						 , threshold=StarThreshold.get(),
@@ -186,7 +163,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	controlButtons.grid(row = 7, column=7)
 
 	CancelButton = ttk.Button(controlButtons, text = "Cancelar", command = CloseWindow, image = icons.Icons["delete"], compound = "left")
-	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = applycmd, image = icons.Icons["check"], compound = "right", style="Highlight.TButton")
+	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = apply_command, image = icons.Icons["check"], compound = "right", style="Highlight.TButton")
 	
 	CancelButton.grid(row = 0, column = 0)
 	ApplyButton.grid(row = 0, column = 1, padx=4)
@@ -197,10 +174,10 @@ def GetMax(data, xloc, yloc, radius):
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 
-	return int(numpy.max(crop) - Background_Mean), snr
+	return int(numpy.max(crop) - bkg_median), snr
 
-def DrawCanvas(stLoc, radius, data):
-	global Image, canvas, fig, axis
+def DrawCanvas(stLoc, radius, sample_width, data):
+	global Image, canvas, fig, axis, sample_artists, square
 	fig = matplotlib.figure.Figure(figsize = (2,2), dpi = 100)
 	axis = fig.add_subplot(111)
 	axis.set_axis_off()
@@ -227,71 +204,60 @@ def DrawCanvas(stLoc, radius, data):
 	axis.add_artist(square)
 	Viewport.grid(row = 0, column=7, rowspan=7)
 
-def Initial_Background_Sample_1(A, radius):
-	global sample1
-	sample1 = Rectangle((-0.5, -0.5), 40, A*10.0/radius, facecolor = "none", edgecolor = "red")
-	axis.add_artist(sample1)
+	args = {"facecolor" : "none", "edgecolor" : "orange"}
+	for i in range(4):
+		bounds = GetSampleBounds(i, sample_width, radius)
+		rect = Rectangle(bounds[0], bounds[1], bounds[2], **args)
+		axis.add_artist(rect)
+		sample_artists.append(rect)
 
-def Draw_Background_Sample_1(A, radius):
-	global sample1
-	sample1.remove()
-	sample1 = Rectangle((-0.5, -0.5), 40, A *10.0/radius, facecolor = "none", edgecolor = "red")
-	axis.add_artist(sample1)
+# Gizmo order: Left, bottom, right, top
 
-def Initial_Background_Sample_2(A, radius):
-	global sample2
-	sample2 = Rectangle((39.5-(A*10.0/radius), -0.5), A*10.0/radius, 40, facecolor = "none", edgecolor = "red")
-	axis.add_artist(sample2)
-
-def Draw_Background_Sample_2(A, radius):
-	global sample2
-	sample2.remove()
-	sample2 = Rectangle((39.5-(A*10.0/radius), -0.5), A * 10.0/radius, 40, facecolor = "none", edgecolor = "red")
-	axis.add_artist(sample2)
-
-def Initial_Background_Sample_3(A, radius):
-	global sample3
-	sample3 = Rectangle((-0.5, 39.5-(A*10.0/radius)), 40, A * 10.0/radius, facecolor = "none", edgecolor = "red")
-	axis.add_artist(sample3)
-
-def Draw_Background_Sample_3(A, radius):
-	global sample3
-	sample3.remove()
-	sample3 = Rectangle((-0.5, 39.5-(A*10.0/radius)), 40, A * 10.0/radius, facecolor = "none", edgecolor = "red")
-	axis.add_artist(sample3)
+# this is in axis's units which defaults to 10 pixels
+def GetSampleBounds(index, width, radius):
+	if index == 0:
+		return (-0.5, -0.5), width - 0.5, 4 * radius
+	elif index == 1:
+		return (-0.5, 4 * radius - width - 0.5), 4 * radius, width - 0.5
+	elif index == 2:
+		return (4 * radius - width - 0.5, -0.5), width - 0.5 , 4 * radius
+	elif index == 3:
+		return (-0.5, -0.5), 4 * radius, width
+	else:
+		raise IndexError("index must be less than 5")
 	
-def Initial_Background_Sample_4(A, radius):
-	global sample4
-	sample4 = Rectangle((-0.6, -0.5), A * 10.0/radius, 40, facecolor = "none", edgecolor = "red")
-	axis.add_artist(sample4)
+def BackgroundMedian(crop, width):
+	sample1 = numpy.median(crop[:width, :])
+	sample2 = numpy.median(crop[:, -width:])
+	sample3 = numpy.median(crop[-width:, :])
+	sample4 = numpy.median(crop[:, :width])
+	return numpy.mean([sample1, sample2, sample3, sample4])
 
-def Draw_Background_Sample_4(A, radius):
-	global sample4
-	sample4.remove()
-	sample4 = Rectangle((-0.6, -0.5), A * 10.0/radius, 40, facecolor = "none", edgecolor = "red")
-	axis.add_artist(sample4)
-
-def Get_BackgroundMean(crop, A, B, C, D):
-	Background_Sample_1 = numpy.median(crop[:A, :])
-	Background_Sample_2 = numpy.median(crop[:, -B:])
-	Background_Sample_3 = numpy.median(crop[-C:, :])
-	Background_Sample_4 = numpy.median(crop[:, :D])
-	Background_Samples_Mean = numpy.mean([Background_Sample_1, Background_Sample_2, Background_Sample_3, Background_Sample_4])
-	return Background_Samples_Mean
-
-def UpdateCanvas(data, stLoc, radius, A, B, C, D):
-	global Image, canvas, BrightLabel, ConfIcon, snr, Background_Mean
+def UpdateCanvas(data, stLoc, radius, sample_width):
+	global Image, canvas, BrightLabel, ConfIcon, snr, bkg_median, sample_artists, square
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
 	Image.set_array(crop)
-	Background_Mean = Get_BackgroundMean(crop, A, B, C, D)
+
+	bkg_median = BackgroundMedian(crop, sample_width)
+
+	for index in range(4):
+		# Values are divided by radius to keep the units in axis' units
+		bounds = GetSampleBounds(index, 10 * sample_width / radius, 10)
+
+		sample_artists[index].set_xy(bounds[0])
+		sample_artists[index].set_width(bounds[1])
+		sample_artists[index].set_height(bounds[2])
 	area = (2 * radius) ** 2
-	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * Background_Mean))
+	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkg_median))
 	BrightLabel.config(text = "Señal a Ruido: %.2f " % snr)
 
-	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
-	ConfIcon.config(image = icons.Icons["conf"+_conf])
+	
+	_conf = numpy.clip(int(snr/2 + 1), 1, 3)
+
+	square.set_edgecolor(("red", "yellow", "lime" )[_conf-1])
+	ConfIcon.config(image = icons.Icons["conf"+str(_conf)])
 	canvas.draw_idle()
 
 def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, OnStarAdd, starIndex, sigma):
@@ -304,7 +270,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.radius = radius #"Tamaño"
 	st.value = value[0] #"Brillo"
 	st.snr = value[1] #"Señal a ruido"
-	st.background = Background_Mean #"Fondo"
+	st.background = bkg_median #"Fondo"
 	st.threshold = 1#(threshold * 0.01)
 	st.bsigma = 2#sigma
 	
@@ -324,11 +290,15 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	
 
 def CloseWindow():
-	global App, BrightLabel, ConfIcon
+	global App, BrightLabel, ConfIcon, sample_artists
 	App.destroy()
 	App = None
 	BrightLabel = None
 	ConfIcon = None
+	
+	for a in sample_artists:
+		a.remove()
+	sample_artists = []
 
 def OnMousePress(event):
 	global MousePress
