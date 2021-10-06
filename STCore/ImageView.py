@@ -1,5 +1,7 @@
 # coding=utf-8
 
+from pickle import FALSE
+from sys import flags, version_info
 from STCore.Component import StarElement
 from logging import root
 from operator import contains
@@ -22,7 +24,7 @@ from matplotlib.colors import Normalize, PowerNorm, LogNorm
 from matplotlib.artist import setp, getp
 import tkinter as tk
 from tkinter import ttk
-from STCore.item.Star import StarItem
+from STCore.item.Star import StarItem, CURRENT_VER
 from STCore import SetStar, Tracker
 import STCore.DataManager
 from time import time
@@ -106,6 +108,14 @@ def Awake(root):
 	levelFrame.setMax(level_perc[0])
 	levelFrame.setMin(level_perc[1])
 	
+	# Star version control
+	version_changed = False
+	for star in Stars:
+		version_changed = CheckVersion(star)
+
+	if version_changed: print ("Se actualizaron las estrellas de una version anterior")
+
+
 	OnStarChange()
 	isInitialized = True
 
@@ -302,19 +312,33 @@ def UpdateStarList():
 		
 	index = 0
 	# Update elements if necessary
+	star : StarItem
 	for star in Stars:
 		element :StarElement = sidebar_elements[index]
 		element.update_star(star)
 		index += 1
 		
-
 	SidebarList.config(height=32 * index)
 	Sidebar.update_idletasks()
 	Sidebar.config(scrollregion=SidebarList.bbox())
 	#Sidebar.after(10, lambda:Sidebar.config(scrollregion=(0,0, 250, 32 * index)))
 	#Sidebar.update_idletasks()
 	App.after(40, UpdateCanvasOverlay)
-	
+
+def CheckVersion(star : StarItem):
+
+	# Version is way too old. needs to recompute
+	if not hasattr(star, "version"):
+		
+		SetStar.Awake(Data, star, OnStarChange, skipUI = True)
+		return True
+	changed = FALSE
+
+	# File is from another version, needs to be re-registered
+	if star.version != CURRENT_VER:
+		SetStar.Awake(Data, star, OnStarChange, skipUI = True)
+		changed = True
+	return changed
 
 def UpdateCanvasOverlay():
 	# Si se elimina el primer elemento de un lista en un ciclo for, entonces
@@ -607,6 +631,7 @@ def OnStarChange(star : StarItem = None, index = -1):
 
 	if star is not None:
 		Stars[index] = star
+	
 	UpdateStarList()
 	#UpdateCanvasOverlay()
 	STCore.DataManager.StarItemList = Stars
