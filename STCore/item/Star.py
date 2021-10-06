@@ -19,5 +19,5 @@ class StarItem(object):
 		if header:
 			name_lenght = max(len(self.name) - 6, 0)
 			print("Nombre" + " "*name_lenght,"", "Ubicacion", "Brillo", "Fondo", "Radio", "Area", "Señal/Fondo", "Tamaño de muestra", sep="\t")
-		print(self.name,"",self.location, self.value, int(self.background), self.radius, self.radius**2, "%.3f" % self.snr,"", self.bsample, sep="\t")
+		print(self.name,"",self.location, self.value + self.background, int(self.background), self.radius, self.radius**2, "%.3f" % self.snr,"", self.bsample, sep="\t")
 		
