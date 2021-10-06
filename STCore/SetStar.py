@@ -1,4 +1,5 @@
 # coding=utf-8
+from time import time
 import numpy
 import matplotlib
 import tkinter as tk
@@ -29,6 +30,8 @@ lastBounds = 60
 # Background sample artists
 sample_artists = []
 square : Rectangle = None
+
+closedTime = 0
 
 def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1, location = (0,0), name = "", skipUI = False):
 	global App, Image, canvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
@@ -144,7 +147,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 
 
 
-	update_command = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()), int(BackgroundSample.get()))
+	update_command = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()) , int(BackgroundSample.get()), startRadius = radius)
 	# Removed reduntant functions
 
 	XLoc.trace("w",update_command)
@@ -237,7 +240,7 @@ def BackgroundMedian(crop, width):
 	sample4 = numpy.median(crop[:, :width])
 	return numpy.nanmean([sample1, sample2, sample3, sample4])
 
-def UpdateCanvas(data, stLoc, radius, sample_width):
+def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 	global Image, canvas, BrightLabel, ConfIcon, snr, bkg_median, sample_artists, square
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
@@ -248,7 +251,7 @@ def UpdateCanvas(data, stLoc, radius, sample_width):
 
 	for index in range(4):
 		# Values are divided by radius to keep the units in axis' units
-		bounds = GetSampleBounds(index, 10 * sample_width / radius, 10)
+		bounds = GetSampleBounds(index, startRadius * sample_width / radius, startRadius)
 
 		sample_artists[index].set_xy(bounds[0])
 		sample_artists[index].set_width(bounds[1])
@@ -264,7 +267,7 @@ def UpdateCanvas(data, stLoc, radius, sample_width):
 	canvas.draw_idle()
 
 def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, OnStarAdd, starIndex, sample_width):
-	
+	global closedTime
 	#Entre comillas iran los headers que llevarian en el print
 	st = StarItem()
 	st.name = name  	#"Nombre"
@@ -285,13 +288,14 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 		STCore.Tracker.DataChanged = True
 	
 	OnStarChange(st, starIndex)
-	st.PrintData()
+	st.PrintData(header= time() - closedTime > 60)
 	CloseWindow()
 
 	global XLoc, YLoc, lastRadius, lastBounds
 	lastBounds = bounds
 	lastRadius = 10
 	XLoc = YLoc = None
+	closedTime = time()
 	
 
 def CloseWindow():

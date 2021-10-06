@@ -110,10 +110,14 @@ def Awake(root):
 	
 	# Star version control
 	version_changed = False
+	index = 0
 	for star in Stars:
-		version_changed = CheckVersion(star)
+		version_changed = CheckVersion(star, index)
+		index += 1
 
-	if version_changed: print ("Se actualizaron las estrellas de una version anterior")
+	if version_changed:
+		print ("Se actualizaron las estrellas de una version anterior")
+		SetStar.closedTime = 0
 
 
 	OnStarChange()
@@ -306,7 +310,6 @@ def UpdateStarList():
 			index += 1
 
 		if gs > 1 or gs == 0:
-			print (gs, bsi)
 			SetGuideStar(bsi)
 			return
 		
@@ -325,18 +328,18 @@ def UpdateStarList():
 	#Sidebar.update_idletasks()
 	App.after(40, UpdateCanvasOverlay)
 
-def CheckVersion(star : StarItem):
+def CheckVersion(star : StarItem, index):
 
 	# Version is way too old. needs to recompute
 	if not hasattr(star, "version"):
 		
-		SetStar.Awake(Data, star, OnStarChange, skipUI = True)
+		SetStar.Awake(Data, star, OnStarChange, skipUI = True, starIndex=index)
 		return True
 	changed = FALSE
 
 	# File is from another version, needs to be re-registered
 	if star.version != CURRENT_VER:
-		SetStar.Awake(Data, star, OnStarChange, skipUI = True)
+		SetStar.Awake(Data, star, OnStarChange, skipUI = True, starIndex=index)
 		changed = True
 	return changed
 
