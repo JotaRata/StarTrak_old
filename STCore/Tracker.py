@@ -419,7 +419,7 @@ def Track(index, ItemList, stars):
 		lvalue = s.value + back#TrackedStars[starIndex].lastValue 
 		
 
-		sigma_criterion = (numpy.abs(crop - back) > s.bsigma * bgStD)		# Determina cuando la imagen se encuentra a (threshold) sigma del fondo
+		sigma_criterion = (numpy.abs(crop - back) > 2 * bgStD)		# Determina cuando la imagen se encuentra a (threshold) sigma del fondo
 		value_criterion = ((-crop + lvalue) < numpy.abs(lvalue - max(numpy.max(crop) - back, back) ) * (1 + s.threshold)/2 )			# Compara el brillo de la estrella con su referencia
 		#spread_criterion = sigma_criterion.sum() > 4							# Se asegura de que no se detecten hot pixels como estrellas
 		# \operatorname{abs}\left(L-\max\left(b-c,\ 1\right)\right)+d\cdot2

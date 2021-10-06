@@ -46,6 +46,8 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	App.grid_columnconfigure(tuple(range(3)), weight=1)
 	App.grid_rowconfigure(tuple(range(3)), weight=1)
 
+	if skipUI:
+		App.withdraw()
 	bounds = lastBounds
 	radius = lastRadius
 	sample = 3
