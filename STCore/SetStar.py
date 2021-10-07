@@ -183,7 +183,7 @@ def GetMax(data, xloc, yloc, radius):
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius : clipLoc[0]+radius,clipLoc[1]-radius : clipLoc[1]+radius]
 
-	return int(numpy.max(crop) - bkg_median), snr
+	return numpy.max(crop), snr, crop.sum()
 
 def DrawCanvas(stLoc, radius, sample_width, data):
 	global Image, canvas, fig, axis, sample_artists, square
@@ -309,6 +309,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.value = value[0] #"Brillo"
 
 	st.snr = value[1] 	#"Señal a ruido"
+	st.flux = value[2]
 	st.background = bkg_median #"Fondo"
 	st.threshold = 1	#(threshold * 0.01)
 	st.bsample = sample_width		#sigma (deprecated)
