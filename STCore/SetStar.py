@@ -141,7 +141,7 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
 	ConfIcon = ttk.Label(App, image = icons.Icons["conf"+ _conf])
 
-	UpdateCanvas(Data, location, radius, sample)
+	UpdateCanvas(Data, location, radius, sample, startRadius=radius)
 	
 
 	ConfIcon.grid(row = 9, column = 1)
@@ -279,7 +279,6 @@ def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 	bkg_sample = BackgroundMedian(crop, sample_width)
 	bkg_median = bkg_sample[0]
 	bkg_status = bkg_sample[1]
-	print (bkg_status)
 
 	for index in range(4):
 		# Values are divided by radius to keep the units in axis' units
