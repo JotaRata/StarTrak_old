@@ -1,4 +1,5 @@
 # coding=utf-8
+from math import ceil
 from time import time
 import numpy
 import matplotlib
@@ -294,7 +295,7 @@ def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkg_median))
 	#BrightLabel.config(text = "Señal / Fondo: %.2f " % snr)
 
-	_conf = numpy.clip(int(snr/2 + 1), 1, 3)
+	_conf = numpy.clip(ceil(snr), 1, 3)
 
 	square.set_edgecolor(("red", "yellow", "lime" )[_conf-1])
 	#ConfIcon.config(image = icons.Icons["conf"+str(_conf)])
