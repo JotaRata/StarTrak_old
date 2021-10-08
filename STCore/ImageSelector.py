@@ -6,7 +6,7 @@ from astropy.io import fits
 #import pyfits as fits
 from os.path import basename, getmtime, isfile
 from time import sleep, strftime, localtime, strptime,gmtime
-from tkinter import filedialog, messagebox, ttk
+from tkinter import Widget, filedialog, messagebox, ttk
 from item.File import FileItem
 
 from STCore import ImageView, DataManager, Tracker
@@ -15,8 +15,8 @@ from functools import partial
 import STCore.utils.Icons as icons
 
 #region Variables
-SelectorFrame = None
-ImagesFrame = None
+App = None
+ListFrame = None
 ScrollView = None
 loadIndex = 0
 FilteredList = []
@@ -74,34 +74,21 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	#lock.relase()
 
 def Awake(root, paths = []):
-	global SelectorFrame, ImagesFrame, ScrollView
+	global App, ListFrame, ScrollView
 	DataManager.CurrentWindow = 1
-	SelectorFrame = ttk.Frame(root)
-	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
-	ttk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
-	
-	# Create Canvas
-	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-80, len(paths)*220/4), width = root.winfo_width()-180, bg= "gray15", bd=0, relief="flat")
-	ScrollBar = ttk.Scrollbar(SelectorFrame, command=ScrollView.yview)
-	ScrollView.config(yscrollcommand=ScrollBar.set)  
-	ScrollView.pack(expand = 0, fill = tk.BOTH, anchor = tk.NW, side = tk.LEFT)
-	ScrollBar.pack(side = tk.LEFT,fill=tk.Y) 
-	ImagesFrame = ttk.Frame(height=root.winfo_height())
-	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 180)
+	App = ttk.Frame(root)
+	App.pack(fill = tk.BOTH, expand = 1)
 
-	buttonFrame = ttk.Frame(SelectorFrame, width = 80)
-	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH, expand = 1)
-	for c in range(1):
-		tk.Grid.columnconfigure(buttonFrame, c, weight=1)
-	style = ttk.Style()
-	style.configure("Left.TButton", anchor = tk.E)
-	CleanButton = ttk.Button(buttonFrame, text="Limpiar todo     ", command = lambda: ClearList(root), state = tk.DISABLED,  image = icons.Icons["delete"], compound = "right",style = "Left.TButton")
-	CleanButton.image = icons.Icons["delete"]
-	CleanButton.grid(row=2, column=0, sticky = tk.EW, pady=5)
-	AddButton = ttk.Button(buttonFrame, text=  "Agregar archivo  ", command = lambda: AddFiles(root), state = tk.DISABLED, image = icons.Icons["multi"], compound = "right",style = "Left.TButton")
-	AddButton.grid(row=1, column=0, sticky = tk.EW, pady=5)
-	ApplyButton = ttk.Button(buttonFrame, text="Continuar        ", command = lambda: Apply(root), state = tk.DISABLED, image = icons.Icons["next"], compound = "right",style = "Left.TButton")
-	ApplyButton.grid(row=0, column=0, sticky = tk.EW, pady=5)
+	App.columnconfigure((0, 1, 2), weight=2)
+	App.columnconfigure(4, weight=1)
+	App.rowconfigure((1, 2), weight=1)
+	
+	ttk.Label(App, text = "Seleccionar Imagenes").grid(row=0, column=0, columnspan=3)
+	
+	CreateCanvas(root, paths)
+
+	CreateSidebar(root)
+	BuildLayout()
 
 	# Saved File
 	if len(DataManager.FileItemList) != 0 and len(paths) == 0:
@@ -129,9 +116,41 @@ def Awake(root, paths = []):
 		LoadWindow[0].destroy()
 	else:
 		LoadFiles(paths, root)
+
+def BuildLayout():
+	global App, ScrollView, Sidebar
+
+	ScrollView.grid(row=1, column=0, rowspan=3, columnspan=3, sticky="news")
+	Sidebar.grid(row=0, column=4, rowspan=3, sticky="news")
+
+def CreateCanvas(root, paths):
+	global App, ScrollView, ListFrame
+
+	ScrollView = tk.Canvas(App, scrollregion=(0,0, root.winfo_width()-200, len(paths)*220/4), bg= "gray15", bd=0, relief="flat")
+	ScrollBar = ttk.Scrollbar(App, command=ScrollView.yview)
+	ScrollView.config(yscrollcommand=ScrollBar.set)  
+
+	ListFrame = ttk.Frame(ScrollView)
+	ScrollView.create_window(0,0, anchor = tk.NW, window = ListFrame)
+	ScrollBar.grid(row=1, column=3, rowspan=3, sticky="ns")
+
+def CreateSidebar(root):
+	global App, Sidebar
+	Sidebar = ttk.Frame(App, width = 200)
+	Sidebar.columnconfigure(0, weight=1)
+
+	CleanButton = ttk.Button(Sidebar, text="Limpiar todo", command = lambda: ClearList(root), state = tk.DISABLED,  image = icons.Icons["delete"], compound = "right")	
+	AddButton = ttk.Button(Sidebar, text=  "Agregar archivo", command = lambda: AddFiles(root), state = tk.DISABLED, image = icons.Icons["multi"], compound = "right")
+	ApplyButton = ttk.Button(Sidebar, text="Continuar", command = lambda: Apply(root), state = tk.DISABLED, image = icons.Icons["next"], compound = "right")
+	
+	CleanButton.grid(row=2, column=0, sticky = "ew", pady=5)
+	AddButton.grid(row=1, column=0, sticky = "ew", pady=5)
+	ApplyButton.grid(row=0, column=0, sticky = "ew", pady=5)
+
 	CleanButton.config(state = tk.NORMAL)
 	ApplyButton.config(state = tk.NORMAL)
 	AddButton.config(state = tk.NORMAL)
+
 
 def GridPlace(root, index, size):
 	maxrows = root.winfo_height()/size
@@ -159,7 +178,7 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 
 def CreateFileGrid(index, item, root):
 	
-	GridFrame = tk.LabelFrame(ImagesFrame, width = 200, height = 200, bg="gray30", relief="flat")
+	GridFrame = tk.LabelFrame(ListFrame, width = 200, height = 200, bg="gray30", relief="flat")
 	Row, Col = GridPlace(root, index, 250)
 	GridFrame.grid(row = Row, column = Col, sticky = tk.NSEW, padx = 20, pady = 20)
 	dat = item.data.astype(float)
@@ -170,7 +189,7 @@ def CreateFileGrid(index, item, root):
 	Pic.thumbnail((200, 200))
 	Img = ImageTk.PhotoImage(Pic)
 	ttk.Label(GridFrame, text=basename(item.path)).grid(row=0,column=0, sticky=tk.W)
-	isactive =tk.IntVar(ImagesFrame, value=item.active)
+	isactive =tk.IntVar(ListFrame, value=item.active)
 	Ckeckbox = ttk.Checkbutton(GridFrame, variable = isactive)
 	Ckeckbox.grid(row=0,column=1, sticky=tk.E)
 	isactive.trace("w", lambda a,b,c: SetActive(item, isactive, c))
@@ -209,7 +228,7 @@ def ClearList(root):
 	DataManager.FileItemList = []
 	try:
 		ScrollView.config(scrollregion=(0,0, root.winfo_width(), 1))
-		for child in ImagesFrame.winfo_children():
+		for child in ListFrame.winfo_children():
 			child.destroy()
 	except:
 		pass
@@ -222,4 +241,4 @@ def AddFiles(root):
 
 def Destroy():
 	SetFilteredList()
-	SelectorFrame.destroy()
+	App.destroy()
