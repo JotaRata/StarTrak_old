@@ -6,7 +6,8 @@ from astropy.io import fits
 #import pyfits as fits
 from os.path import basename, getmtime, isfile
 from time import sleep, strftime, localtime, strptime,gmtime
-from tkinter import Widget, filedialog, messagebox, ttk
+from tkinter import Grid, Widget, filedialog, messagebox, ttk
+from STCore.item.File import _FILE_VERSION
 from item.File import FileItem
 
 from STCore import ImageView, DataManager, Tracker
@@ -51,20 +52,23 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	print (path)
 	item = FileItem()
 	item.path = str(path)
-	item.data, hdr = fits.getdata(item.path, header = True)
+	item.data, item.header = fits.getdata(item.path, header = True)
+
 	#item.date = fits.header['NOTE'].split()[3]
 	# Request DATE-OBS keyword to extract date information (previously used NOTE keyword which was not always available)
 	try:
-		item.date = strptime(hdr["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
+		item.date = strptime(item.header["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
 	except:
 		print ("File has no DATE-OBS keyword in Header   -   using system time instead..")
 		item.date = gmtime(getmtime(item.path))
 		pass
 	#print strftime('%H/%M/%S', localtime(item.date))
 	#item.timee = header['NOTE'].split()[3]
+
 	item.active = 1
 	DataManager.FileItemList.append(item)
 	CreateFileGrid(loadIndex + ListSize, item, root)
+
 	progress.set(100*float(loadIndex)/PathSize)
 	loadWindow[1].config(text="Cargando archivo "+str(loadIndex)+" de "+str(PathSize))
 	loadWindow[0].update()
@@ -95,24 +99,36 @@ def Awake(root, paths = []):
 		ind = 0
 		Progress = tk.DoubleVar()
 		LoadWindow = CreateLoadBar(root, Progress, title = "Cargando "+basename(DataManager.CurrentFilePath))
-		while ind < len(DataManager.FileItemList):
-			if DataManager.FileItemList[ind].data is None:
-				if DataManager.FileItemList[ind].Exists():
-					DataManager.FileItemList[ind].data, hdr = fits.getdata(DataManager.FileItemList[ind].path, header = True)
+		
+		index = 0
+		for item in DataManager.FileItemList:
+			# File item is too old, has to be re-made
+			if not hasattr(item, "version"):
+				item.data = None
+				continue
+			elif item.version != _FILE_VERSION:
+				 _, item.header = fits.getdata(item.path, header = True)
+				 
+		for item in DataManager.FileItemList:
+			if item.data is None:
+				if item.Exists():
+					item.data, item.header = fits.getdata(item.path, header = True)
 					try:
-						DataManager.FileItemList[ind].date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
+						item.date = strptime(item.header["DATE-OBS"].split()[1]+"-"+item.header["DATE-OBS"].split()[3], "%Y-%m-%dT%H:%M:%S.%f")
 					except:
 						print ("File has no Header!   -   using system time instead..")
-						DataManager.FileItemList[ind].date = gmtime(getmtime(DataManager.FileItemList[ind].path))
+						item.date = gmtime(getmtime(item.path))
 						pass
 					Progress.set(100*float(ind)/len(DataManager.FileItemList))
 					LoadWindow[0].update()
 				else:
-					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ DataManager.FileItemList[ind].path)
+					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ item.path)
 					break	
 			ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(DataManager.FileItemList)*240/4))
-			CreateFileGrid(ind, DataManager.FileItemList[ind], root)
-			ind += 1
+
+			CreateFileGrid(index, item, root)
+			DataManager.FileItemList[index] = item
+			index += 1
 		LoadWindow[0].destroy()
 	else:
 		LoadFiles(paths, root)
@@ -178,24 +194,52 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 
 def CreateFileGrid(index, item, root):
 	
-	GridFrame = tk.LabelFrame(ListFrame, width = 200, height = 200, bg="gray30", relief="flat")
-	Row, Col = GridPlace(root, index, 250)
-	GridFrame.grid(row = Row, column = Col, sticky = tk.NSEW, padx = 20, pady = 20)
+	styles = {"anchor":"w", "bg":"gray30", "fg":"gray80", "relief":"flat", "width":15}
+	ItemFrame = tk.LabelFrame(ListFrame, width = 200, height = 200, bg="gray30")
+
+	ItemFrame.rowconfigure((2,3), weight=1)
 	dat = item.data.astype(float)
 	minv = numpy.percentile(dat, 1)
 	maxv = numpy.percentile(dat, 99.8)
 	thumb = numpy.clip(255*(dat - minv)/(maxv - minv), 0, 255).astype(numpy.uint8)
 	Pic = Image.fromarray(thumb)
-	Pic.thumbnail((200, 200))
+	Pic.thumbnail((150, 150))
 	Img = ImageTk.PhotoImage(Pic)
-	ttk.Label(GridFrame, text=basename(item.path)).grid(row=0,column=0, sticky=tk.W)
+
 	isactive =tk.IntVar(ListFrame, value=item.active)
-	Ckeckbox = ttk.Checkbutton(GridFrame, variable = isactive)
+	Ckeckbox = ttk.Checkbutton(ItemFrame, variable = isactive)
 	Ckeckbox.grid(row=0,column=1, sticky=tk.E)
 	isactive.trace("w", lambda a,b,c: SetActive(item, isactive, c))
-	ImageLabel = ttk.Label(GridFrame, image =Img, width = 200, state="focus")
+
+	ImageLabel = ttk.Label(ItemFrame, image =Img, width = 100, state="focus")
 	ImageLabel.image = Img
-	ImageLabel.grid(row=1,column=0, columnspan=2)
+	ImageLabel.grid(row=0,column=0, columnspan=2, rowspan=4)
+
+	tk.Label(ItemFrame, text="Archivo", font=(None, 10, "bold"), **styles).grid(row=0, column=2, sticky="ew")
+	tk.Label(ItemFrame, text="Dimension", font=(None, 10, "bold"), **styles).grid(row=0, column=3, sticky="ew")
+	tk.Label(ItemFrame, text="Objeto", font=(None, 10, "bold"), **styles).grid(row=0, column=4, sticky="ew")
+	tk.Label(ItemFrame, text="Fecha", font=(None, 10, "bold"), **styles).grid(row=0, column=5, sticky="ew")
+	tk.Label(ItemFrame, text="Exposicion", font=(None, 10, "bold"), **styles).grid(row=0, column=6, sticky="ew")
+
+	name_label = tk.Label(ItemFrame, text=basename(item.path), **styles)
+	dim_label = tk.Label(ItemFrame, text= "{0}, {1}".format(item.header["NAXIS1"], item.header["NAXIS2"]), **styles)
+	obj_label = tk.Label(ItemFrame, text= "NA", **styles)
+	date_label = tk.Label(ItemFrame, text= strftime('%Y-%m-%d %H:%M:%S', item.date), **styles)
+	exp_label = tk.Label(ItemFrame, text= "NA", **styles)
+
+	if "OBJECT" in item.header:
+		obj_label.config(text=item.header["OBJECT"])
+
+	if "EXPTIME" in item.header:
+		exp_label.config(text="{0} s".format(item.header["EXPTIME"]))
+
+	name_label.grid(row=1,column=2, sticky="ew")
+	dim_label.grid(row=1, column= 3, sticky="ew")
+	obj_label.grid(row=1, column= 4, sticky="ew")
+	date_label.grid(row=1, column= 5, sticky="ew")
+	exp_label.grid(row=1, column= 6, sticky="ew")
+
+	ItemFrame.grid(row = index, column = 0, sticky = tk.NSEW, padx = 20, pady = 5)
 
 def SetActive(item, intvar, operation):
 	item.active = intvar.get()
