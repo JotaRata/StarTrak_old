@@ -21,7 +21,7 @@ ImageViewer = None
 BrightLabel = None
 ConfIcon = None
 MousePress = None
-XLoc= YLoc = None
+xloc_var= yloc_var = None
 #endregion
 
 lastRadius = 10
@@ -34,7 +34,7 @@ square : Rectangle = None
 closedTime = 0
 
 def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1, location = (0,0), name = "", skipUI = False):
-	global App, Image, canvas, leftPanel, rightPanel, ImageViewer, BrightLabel, XLoc, YLoc, ConfIcon
+	global App, Image, canvas, leftPanel, rightPanel, ImageViewer, BrightLabel, xloc_var, yloc_var, ConfIcon
 	if App is not None:
 		return
 	App = tk.Toplevel()
@@ -63,50 +63,52 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 			threshold = star.threshold
 			sample = star.bsample
 
-	StarName = tk.StringVar(value = name)
-	XLoc = tk.IntVar(value = location[1])
-	YLoc= tk.IntVar(value = location[0])
-	StarBounds = tk.IntVar(value = bounds)
-	StarRadius = tk.IntVar(value = radius)
+	name_var = tk.StringVar(value = name)
+	xloc_var = tk.IntVar(value = location[1])
+	yloc_var= tk.IntVar(value = location[0])
+	bounds_var = tk.IntVar(value = bounds)
+	radius_var = tk.IntVar(value = radius)
 	
-	BackgroundSample = tk.IntVar(value = sample)
+	samble_var = tk.IntVar(value = sample)
 
-	StarThreshold = tk.IntVar(value = threshold)
+	threshold_var = tk.IntVar(value = threshold)
 	#SigmaFactor = tk.IntVar(value = sigma)
 
-	nameLabel = ttk.Label(App, text = "Nombre de la estrella: ")
-	nameEntry = ttk.Entry(App, textvariable = StarName)
+	name_label = ttk.Label(App, text = "Nombre de la estrella: ")
+	name_input = ttk.Entry(App, textvariable = name_var)
 
-	posLabel = ttk.Label(App, text = "Posicion:")
-	posLocs = ttk.Frame(App)
-	XLocSpinBox = ttk.Spinbox(posLocs, from_ = 0, to = Data.shape[1], textvariable = XLoc, width = 10)
-	YLocSpinBox = ttk.Spinbox(posLocs, from_ = 0, to = Data.shape[0], textvariable = YLoc, width = 10)
-	XLocSpinBox.grid(row = 0, column = 0)
-	YLocSpinBox.grid(row = 0, column = 1)
+	position_label = ttk.Label(App, text = "Posicion:")
+
+	XLocSpinBox = ttk.Spinbox(App, from_ = 0, to = Data.shape[1], textvariable = xloc_var, width = 10)
+	YLocSpinBox = ttk.Spinbox(App, from_ = 0, to = Data.shape[0], textvariable = yloc_var, width = 10)
+	
 
 
-	radiusLabel = ttk.Label(App, text = "Tamaño de la estrella:")
-	RadiusSpinBox = ttk.Spinbox(App, from_ = 1, to = StarBounds.get(), textvariable = StarRadius, width = 10, increment = 1)
+	radius_label = ttk.Label(App, text = "Radio de la estrella:")
+	radius_spinbox = ttk.Spinbox(App, from_ = 3, to = bounds_var.get(), textvariable = radius_var, width = 10, increment = 1)
 
 	sample_label = ttk.Label(App, text = "Tamaño de muestras del fondo:")
 	
-	sample_spinbox = ttk.Spinbox(App, from_ = 1, to = StarBounds.get() - 1, textvariable = BackgroundSample, width = 5, increment = 1)
+	sample_spinbox = ttk.Spinbox(App, from_ = 1, to = bounds_var.get() - 1, textvariable = samble_var, width = 5, increment = 1)
 
-	boundsLabel = ttk.Label(App, text = "Radio de búsqueda:")
-	BoundSpinBox = ttk.Spinbox(App, from_ = 0, to = min(Data.shape), textvariable = StarBounds, width = 10, increment = 10)
+	bounds_label = ttk.Label(App, text = "Radio de búsqueda:")
+	bounds_spinbox = ttk.Spinbox(App, from_ = 0, to = min(Data.shape), textvariable = bounds_var, width = 10, increment = 10)
 
-	nameLabel.grid(row = 0, column = 0, sticky="w")
-	nameEntry.grid (row = 0,column = 1)
-	posLabel.grid(row = 1, column = 0, sticky="w")
-	posLocs.grid(row = 1, column = 1)
-	radiusLabel.grid(row = 2, column = 0, sticky="w")
-	RadiusSpinBox.grid(row = 2, column = 1)
+	name_label.grid(row = 0, column = 0, sticky="w")
+	name_input.grid (row = 0,column = 1, columnspan=2, sticky="ew")
+	position_label.grid(row = 1, column = 0, sticky="w")
+	
+	XLocSpinBox.grid(row = 1, column = 1)
+	YLocSpinBox.grid(row = 1, column = 2)
+
+	radius_label.grid(row = 2, column = 0, sticky="w")
+	radius_spinbox.grid(row = 2, column = 1, columnspan=2, sticky="ew")
 
 	sample_label.grid(row = 3, column = 0, sticky="w")
-	sample_spinbox.grid(row = 3, column = 1)
+	sample_spinbox.grid(row = 3, column = 1, columnspan=2, sticky="ew")
 	
-	boundsLabel.grid(row = 7, column = 0, sticky="w")
-	BoundSpinBox.grid(row = 7, column = 1)
+	bounds_label.grid(row = 7, column = 0, sticky="w")
+	bounds_spinbox.grid(row = 7, column = 1, columnspan=2, sticky="ew")
 
 
 
@@ -135,34 +137,34 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	#area = (2 * radius) ** 2
 	#snr = (Image.get_array()[radius:3*radius, radius:3*radius].sum() / (area * back_median))
 
-	snr = 0
+	#snr = 0
 
-	BrightLabel = ttk.Label(App,font="-weight bold", width = 18, anchor = "w")
-	_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
-	ConfIcon = ttk.Label(App, image = icons.Icons["conf"+ _conf])
+	#BrightLabel = ttk.Label(App,font="-weight bold", width = 18, anchor = "w")
+	#_conf = str(numpy.clip(int(snr/2 + 1), 1, 3))
+	#ConfIcon = ttk.Label(App, image = icons.Icons["conf"+ _conf])
 
 	UpdateCanvas(Data, location, radius, sample, startRadius=radius)
 	
 
-	ConfIcon.grid(row = 9, column = 1)
-	BrightLabel.grid(row = 9, column = 0)
+	#ConfIcon.grid(row = 9, column = 1)
+	#BrightLabel.grid(row = 9, column = 0)
 
 
 
-	update_command = lambda a,b,c : UpdateCanvas(Data,(int(YLoc.get()), int(XLoc.get())), int(StarRadius.get()) , int(BackgroundSample.get()), startRadius = radius)
+	update_command = lambda a,b,c : UpdateCanvas(Data,(yloc_var.get(), xloc_var.get()), radius_var.get(), samble_var.get(), startRadius = radius)
 	# Removed reduntant functions
 
-	XLoc.trace("w",update_command)
-	YLoc.trace("w",update_command)
+	xloc_var.trace("w",update_command)
+	yloc_var.trace("w",update_command)
 
-	StarRadius.trace('w', update_command)
-	BackgroundSample.trace('w', update_command)
+	radius_var.trace('w', update_command)
+	samble_var.trace('w', update_command)
 
-	apply_command = lambda: Apply(name=StarName.get(),loc=(YLoc.get(), XLoc.get()), bounds=StarBounds.get(),
-						 radius=StarRadius.get() , Type=1,
-						 value=GetMax(Data,XLoc.get(), YLoc.get(), StarRadius.get())
-						 , threshold=StarThreshold.get(),
-						 stars=star, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sample_width=BackgroundSample.get())
+	apply_command = lambda: Apply(name=name_var.get(),loc=(yloc_var.get(), xloc_var.get()), bounds=bounds_var.get(),
+						 radius=radius_var.get() , Type=1,
+						 value=GetMax(Data,xloc_var.get(), yloc_var.get(), radius_var.get())
+						 , threshold=threshold_var.get(),
+						 stars=star, OnStarChange= OnStarChange, OnStarAdd = OnStarAdd,starIndex=starIndex, sample_width=samble_var.get())
 
 	if skipUI:
 		apply_command()
@@ -290,12 +292,12 @@ def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 		sample_artists[index].set_edgecolor("orange" if bkg_status[index] == 1 else "red")
 	area = (2 * radius) ** 2
 	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkg_median))
-	BrightLabel.config(text = "Señal / Fondo: %.2f " % snr)
+	#BrightLabel.config(text = "Señal / Fondo: %.2f " % snr)
 
 	_conf = numpy.clip(int(snr/2 + 1), 1, 3)
 
 	square.set_edgecolor(("red", "yellow", "lime" )[_conf-1])
-	ConfIcon.config(image = icons.Icons["conf"+str(_conf)])
+	#ConfIcon.config(image = icons.Icons["conf"+str(_conf)])
 	canvas.draw_idle()
 
 def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange, OnStarAdd, starIndex, sample_width):
@@ -324,10 +326,10 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.PrintData(header= time() - closedTime > 60)
 	CloseWindow()
 
-	global XLoc, YLoc, lastRadius, lastBounds
+	global xloc_var, yloc_var, lastRadius, lastBounds
 	lastBounds = bounds
 	lastRadius = 10
-	XLoc = YLoc = None
+	xloc_var = yloc_var = None
 	closedTime = time()
 	
 
@@ -346,17 +348,17 @@ def CloseWindow():
 
 def OnMousePress(event):
 	global MousePress
-	MousePress = XLoc.get(), YLoc.get(), event.xdata, event.ydata
+	MousePress = xloc_var.get(), yloc_var.get(), event.xdata, event.ydata
 
 def OnMouseDrag(event):
-	global XLoc, YLoc
+	global xloc_var, yloc_var
 	global MousePress
 	if MousePress is None or event.inaxes is None: return
 	x0, y0, xpress, ypress = MousePress
 	dx = event.xdata - xpress
 	dy = event.ydata - ypress
-	XLoc.set(int(x0 - dx))
-	YLoc.set(int(y0 - dy))
+	xloc_var.set(int(x0 - dx))
+	yloc_var.set(int(y0 - dy))
 
 def OnMouseRelase(event):
 	global MousePress
