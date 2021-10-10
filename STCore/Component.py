@@ -143,7 +143,7 @@ class FileListElement(tk.Frame):
 		self.styles = {"anchor":"w", "bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold")}
 		self.file = item
 		self.rowconfigure((2,3, 4), weight=1)
-		self.columnconfigure((0, 1, 2, 3), weight=1)
+		self.columnconfigure(tuple(range(10)), weight=1)
 		self.config(bg="gray25")
 		self.labels = []
 
@@ -151,12 +151,10 @@ class FileListElement(tk.Frame):
 		self.image = ImageTk.PhotoImage(thumb)
 		self.active =tk.IntVar(value=self.file.active)
 
-
 		thumb_label = tk.Label(self, image =self.image, width = 150)
 		thumb_label.image = self.image
 
 		thumb_label.grid(row=0, column=0, rowspan=3, columnspan=3)
-		self.SetLabels(["DATE-OBS", "EXPTIME", "TELESCOP", "INSTRUME"])
 
 	def SetLabels(self, keywords):
 		labelcount = len(keywords)

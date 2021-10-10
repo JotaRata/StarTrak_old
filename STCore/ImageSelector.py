@@ -84,8 +84,8 @@ def Awake(root, paths = []):
 	App = ttk.Frame(root)
 	App.pack(fill = tk.BOTH, expand = 1)
 
-	App.columnconfigure((0, 1, 2), weight=2)
-	App.columnconfigure(4, weight=1)
+	#App.columnconfigure((0, 1), weight=2)
+	App.columnconfigure((0, 1, 2, 4), weight=1)
 	App.rowconfigure((1, 2), weight=1)
 	
 	ttk.Label(App, text = "Seleccionar Imagenes").grid(row=0, column=0, columnspan=3)
@@ -143,13 +143,14 @@ def BuildLayout():
 def CreateCanvas(root, paths):
 	global App, ScrollView, ListFrame
 
-	ScrollView = tk.Canvas(App, bg= "gray15", bd=0, relief="flat")
+	ScrollView = tk.Canvas(App, bg= "gray15", bd=0, relief="flat", highlightthickness=0)
 	ScrollBar = ttk.Scrollbar(App, command=ScrollView.yview)
 	ScrollView.config(yscrollcommand=ScrollBar.set)  
 
 	ListFrame = ttk.Frame(ScrollView)
 	ListFrame.columnconfigure(0, weight=1)
-	ScrollView.create_window(0,0, anchor = tk.NW, window = ListFrame)
+	ScrollView.create_window(0, 0, anchor = tk.NW, window = ListFrame)
+	
 	ScrollBar.grid(row=1, column=3, rowspan=3, sticky="ns")
 
 def CreateSidebar(root):
@@ -196,6 +197,7 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 
 def CreateFileGrid(index, item, root):
 	element = FileListElement(ListFrame, item)
+	element.SetLabels(["DATE-OBS", "EXPTIME", "TELESCOP", "INSTRUME"])
 	element.grid(row=index, sticky="ew")
 
 def SetActive(item, intvar, operation):
