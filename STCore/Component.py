@@ -1,9 +1,14 @@
 from os import stat
+from PIL import Image, ImageTk
+
+import numpy
 from STCore.item.Track import TrackItem
 from STCore.item.Star import StarItem
+from STCore.item.File import FileItem
 from STCore.utils.Icons import GetIcon
 import tkinter as tk
 from tkinter import ttk
+from os.path import basename, getsize
 
 # This file contains different UI elements which are repeated along the program
 
@@ -130,3 +135,70 @@ class TrackElement(tk.Frame):
 		self.lastPos.config(text = str(track.lastPos))
 		self.lost.config(text = str(len(track.lostPoints)))
 		self.trust.config(text = str(variation))
+
+class FileListElement(tk.Frame):
+	def __init__(self, master, item : FileItem, *args, **kwargs):
+		tk.Frame.__init__(self, master , *args, **kwargs)
+		
+		self.styles = {"anchor":"w", "bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold")}
+		self.file = item
+		self.rowconfigure((2,3, 4), weight=1)
+		self.columnconfigure((0, 1, 2, 3), weight=1)
+		self.config(bg="gray25")
+		self.labels = []
+
+		thumb = self.GetThumbnail()
+		self.image = ImageTk.PhotoImage(thumb)
+		self.active =tk.IntVar(value=self.file.active)
+
+
+		thumb_label = tk.Label(self, image =self.image, width = 150)
+		thumb_label.image = self.image
+
+		thumb_label.grid(row=0, column=0, rowspan=3, columnspan=3)
+		self.SetLabels(["DATE-OBS", "EXPTIME", "TELESCOP", "INSTRUME"])
+
+	def SetLabels(self, keywords):
+		labelcount = len(keywords)
+
+		if len(self.labels) == 0:
+			for label in reversed(self.labels):
+				label.destroy()
+				self.labels.remove(label)
+				
+		name_label = tk.Label(self,**self.styles)
+		size_label = tk.Label(self,**self.styles)
+		dim_label = tk.Label(self,**self.styles)
+
+		name_label.config(text = basename(self.file.path), fg="white")
+		size_label.config(text = "%.2f Mb" % (getsize(self.file.path) / (1024 * 1024)))
+		dim_label.config(text = str(self.file.data.shape))
+		
+		self.labels.append(name_label)
+		self.labels.append(dim_label)
+
+		for i in range(labelcount):
+			label = tk.Label(self,**self.styles)
+			try:
+				label.config(text = self.file.header[keywords[i]])
+			except:
+				label.config(text = "NA")
+				print ("La clave \"{0}\" no existe en el header".format(keywords[i]))
+
+			self.labels.append(label)
+		
+		# Size label should be last
+		self.labels.append(size_label)
+
+		index = 0
+		for label in self.labels:
+			label.grid(row = 2, column = 4 + index, padx = 12, sticky="ew")
+			index += 1
+		
+	def GetThumbnail(self):
+		minv = numpy.percentile(self.file.data, 1)
+		maxv = numpy.percentile(self.file.data, 99.8)
+		thumb = Image.fromarray(numpy.clip(255*(self.file.data - minv)/(maxv - minv), 0, 255).astype(numpy.uint8))
+		thumb.thumbnail((150, 150))
+			
+		return thumb

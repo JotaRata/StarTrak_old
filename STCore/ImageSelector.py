@@ -7,6 +7,7 @@ from astropy.io import fits
 from os.path import basename, getmtime, isfile
 from time import sleep, strftime, localtime, strptime,gmtime
 from tkinter import Grid, Widget, filedialog, messagebox, ttk
+from STCore.Component import FileListElement
 from STCore.item.File import _FILE_VERSION
 from item.File import FileItem
 
@@ -38,7 +39,7 @@ def LoadFiles(paths, root):
 	loadIndex = 0
 	
 	LoadWindow[0].destroy()
-	ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(DataManager.FileItemList)*240/4))
+	ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(DataManager.FileItemList)*240/4))
 
 def Sort(path):
 	if any(char.isdigit() for char in path):
@@ -124,7 +125,7 @@ def Awake(root, paths = []):
 				else:
 					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ item.path)
 					break	
-			ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(DataManager.FileItemList)*240/4))
+			ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(DataManager.FileItemList)*240/4))
 
 			CreateFileGrid(index, item, root)
 			DataManager.FileItemList[index] = item
@@ -142,11 +143,12 @@ def BuildLayout():
 def CreateCanvas(root, paths):
 	global App, ScrollView, ListFrame
 
-	ScrollView = tk.Canvas(App, scrollregion=(0,0, root.winfo_width()-200, len(paths)*220/4), bg= "gray15", bd=0, relief="flat")
+	ScrollView = tk.Canvas(App, bg= "gray15", bd=0, relief="flat")
 	ScrollBar = ttk.Scrollbar(App, command=ScrollView.yview)
 	ScrollView.config(yscrollcommand=ScrollBar.set)  
 
 	ListFrame = ttk.Frame(ScrollView)
+	ListFrame.columnconfigure(0, weight=1)
 	ScrollView.create_window(0,0, anchor = tk.NW, window = ListFrame)
 	ScrollBar.grid(row=1, column=3, rowspan=3, sticky="ns")
 
@@ -193,53 +195,8 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	return popup, label, bar
 
 def CreateFileGrid(index, item, root):
-	
-	styles = {"anchor":"w", "bg":"gray30", "fg":"gray80", "relief":"flat", "width":15}
-	ItemFrame = tk.LabelFrame(ListFrame, width = 200, height = 200, bg="gray30")
-
-	ItemFrame.rowconfigure((2,3), weight=1)
-	dat = item.data.astype(float)
-	minv = numpy.percentile(dat, 1)
-	maxv = numpy.percentile(dat, 99.8)
-	thumb = numpy.clip(255*(dat - minv)/(maxv - minv), 0, 255).astype(numpy.uint8)
-	Pic = Image.fromarray(thumb)
-	Pic.thumbnail((150, 150))
-	Img = ImageTk.PhotoImage(Pic)
-
-	isactive =tk.IntVar(ListFrame, value=item.active)
-	Ckeckbox = ttk.Checkbutton(ItemFrame, variable = isactive)
-	Ckeckbox.grid(row=0,column=1, sticky=tk.E)
-	isactive.trace("w", lambda a,b,c: SetActive(item, isactive, c))
-
-	ImageLabel = ttk.Label(ItemFrame, image =Img, width = 100, state="focus")
-	ImageLabel.image = Img
-	ImageLabel.grid(row=0,column=0, columnspan=2, rowspan=4)
-
-	tk.Label(ItemFrame, text="Archivo", font=(None, 10, "bold"), **styles).grid(row=0, column=2, sticky="ew")
-	tk.Label(ItemFrame, text="Dimension", font=(None, 10, "bold"), **styles).grid(row=0, column=3, sticky="ew")
-	tk.Label(ItemFrame, text="Objeto", font=(None, 10, "bold"), **styles).grid(row=0, column=4, sticky="ew")
-	tk.Label(ItemFrame, text="Fecha", font=(None, 10, "bold"), **styles).grid(row=0, column=5, sticky="ew")
-	tk.Label(ItemFrame, text="Exposicion", font=(None, 10, "bold"), **styles).grid(row=0, column=6, sticky="ew")
-
-	name_label = tk.Label(ItemFrame, text=basename(item.path), **styles)
-	dim_label = tk.Label(ItemFrame, text= "{0}, {1}".format(item.header["NAXIS1"], item.header["NAXIS2"]), **styles)
-	obj_label = tk.Label(ItemFrame, text= "NA", **styles)
-	date_label = tk.Label(ItemFrame, text= strftime('%Y-%m-%d %H:%M:%S', item.date), **styles)
-	exp_label = tk.Label(ItemFrame, text= "NA", **styles)
-
-	if "OBJECT" in item.header:
-		obj_label.config(text=item.header["OBJECT"])
-
-	if "EXPTIME" in item.header:
-		exp_label.config(text="{0} s".format(item.header["EXPTIME"]))
-
-	name_label.grid(row=1,column=2, sticky="ew")
-	dim_label.grid(row=1, column= 3, sticky="ew")
-	obj_label.grid(row=1, column= 4, sticky="ew")
-	date_label.grid(row=1, column= 5, sticky="ew")
-	exp_label.grid(row=1, column= 6, sticky="ew")
-
-	ItemFrame.grid(row = index, column = 0, sticky = tk.NSEW, padx = 20, pady = 5)
+	element = FileListElement(ListFrame, item)
+	element.grid(row=index, sticky="ew")
 
 def SetActive(item, intvar, operation):
 	item.active = intvar.get()
