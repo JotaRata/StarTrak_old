@@ -2,6 +2,7 @@
 
 from tkinter.constants import S
 from STCore.Component import TrackElement
+from STCore.item.Star import StarItem
 from item import ResultSettings
 import numpy
 from matplotlib import use, figure
@@ -398,32 +399,40 @@ def OnFinishTrack():
 
 def Track(index, ItemList, stars):
 	global TrackedStars
-	
+	from STCore.SetStar import BackgroundMedian
+
 	data = ItemList[index].data
-	back, bgStD =  GetBackground(data)
+	
 	deltaPos = numpy.array([0,0])
 	indices = range(len(stars))
 	sortedIndices = sorted(indices, key = lambda e: stars[e].type, reverse = True)
 
 	for starIndex in sortedIndices:
-		s = stars[starIndex]
+		s : StarItem = stars[starIndex]
 		ts = TrackedStars[starIndex]
-		Pos = numpy.array(ts.currPos)
-		clipLoc = numpy.clip(Pos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
+		pos = numpy.array(ts.currPos)
+		clipLoc = numpy.clip(pos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
 		if s.type == 0 and Settings._TRACK_PREDICTION_.get() == 1:
-			clipLoc = numpy.clip(Pos + deltaPos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
-		crop = data[clipLoc[0]-s.bounds : clipLoc[0]+s.bounds,clipLoc[1]-s.bounds : clipLoc[1]+s.bounds]
-		crop = median_filter(crop, 2)
+			clipLoc = numpy.clip(pos + deltaPos, s.bounds, (data.shape[0] - s.bounds, data.shape[1] - s.bounds))
+
+		search_crop = data[clipLoc[0]-s.bounds : clipLoc[0]+s.bounds,clipLoc[1]-s.bounds : clipLoc[1]+s.bounds]
+
+		bound_radius = s.bounds - s.radius
+		star_crop = search_crop[bound_radius : -bound_radius, bound_radius : -bound_radius]
+		#crop = median_filter(crop, 2)
+		back,_, bgStD =  BackgroundMedian(star_crop, s.bsample)
+		back = int(back)
+
 		#indices = numpy.where((numpy.abs(-crop + s.value) < s.threshold) & (crop > bgStD*2 + back))
 
 		lvalue = s.value + back#TrackedStars[starIndex].lastValue 
 		
 
-		sigma_criterion = (numpy.abs(crop - back) > 2 * bgStD)		# Determina cuando la imagen se encuentra a (threshold) sigma del fondo
-		value_criterion = ((-crop + lvalue) < numpy.abs(lvalue - max(numpy.max(crop) - back, back) ) * (1 + s.threshold)/2 )			# Compara el brillo de la estrella con su referencia
+		sigma_criterion = (numpy.abs(search_crop - back) > 2 * bgStD)		# Determina cuando la imagen se encuentra a (threshold) sigma del fondo
+		value_criterion = ((-search_crop + lvalue) < numpy.abs(lvalue - max(numpy.max(search_crop) - back, back) ) * (1 + s.threshold)/2 )			# Compara el brillo de la estrella con su referencia
 		#spread_criterion = sigma_criterion.sum() > 4							# Se asegura de que no se detecten hot pixels como estrellas
-		# \operatorname{abs}\left(L-\max\left(b-c,\ 1\right)\right)+d\cdot2
-		indices = numpy.unravel_index(numpy.flatnonzero( value_criterion &  sigma_criterion),  crop.shape)
+
+		indices = numpy.unravel_index(numpy.flatnonzero( value_criterion &  sigma_criterion),  search_crop.shape)
 		SearchIndices = numpy.swapaxes(numpy.array(indices), 0, 1)
 		RegPositions = numpy.empty((0,2), int)
 
@@ -434,7 +443,7 @@ def Track(index, ItemList, stars):
 			RegPositions = numpy.append(RegPositions, _ind, axis = 0)
 			i += 1
 		if len(RegPositions) != 0:
-			MeanPos = numpy.mean(RegPositions, axis = 0).astype(int)
+			MeanPos = numpy.median(RegPositions, axis = 0).astype(int)
 			ts.lastPos = ts.currPos
 			ts.lastValue = ts.currValue 
 			ts.currPos = MeanPos.tolist()
@@ -450,7 +459,7 @@ def Track(index, ItemList, stars):
 			ts.trackedPos.append(list(reversed(ts.lastPos)))
 
 		if s.type == 1:
-			deltaPos = numpy.array(ts.currPos) - Pos
+			deltaPos = numpy.array(ts.currPos) - pos
 		#starIndex += 1
 	
 def StopTracking():
