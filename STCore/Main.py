@@ -11,6 +11,8 @@ try:
 	from logging import log
 	from os.path import dirname, abspath, basename, isfile
 	import gc
+	import warnings
+	warnings.filterwarnings("ignore")	
 	print ("Listo")
 except:
 	raise ImportError("StarTrak no pudo cargar los modulos del sistema.\nCompruebe su instalacion de python.")
