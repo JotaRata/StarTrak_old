@@ -140,7 +140,7 @@ class FileListElement(tk.Frame):
 	def __init__(self, master, item : FileItem, *args, **kwargs):
 		tk.Frame.__init__(self, master , *args, **kwargs)
 		
-		self.styles = {"anchor":"w", "bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold")}
+		self.styles = {"bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold")}
 		self.file = item
 		self.rowconfigure((2,3, 4), weight=1)
 		self.columnconfigure(tuple(range(10)), weight=1)
@@ -176,7 +176,7 @@ class FileListElement(tk.Frame):
 		self.labels.append(dim_label)
 
 		for i in range(labelcount):
-			label = tk.Label(self, width=10 if i != 0 else 20,**self.styles)
+			label = tk.Label(self, width=12 if i != 0 else 20,**self.styles)
 			try:
 				label.config(text = self.file.header[keywords[i]])
 			except:

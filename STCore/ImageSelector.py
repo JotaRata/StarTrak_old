@@ -27,6 +27,7 @@ ScrollView = None
 loadIndex = 0
 FilteredList = []
 ListElements = []
+def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
 #endregion
 
 def LoadFiles(paths, root):
@@ -38,13 +39,13 @@ def LoadFiles(paths, root):
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
 	sortedP = sorted(paths, key=lambda f: Sort(f))
 	n = 0
-	print ("-"*60)
+	print ("_"*60)
 	[SetFileItems(x, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root) for x in sortedP]
 	#map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
 	loadIndex = 0
 	
 	LoadWindow[0].destroy()
-	ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(DataManager.FileItemList)*240/4))
+	ScrollView.config(scrollregion=(0,0, root.winfo_width(), 150 * len(DataManager.FileItemList)))
 
 def Sort(path):
 	if any(char.isdigit() for char in path):
@@ -89,13 +90,12 @@ def Awake(root, paths = []):
 	App = ttk.Frame(root)
 	App.pack(fill = tk.BOTH, expand = 1)
 
-	App.columnconfigure((0, 1), weight=2)
-	App.columnconfigure(( 2, 4), weight=1)
+	App.columnconfigure((0, 1), weight=1)
+	App.columnconfigure(( 4), weight=1)
 	App.rowconfigure((1, 2), weight=1)
 	
 	#ttk.Label(App, text = "Seleccionar Imagenes").grid(row=0, column=0, columnspan=3)
 	
-	def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
 	CreateCanvas()
 	CreateHeader(def_keywords)
 	CreateSidebar(root)
@@ -131,7 +131,7 @@ def Awake(root, paths = []):
 				else:
 					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ item.path)
 					break	
-			ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(DataManager.FileItemList)*240/4))
+			ScrollView.config(scrollregion=(0,0, root.winfo_width(), 150 * len(DataManager.FileItemList)))
 
 			CreateElements(index, item, root, def_keywords)
 			DataManager.FileItemList[index] = item
@@ -184,7 +184,7 @@ def CreateHeader(keywords):
 	HeaderButtons = []
 	#Header.columnconfigure((tuple(range(10))), weight=1)
 	dargs = {"font":(None, 11), "bg":"gray30", "fg":"white", "bd":1, "relief":tk.RIDGE}
-	args = {"row":0, "sticky":"news", "ipadx":4}
+	args = {"row":0, "sticky":"news", "ipadx":2}
 
 	tk.Label(Header, text= "Vista previa", width=16, **dargs).grid(column=0, **args)
 	tk.Label(Header, text= "Nombre", width = 10, **dargs).grid(column=1, **args)
@@ -193,7 +193,7 @@ def CreateHeader(keywords):
 
 	index = 0
 	for key in keywords:
-		button = tk.Button(Header, text=key+" ▼", width=10 if index != 0 else 20, cursor="hand2", highlightcolor="gray50", **dargs)
+		button = tk.Button(Header, text=key+" ▼", width=12 if index != 0 else 20, cursor="hand2", highlightcolor="gray50", **dargs)
 		button.grid(column= 3 + index, **args)
 		index += 1
 		HeaderButtons.append((button, key))
