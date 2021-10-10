@@ -133,7 +133,7 @@ def Awake(root, paths = []):
 					break	
 			ScrollView.config(scrollregion=(0,0, root.winfo_width(), 150 * len(DataManager.FileItemList)))
 
-			CreateElements(index, item, root, def_keywords)
+			CreateElements(index, item, def_keywords)
 			DataManager.FileItemList[index] = item
 			index += 1
 		LoadWindow[0].destroy()
