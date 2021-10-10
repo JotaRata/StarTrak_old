@@ -140,11 +140,11 @@ class FileListElement(tk.Frame):
 	def __init__(self, master, item : FileItem, *args, **kwargs):
 		tk.Frame.__init__(self, master , *args, **kwargs)
 		
-		self.styles = {"bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold")}
+		self.styles = {"bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold"), "wraplength":140}
 		self.file = item
 		self.rowconfigure((2,3, 4), weight=1)
 		self.columnconfigure(tuple(range(10)), weight=1)
-		self.config(bg="gray25")
+		self.config(bg="gray25", height=150)
 		self.labels = []
 
 		thumb = self.GetThumbnail()
@@ -164,9 +164,9 @@ class FileListElement(tk.Frame):
 				label.destroy()
 				self.labels.remove(label)
 				
-		name_label = tk.Label(self,**self.styles)
-		size_label = tk.Label(self,**self.styles)
-		dim_label = tk.Label(self,**self.styles)
+		name_label = tk.Label(self,width=20,**self.styles)
+		size_label = tk.Label(self,width=12, **self.styles)
+		dim_label = tk.Label(self,width=12, **self.styles)
 
 		name_label.config(text = basename(self.file.path), fg="white")
 		size_label.config(text = "%.2f Mb" % (getsize(self.file.path) / (1024 * 1024)))
@@ -193,7 +193,7 @@ class FileListElement(tk.Frame):
 
 		index = 0
 		for label in self.labels:
-			label.grid(row = 2, column = 4 + index, padx = 12, sticky="ew")
+			label.grid(row = 2, column = 4 + index, padx = 8, sticky="ew")
 			index += 1
 		
 	def GetThumbnail(self):

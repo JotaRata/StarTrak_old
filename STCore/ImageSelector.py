@@ -187,9 +187,9 @@ def CreateHeader(keywords):
 	args = {"row":0, "sticky":"news", "ipadx":2}
 
 	tk.Label(Header, text= "Vista previa", width=16, **dargs).grid(column=0, **args)
-	tk.Label(Header, text= "Nombre", width = 10, **dargs).grid(column=1, **args)
-	tk.Label(Header, text= "Dimensiones", width=10, **dargs).grid(column=2, **args)
-	tk.Label(Header, text= "Tamaño", width=10, **dargs).grid(column= 4 + len(keywords), **args)
+	tk.Label(Header, text= "Nombre", width = 20, **dargs).grid(column=1, **args)
+	tk.Label(Header, text= "Dimensiones", width=12, **dargs).grid(column=2, **args)
+	tk.Label(Header, text= "Tamaño", width=12, **dargs).grid(column= 4 + len(keywords), **args)
 
 	index = 0
 	for key in keywords:
