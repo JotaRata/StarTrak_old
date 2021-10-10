@@ -1,12 +1,15 @@
 # coding=utf-8
 
 import tkinter as tk
+from typing import Collection
 from PIL import Image, ImageTk
 from astropy.io import fits
 #import pyfits as fits
 from os.path import basename, getmtime, isfile
 from time import sleep, strftime, localtime, strptime,gmtime
-from tkinter import filedialog, messagebox, ttk
+from tkinter import Grid, Widget, filedialog, messagebox, ttk
+from STCore.Component import FileListElement
+from STCore.item.File import _FILE_VERSION
 from item.File import FileItem
 
 from STCore import ImageView, DataManager, Tracker
@@ -15,11 +18,16 @@ from functools import partial
 import STCore.utils.Icons as icons
 
 #region Variables
-SelectorFrame = None
-ImagesFrame = None
+App : tk.Frame = None
+
+Sidebar :tk.Frame = None
+ListFrame : tk.Frame = None
+Header : tk.Frame = None
 ScrollView = None
 loadIndex = 0
 FilteredList = []
+ListElements = []
+def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
 #endregion
 
 def LoadFiles(paths, root):
@@ -31,13 +39,13 @@ def LoadFiles(paths, root):
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
 	sortedP = sorted(paths, key=lambda f: Sort(f))
 	n = 0
-	print ("-"*60)
+	print ("_"*60)
 	[SetFileItems(x, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root) for x in sortedP]
 	#map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
 	loadIndex = 0
 	
 	LoadWindow[0].destroy()
-	ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(DataManager.FileItemList)*240/4))
+	ScrollView.config(scrollregion=(0,0, root.winfo_width(), 150 * len(DataManager.FileItemList)))
 
 def Sort(path):
 	if any(char.isdigit() for char in path):
@@ -51,20 +59,23 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	print (path)
 	item = FileItem()
 	item.path = str(path)
-	item.data, hdr = fits.getdata(item.path, header = True)
+	item.data, item.header = fits.getdata(item.path, header = True)
+
 	#item.date = fits.header['NOTE'].split()[3]
 	# Request DATE-OBS keyword to extract date information (previously used NOTE keyword which was not always available)
 	try:
-		item.date = strptime(hdr["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
+		item.date = strptime(item.header["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
 	except:
 		print ("File has no DATE-OBS keyword in Header   -   using system time instead..")
 		item.date = gmtime(getmtime(item.path))
 		pass
 	#print strftime('%H/%M/%S', localtime(item.date))
 	#item.timee = header['NOTE'].split()[3]
+
 	item.active = 1
 	DataManager.FileItemList.append(item)
-	CreateFileGrid(loadIndex + ListSize, item, root)
+	CreateElements(loadIndex + ListSize, item, def_keywords)
+
 	progress.set(100*float(loadIndex)/PathSize)
 	loadWindow[1].config(text="Cargando archivo "+str(loadIndex)+" de "+str(PathSize))
 	loadWindow[0].update()
@@ -74,74 +85,118 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	#lock.relase()
 
 def Awake(root, paths = []):
-	global SelectorFrame, ImagesFrame, ScrollView
+	global App, ListFrame, ScrollView, def_keywords
 	DataManager.CurrentWindow = 1
-	SelectorFrame = ttk.Frame(root)
-	SelectorFrame.pack(fill = tk.BOTH, expand = 1)
-	ttk.Label(SelectorFrame, text = "Seleccionar Imagenes").pack(fill = tk.X)
-	
-	# Create Canvas
-	ScrollView = tk.Canvas(SelectorFrame, scrollregion=(0,0, root.winfo_width()-80, len(paths)*220/4), width = root.winfo_width()-180, bg= "gray15", bd=0, relief="flat")
-	ScrollBar = ttk.Scrollbar(SelectorFrame, command=ScrollView.yview)
-	ScrollView.config(yscrollcommand=ScrollBar.set)  
-	ScrollView.pack(expand = 0, fill = tk.BOTH, anchor = tk.NW, side = tk.LEFT)
-	ScrollBar.pack(side = tk.LEFT,fill=tk.Y) 
-	ImagesFrame = ttk.Frame(height=root.winfo_height())
-	ScrollView.create_window(0,0, anchor = tk.NW, window = ImagesFrame, width = root.winfo_width() - 180)
+	App = ttk.Frame(root)
+	App.pack(fill = tk.BOTH, expand = 1)
 
-	buttonFrame = ttk.Frame(SelectorFrame, width = 80)
-	buttonFrame.pack(side = tk.RIGHT, anchor = tk.NE, fill = tk.BOTH, expand = 1)
-	for c in range(1):
-		tk.Grid.columnconfigure(buttonFrame, c, weight=1)
-	style = ttk.Style()
-	style.configure("Left.TButton", anchor = tk.E)
-	CleanButton = ttk.Button(buttonFrame, text="Limpiar todo     ", command = lambda: ClearList(root), state = tk.DISABLED,  image = icons.Icons["delete"], compound = "right",style = "Left.TButton")
-	CleanButton.image = icons.Icons["delete"]
-	CleanButton.grid(row=2, column=0, sticky = tk.EW, pady=5)
-	AddButton = ttk.Button(buttonFrame, text=  "Agregar archivo  ", command = lambda: AddFiles(root), state = tk.DISABLED, image = icons.Icons["multi"], compound = "right",style = "Left.TButton")
-	AddButton.grid(row=1, column=0, sticky = tk.EW, pady=5)
-	ApplyButton = ttk.Button(buttonFrame, text="Continuar        ", command = lambda: Apply(root), state = tk.DISABLED, image = icons.Icons["next"], compound = "right",style = "Left.TButton")
-	ApplyButton.grid(row=0, column=0, sticky = tk.EW, pady=5)
+	App.columnconfigure((0, 1), weight=1)
+	App.columnconfigure(( 4), weight=1)
+	App.rowconfigure((1, 2), weight=1)
+	
+	#ttk.Label(App, text = "Seleccionar Imagenes").grid(row=0, column=0, columnspan=3)
+	
+	CreateCanvas()
+	CreateHeader(def_keywords)
+	CreateSidebar(root)
+	BuildLayout()
 
 	# Saved File
 	if len(DataManager.FileItemList) != 0 and len(paths) == 0:
 		ind = 0
 		Progress = tk.DoubleVar()
 		LoadWindow = CreateLoadBar(root, Progress, title = "Cargando "+basename(DataManager.CurrentFilePath))
-		while ind < len(DataManager.FileItemList):
-			if DataManager.FileItemList[ind].data is None:
-				if DataManager.FileItemList[ind].Exists():
-					DataManager.FileItemList[ind].data, hdr = fits.getdata(DataManager.FileItemList[ind].path, header = True)
+		
+		index = 0
+		for item in DataManager.FileItemList:
+			# File item is too old, has to be re-made
+			if not hasattr(item, "version"):
+				item.data = None
+				continue
+			elif item.version != _FILE_VERSION:
+				 _, item.header = fits.getdata(item.path, header = True)
+				 
+		for item in DataManager.FileItemList:
+			if item.data is None:
+				if item.Exists():
+					item.data, item.header = fits.getdata(item.path, header = True)
 					try:
-						DataManager.FileItemList[ind].date = strptime(hdr["NOTE"].split()[1]+"-"+hdr["NOTE"].split()[3], "time:%m/%d/%Y-%H:%M:%S")
+						item.date = strptime(item.header["DATE-OBS"].split()[1]+"-"+item.header["DATE-OBS"].split()[3], "%Y-%m-%dT%H:%M:%S.%f")
 					except:
 						print ("File has no Header!   -   using system time instead..")
-						DataManager.FileItemList[ind].date = gmtime(getmtime(DataManager.FileItemList[ind].path))
+						item.date = gmtime(getmtime(item.path))
 						pass
 					Progress.set(100*float(ind)/len(DataManager.FileItemList))
 					LoadWindow[0].update()
 				else:
-					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ DataManager.FileItemList[ind].path)
+					messagebox.showerror("Error de carga.", "Uno o más archivos no existen\n"+ item.path)
 					break	
-			ScrollView.config(scrollregion=(0,0, root.winfo_width()-180, len(DataManager.FileItemList)*240/4))
-			CreateFileGrid(ind, DataManager.FileItemList[ind], root)
-			ind += 1
+			ScrollView.config(scrollregion=(0,0, root.winfo_width(), 150 * len(DataManager.FileItemList)))
+
+			CreateElements(index, item, root, def_keywords)
+			DataManager.FileItemList[index] = item
+			index += 1
 		LoadWindow[0].destroy()
 	else:
 		LoadFiles(paths, root)
+
+	UpdateHeaders(DataManager.FileItemList[0])
+def BuildLayout():
+	global App, ScrollView, Sidebar, Header
+
+	Header.grid(row= 0, column= 0, columnspan=3, sticky="ew")
+	ScrollView.grid(row=1, column=0, rowspan=3, columnspan=3, sticky="news")
+	Sidebar.grid(row=0, column=4, rowspan=3, sticky="news")
+
+def CreateCanvas():
+	global App, ScrollView, ListFrame
+
+	ScrollView = tk.Canvas(App, bg= "gray15", bd=0, relief="flat", highlightthickness=0)
+	ScrollBar = ttk.Scrollbar(App, command=ScrollView.yview)
+	ScrollView.config(yscrollcommand=ScrollBar.set)  
+
+	ListFrame = ttk.Frame(ScrollView)
+	ListFrame.columnconfigure(0, weight=1)
+	ScrollView.create_window(0, 0, anchor = tk.NW, window = ListFrame)
+	
+	ScrollBar.grid(row=1, column=3, rowspan=3, sticky="ns")
+
+def CreateSidebar(root):
+	global App, Sidebar
+	Sidebar = ttk.Frame(App, width = 200)
+	Sidebar.columnconfigure(0, weight=1)
+
+	CleanButton = ttk.Button(Sidebar, text="Limpiar todo", command = lambda: ClearList(root), state = tk.DISABLED,  image = icons.Icons["delete"], compound = "right")	
+	AddButton = ttk.Button(Sidebar, text=  "Agregar archivo", command = lambda: AddFiles(root), state = tk.DISABLED, image = icons.Icons["multi"], compound = "right")
+	ApplyButton = ttk.Button(Sidebar, text="Continuar", command = lambda: Apply(root), state = tk.DISABLED, image = icons.Icons["next"], compound = "right")
+	
+	CleanButton.grid(row=2, column=0, sticky = "ew", pady=5)
+	AddButton.grid(row=1, column=0, sticky = "ew", pady=5)
+	ApplyButton.grid(row=0, column=0, sticky = "ew", pady=5)
+
 	CleanButton.config(state = tk.NORMAL)
 	ApplyButton.config(state = tk.NORMAL)
 	AddButton.config(state = tk.NORMAL)
 
-def GridPlace(root, index, size):
-	maxrows = root.winfo_height()/size
-	maxcols = (root.winfo_width()-180) / size - 1
-	col = index
-	row = 0
-	while col >= maxcols:
-		col -= maxcols
-		row += 1
-	return int(row), int(col)
+def CreateHeader(keywords):
+	global App, Header, HeaderButtons
+	Header = tk.Frame(App,bg = "gray40", height=24)
+	HeaderButtons = []
+	#Header.columnconfigure((tuple(range(10))), weight=1)
+	dargs = {"font":(None, 11), "bg":"gray30", "fg":"white", "bd":1, "relief":tk.RIDGE}
+	args = {"row":0, "sticky":"news", "ipadx":2}
+
+	tk.Label(Header, text= "Vista previa", width=16, **dargs).grid(column=0, **args)
+	tk.Label(Header, text= "Nombre", width = 20, **dargs).grid(column=1, **args)
+	tk.Label(Header, text= "Dimensiones", width=12, **dargs).grid(column=2, **args)
+	tk.Label(Header, text= "Tamaño", width=12, **dargs).grid(column= 4 + len(keywords), **args)
+
+	index = 0
+	for key in keywords:
+		button = tk.Button(Header, text=key+" ▼", width=12 if index != 0 else 20, cursor="hand2", highlightcolor="gray50", **dargs)
+		button.grid(column= 3 + index, **args)
+		index += 1
+		HeaderButtons.append((button, key))
 
 def CreateLoadBar(root, progress, title = "Cargando.."):
 	popup = tk.Toplevel()
@@ -157,26 +212,46 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	bar.pack(fill = tk.X)
 	return popup, label, bar
 
-def CreateFileGrid(index, item, root):
+def CreateElements(index, item, keywords):
+	global ListElements
 	
-	GridFrame = tk.LabelFrame(ImagesFrame, width = 200, height = 200, bg="gray30", relief="flat")
-	Row, Col = GridPlace(root, index, 250)
-	GridFrame.grid(row = Row, column = Col, sticky = tk.NSEW, padx = 20, pady = 20)
-	dat = item.data.astype(float)
-	minv = numpy.percentile(dat, 1)
-	maxv = numpy.percentile(dat, 99.8)
-	thumb = numpy.clip(255*(dat - minv)/(maxv - minv), 0, 255).astype(numpy.uint8)
-	Pic = Image.fromarray(thumb)
-	Pic.thumbnail((200, 200))
-	Img = ImageTk.PhotoImage(Pic)
-	ttk.Label(GridFrame, text=basename(item.path)).grid(row=0,column=0, sticky=tk.W)
-	isactive =tk.IntVar(ImagesFrame, value=item.active)
-	Ckeckbox = ttk.Checkbutton(GridFrame, variable = isactive)
-	Ckeckbox.grid(row=0,column=1, sticky=tk.E)
-	isactive.trace("w", lambda a,b,c: SetActive(item, isactive, c))
-	ImageLabel = ttk.Label(GridFrame, image =Img, width = 200, state="focus")
-	ImageLabel.image = Img
-	ImageLabel.grid(row=1,column=0, columnspan=2)
+	element = FileListElement(ListFrame, item)
+	element.SetLabels(keywords)
+	element.grid(row=index, sticky="ew", pady=4)
+	ListElements.append(element)
+
+def UpdateElements(keywords):
+	global ListElements
+	
+	for element in ListElements:
+		element.SetLabels(keywords)
+
+def UpdateHeaders(sample_item : FileItem):
+	global HeaderButtons
+	
+	i = 0
+	keys = def_keywords
+	def SetKey(bindex, key):
+		nonlocal keys
+		button = HeaderButtons[bindex][0]
+		button.config(text= key + " ▼", state="normal")
+		HeaderButtons[bindex] = button, key
+		keys[bindex] = key
+
+		UpdateElements(keys)
+
+	def OpenEnum(index, event):
+		nonlocal sample_item
+		menu = tk.Menu(Header)
+		for key in sample_item.header:
+			menu.add_command(label=key, command=lambda b=index, k=key : SetKey(b, k))
+		menu.post(event.x_root, event.y_root)
+
+	for button, key in HeaderButtons:
+		
+		button.bind("<Button-1>", lambda event, index = i: OpenEnum(index, event))
+		
+		i += 1
 
 def SetActive(item, intvar, operation):
 	item.active = intvar.get()
@@ -203,16 +278,17 @@ def Apply(root):
 	ImageView.Awake(root)
 
 def ClearList(root):
-	
+	global ListElements
 	for i in DataManager.FileItemList:
 		del i
 	DataManager.FileItemList = []
 	try:
 		ScrollView.config(scrollregion=(0,0, root.winfo_width(), 1))
-		for child in ImagesFrame.winfo_children():
+		for child in ListFrame.winfo_children():
 			child.destroy()
 	except:
 		pass
+	ListElements = []
 
 def AddFiles(root):
 	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
@@ -222,4 +298,4 @@ def AddFiles(root):
 
 def Destroy():
 	SetFilteredList()
-	SelectorFrame.destroy()
+	App.destroy()

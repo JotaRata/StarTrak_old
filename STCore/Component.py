@@ -1,9 +1,14 @@
 from os import stat
+from PIL import Image, ImageTk
+
+import numpy
 from STCore.item.Track import TrackItem
 from STCore.item.Star import StarItem
+from STCore.item.File import FileItem
 from STCore.utils.Icons import GetIcon
 import tkinter as tk
 from tkinter import ttk
+from os.path import basename, getsize
 
 # This file contains different UI elements which are repeated along the program
 
@@ -130,3 +135,71 @@ class TrackElement(tk.Frame):
 		self.lastPos.config(text = str(track.lastPos))
 		self.lost.config(text = str(len(track.lostPoints)))
 		self.trust.config(text = str(variation))
+
+class FileListElement(tk.Frame):
+	def __init__(self, master, item : FileItem, *args, **kwargs):
+		tk.Frame.__init__(self, master , *args, **kwargs)
+		
+		self.styles = {"bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold"), "wraplength":140}
+		self.file = item
+		self.rowconfigure((2,3, 4), weight=1)
+		self.columnconfigure(tuple(range(10)), weight=1)
+		self.config(bg="gray25", height=150)
+		self.labels = []
+
+		thumb = self.GetThumbnail()
+		self.image = ImageTk.PhotoImage(thumb)
+		self.active =tk.IntVar(value=self.file.active)
+
+		thumb_label = tk.Label(self, image =self.image, width = 150)
+		thumb_label.image = self.image
+
+		thumb_label.grid(row=0, column=0, rowspan=3, columnspan=3)
+
+	def SetLabels(self, keywords):
+		labelcount = len(keywords)
+
+		if len(self.labels) != 4:
+			for label in reversed(self.labels):
+				label.destroy()
+				self.labels.remove(label)
+				
+		name_label = tk.Label(self,width=20,**self.styles)
+		size_label = tk.Label(self,width=12, **self.styles)
+		dim_label = tk.Label(self,width=12, **self.styles)
+
+		name_label.config(text = basename(self.file.path), fg="white")
+		size_label.config(text = "%.2f Mb" % (getsize(self.file.path) / (1024 * 1024)))
+		dim_label.config(text = str(self.file.data.shape))
+		
+		self.labels.append(name_label)
+		self.labels.append(dim_label)
+
+		for i in range(labelcount):
+			label = tk.Label(self, width=12 if i != 0 else 20,**self.styles)
+			try:
+				label.config(text = self.file.header[keywords[i]])
+			except:
+				label.config(text = "NA")
+				print ("La clave \"{0}\" no existe en el header".format(keywords[i]))
+
+			self.labels.append(label)
+		
+		# Size label should be last
+		self.labels.append(size_label)
+
+		spacer = tk.Label(self, **self.styles, width=100)
+		self.labels.append(spacer)
+
+		index = 0
+		for label in self.labels:
+			label.grid(row = 2, column = 4 + index, padx = 8, sticky="ew")
+			index += 1
+		
+	def GetThumbnail(self):
+		minv = numpy.percentile(self.file.data, 1)
+		maxv = numpy.percentile(self.file.data, 99.8)
+		thumb = Image.fromarray(numpy.clip(255*(self.file.data - minv)/(maxv - minv), 0, 255).astype(numpy.uint8))
+		thumb.thumbnail((150, 150))
+			
+		return thumb
