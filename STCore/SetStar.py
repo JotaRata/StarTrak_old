@@ -270,7 +270,7 @@ def BackgroundMedian(crop, width):
 
 	# return new computed mean
 	# mean, status
-	return numpy.nanmean([sample1[0], sample2[0], sample3[0], sample4[0]]), [sample1[2], sample2[2], sample3[2], sample4[2]]
+	return numpy.nanmean([sample1[0], sample2[0], sample3[0], sample4[0]]), [sample1[2], sample2[2], sample3[2], sample4[2]], std
 
 def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 	global Image, canvas, BrightLabel, ConfIcon, snr, bkg_median, sample_artists, square
