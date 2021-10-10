@@ -26,6 +26,7 @@ Header : tk.Frame = None
 ScrollView = None
 loadIndex = 0
 FilteredList = []
+ListElements = []
 #endregion
 
 def LoadFiles(paths, root):
@@ -72,7 +73,7 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 
 	item.active = 1
 	DataManager.FileItemList.append(item)
-	CreateFileGrid(loadIndex + ListSize, item, def_keywords)
+	CreateElements(loadIndex + ListSize, item, def_keywords)
 
 	progress.set(100*float(loadIndex)/PathSize)
 	loadWindow[1].config(text="Cargando archivo "+str(loadIndex)+" de "+str(PathSize))
@@ -132,13 +133,14 @@ def Awake(root, paths = []):
 					break	
 			ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(DataManager.FileItemList)*240/4))
 
-			CreateFileGrid(index, item, root, def_keywords)
+			CreateElements(index, item, root, def_keywords)
 			DataManager.FileItemList[index] = item
 			index += 1
 		LoadWindow[0].destroy()
 	else:
 		LoadFiles(paths, root)
 
+	UpdateHeaders(DataManager.FileItemList[0])
 def BuildLayout():
 	global App, ScrollView, Sidebar, Header
 
@@ -191,7 +193,7 @@ def CreateHeader(keywords):
 
 	index = 0
 	for key in keywords:
-		button = tk.Button(Header, text=key+" ▼", width=10, cursor="hand2", highlightcolor="gray50", **dargs)
+		button = tk.Button(Header, text=key+" ▼", width=10 if index != 0 else 20, cursor="hand2", highlightcolor="gray50", **dargs)
 		button.grid(column= 3 + index, **args)
 		index += 1
 		HeaderButtons.append((button, key))
@@ -210,10 +212,46 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	bar.pack(fill = tk.X)
 	return popup, label, bar
 
-def CreateFileGrid(index, item, keywords):
+def CreateElements(index, item, keywords):
+	global ListElements
+	
 	element = FileListElement(ListFrame, item)
 	element.SetLabels(keywords)
-	element.grid(row=index, sticky="ew")
+	element.grid(row=index, sticky="ew", pady=4)
+	ListElements.append(element)
+
+def UpdateElements(keywords):
+	global ListElements
+	
+	for element in ListElements:
+		element.SetLabels(keywords)
+
+def UpdateHeaders(sample_item : FileItem):
+	global HeaderButtons
+	
+	i = 0
+	keys = def_keywords
+	def SetKey(bindex, key):
+		nonlocal keys
+		button = HeaderButtons[bindex][0]
+		button.config(text= key + " ▼", state="normal")
+		HeaderButtons[bindex] = button, key
+		keys[bindex] = key
+
+		UpdateElements(keys)
+
+	def OpenEnum(index, event):
+		nonlocal sample_item
+		menu = tk.Menu(Header)
+		for key in sample_item.header:
+			menu.add_command(label=key, command=lambda b=index, k=key : SetKey(b, k))
+		menu.post(event.x_root, event.y_root)
+
+	for button, key in HeaderButtons:
+		
+		button.bind("<Button-1>", lambda event, index = i: OpenEnum(index, event))
+		
+		i += 1
 
 def SetActive(item, intvar, operation):
 	item.active = intvar.get()
@@ -240,7 +278,7 @@ def Apply(root):
 	ImageView.Awake(root)
 
 def ClearList(root):
-	
+	global ListElements
 	for i in DataManager.FileItemList:
 		del i
 	DataManager.FileItemList = []
@@ -250,6 +288,7 @@ def ClearList(root):
 			child.destroy()
 	except:
 		pass
+	ListElements = []
 
 def AddFiles(root):
 	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])

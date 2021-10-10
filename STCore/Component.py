@@ -159,7 +159,7 @@ class FileListElement(tk.Frame):
 	def SetLabels(self, keywords):
 		labelcount = len(keywords)
 
-		if len(self.labels) == 0:
+		if len(self.labels) != 4:
 			for label in reversed(self.labels):
 				label.destroy()
 				self.labels.remove(label)
@@ -176,7 +176,7 @@ class FileListElement(tk.Frame):
 		self.labels.append(dim_label)
 
 		for i in range(labelcount):
-			label = tk.Label(self, width=10,**self.styles)
+			label = tk.Label(self, width=10 if i != 0 else 20,**self.styles)
 			try:
 				label.config(text = self.file.header[keywords[i]])
 			except:
