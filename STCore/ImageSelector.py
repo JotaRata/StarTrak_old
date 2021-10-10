@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import tkinter as tk
+from typing import Collection
 from PIL import Image, ImageTk
 from astropy.io import fits
 #import pyfits as fits
@@ -17,8 +18,11 @@ from functools import partial
 import STCore.utils.Icons as icons
 
 #region Variables
-App = None
-ListFrame = None
+App : tk.Frame = None
+
+Sidebar :tk.Frame = None
+ListFrame : tk.Frame = None
+Header : tk.Frame = None
 ScrollView = None
 loadIndex = 0
 FilteredList = []
@@ -68,7 +72,7 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 
 	item.active = 1
 	DataManager.FileItemList.append(item)
-	CreateFileGrid(loadIndex + ListSize, item, root)
+	CreateFileGrid(loadIndex + ListSize, item, def_keywords)
 
 	progress.set(100*float(loadIndex)/PathSize)
 	loadWindow[1].config(text="Cargando archivo "+str(loadIndex)+" de "+str(PathSize))
@@ -79,19 +83,20 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	#lock.relase()
 
 def Awake(root, paths = []):
-	global App, ListFrame, ScrollView
+	global App, ListFrame, ScrollView, def_keywords
 	DataManager.CurrentWindow = 1
 	App = ttk.Frame(root)
 	App.pack(fill = tk.BOTH, expand = 1)
 
-	#App.columnconfigure((0, 1), weight=2)
-	App.columnconfigure((0, 1, 2, 4), weight=1)
+	App.columnconfigure((0, 1), weight=2)
+	App.columnconfigure(( 2, 4), weight=1)
 	App.rowconfigure((1, 2), weight=1)
 	
-	ttk.Label(App, text = "Seleccionar Imagenes").grid(row=0, column=0, columnspan=3)
+	#ttk.Label(App, text = "Seleccionar Imagenes").grid(row=0, column=0, columnspan=3)
 	
-	CreateCanvas(root, paths)
-
+	def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
+	CreateCanvas()
+	CreateHeader(def_keywords)
 	CreateSidebar(root)
 	BuildLayout()
 
@@ -127,7 +132,7 @@ def Awake(root, paths = []):
 					break	
 			ScrollView.config(scrollregion=(0,0, root.winfo_width(), len(DataManager.FileItemList)*240/4))
 
-			CreateFileGrid(index, item, root)
+			CreateFileGrid(index, item, root, def_keywords)
 			DataManager.FileItemList[index] = item
 			index += 1
 		LoadWindow[0].destroy()
@@ -135,12 +140,13 @@ def Awake(root, paths = []):
 		LoadFiles(paths, root)
 
 def BuildLayout():
-	global App, ScrollView, Sidebar
+	global App, ScrollView, Sidebar, Header
 
+	Header.grid(row= 0, column= 0, columnspan=3, sticky="ew")
 	ScrollView.grid(row=1, column=0, rowspan=3, columnspan=3, sticky="news")
 	Sidebar.grid(row=0, column=4, rowspan=3, sticky="news")
 
-def CreateCanvas(root, paths):
+def CreateCanvas():
 	global App, ScrollView, ListFrame
 
 	ScrollView = tk.Canvas(App, bg= "gray15", bd=0, relief="flat", highlightthickness=0)
@@ -170,16 +176,25 @@ def CreateSidebar(root):
 	ApplyButton.config(state = tk.NORMAL)
 	AddButton.config(state = tk.NORMAL)
 
+def CreateHeader(keywords):
+	global App, Header, HeaderButtons
+	Header = tk.Frame(App,bg = "gray40", height=24)
+	HeaderButtons = []
+	#Header.columnconfigure((tuple(range(10))), weight=1)
+	dargs = {"font":(None, 11), "bg":"gray30", "fg":"white", "bd":1, "relief":tk.RIDGE}
+	args = {"row":0, "sticky":"news", "ipadx":4}
 
-def GridPlace(root, index, size):
-	maxrows = root.winfo_height()/size
-	maxcols = (root.winfo_width()-180) / size - 1
-	col = index
-	row = 0
-	while col >= maxcols:
-		col -= maxcols
-		row += 1
-	return int(row), int(col)
+	tk.Label(Header, text= "Vista previa", width=16, **dargs).grid(column=0, **args)
+	tk.Label(Header, text= "Nombre", width = 10, **dargs).grid(column=1, **args)
+	tk.Label(Header, text= "Dimensiones", width=10, **dargs).grid(column=2, **args)
+	tk.Label(Header, text= "Tamaño", width=10, **dargs).grid(column= 4 + len(keywords), **args)
+
+	index = 0
+	for key in keywords:
+		button = tk.Button(Header, text=key+" ▼", width=10, cursor="hand2", highlightcolor="gray50", **dargs)
+		button.grid(column= 3 + index, **args)
+		index += 1
+		HeaderButtons.append((button, key))
 
 def CreateLoadBar(root, progress, title = "Cargando.."):
 	popup = tk.Toplevel()
@@ -195,9 +210,9 @@ def CreateLoadBar(root, progress, title = "Cargando.."):
 	bar.pack(fill = tk.X)
 	return popup, label, bar
 
-def CreateFileGrid(index, item, root):
+def CreateFileGrid(index, item, keywords):
 	element = FileListElement(ListFrame, item)
-	element.SetLabels(["DATE-OBS", "EXPTIME", "TELESCOP", "INSTRUME"])
+	element.SetLabels(keywords)
 	element.grid(row=index, sticky="ew")
 
 def SetActive(item, intvar, operation):

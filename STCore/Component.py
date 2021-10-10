@@ -176,7 +176,7 @@ class FileListElement(tk.Frame):
 		self.labels.append(dim_label)
 
 		for i in range(labelcount):
-			label = tk.Label(self,**self.styles)
+			label = tk.Label(self, width=10,**self.styles)
 			try:
 				label.config(text = self.file.header[keywords[i]])
 			except:
@@ -187,6 +187,9 @@ class FileListElement(tk.Frame):
 		
 		# Size label should be last
 		self.labels.append(size_label)
+
+		spacer = tk.Label(self, **self.styles, width=100)
+		self.labels.append(spacer)
 
 		index = 0
 		for label in self.labels:
