@@ -140,7 +140,7 @@ class FileListElement(tk.Frame):
 	def __init__(self, master, item : FileItem, *args, **kwargs):
 		tk.Frame.__init__(self, master , *args, **kwargs)
 		
-		self.styles = {"bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold"), "wraplength":140}
+		self.styles = {"bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold"), "wraplength":100}
 		self.file = item
 		self.rowconfigure((2,3, 4), weight=1)
 		self.columnconfigure(tuple(range(10)), weight=1)
