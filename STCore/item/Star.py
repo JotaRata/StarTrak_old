@@ -19,6 +19,6 @@ class StarItem(object):
 	def PrintData(self, header=True, sep="\t\t", stdout= None):
 		if header:
 			name_lenght = max(len(self.name) - 6, 0)
-			print("Nombre" + " "*name_lenght, "Ubicacion", "Flujo","", "Fondo", "Area", "Señal/Fondo", "Tamaño de muestra", sep=sep, file=stdout)
-		print(self.name,self.location, int(self.flux),"", int(self.background), (2*self.radius)**2, "%.3f" % self.snr,"", self.bsample, sep=sep, file=stdout)
+			print("Nombre" + " "*name_lenght, "Ubicacion", "Flujo", "Fondo", "Area", "Señal/Fondo", "Tamaño de muestra", sep=sep, file=stdout)
+		print(self.name,self.location, int(self.flux), int(self.background), (2*self.radius)**2, "%.3f" % self.snr, self.bsample, sep=sep, file=stdout)
 		

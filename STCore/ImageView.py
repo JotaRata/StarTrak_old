@@ -235,8 +235,10 @@ def CreateSidebar(root):
 
 	def CommandExport():
 		with filedialog.asksaveasfile(mode="w", filetypes=[("Valores separados por comas", "*.csv"), ("Archivo de texto", "*.txt")]) as f:
+			n=0
 			for star in Stars:
-				star.PrintData(sep= ",", stdout=f)
+				star.PrintData(header= n==0, sep= ",", stdout=f)
+				n+=1
 
 
 
