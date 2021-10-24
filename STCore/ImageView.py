@@ -2,6 +2,7 @@
 
 from pickle import FALSE
 from sys import flags, version_info
+from tkinter import filedialog
 from STCore.Component import StarElement
 from logging import root
 from operator import contains
@@ -217,7 +218,7 @@ def CreateSidebar(root):
 	SidebarList.grid_columnconfigure(0, weight=1)
 
 	ScrollBar = ttk.Scrollbar(App, command=Sidebar.yview)
-	ScrollBar.grid(row=0, column=2, rowspan=2, sticky=tk.NS)
+	ScrollBar.grid(row=0, column=2, rowspan=3, sticky=tk.NS)
 	Sidebar.config(yscrollcommand=ScrollBar.set)  
 
 	cmdTrack = lambda : Apply(root)
@@ -226,19 +227,31 @@ def CreateSidebar(root):
 			return
 		loc = (int(Data.shape[0] * 0.5), int (Data.shape[1] * 0.5))
 		SetStar.Awake(Data, None, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
+	
 	def CommandBack():
 		import STCore.ImageSelector
 		Destroy()
 		STCore.ImageSelector.Awake(root, [])
 
+	def CommandExport():
+		with filedialog.asksaveasfile(mode="w", filetypes=[("Valores separados por comas", "*.csv"), ("Archivo de texto", "*.txt")]) as f:
+			for star in Stars:
+				star.PrintData(sep= ",", stdout=f)
+
+
+
 	sidebar_buttons = ttk.Frame(App)
 	
+	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, style="Highlight.TButton")
+
 	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = icons.GetIcon("prev"), command = CommandBack, compound="left")
-	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
-	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, image = icons.GetIcon("add"), compound="left")
-	AddButton.grid(row = 0, column = 1, sticky = tk.EW)
+	ExpButton = ttk.Button(sidebar_buttons, text= "Exportar datos", command=CommandExport)
 	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = icons.GetIcon("next"), compound = "right")
-	NextButton.grid(row = 0, column = 2, sticky = tk.EW)
+
+	AddButton.grid(row = 0, column = 0, columnspan=3, sticky = "ew")
+	PrevButton.grid(row = 1, column = 0, sticky = "ew")	
+	ExpButton.grid(row=1, column=1, sticky="ew")
+	NextButton.grid(row = 1, column = 2, sticky = "ew")
 
 
 def CreateLevels():
