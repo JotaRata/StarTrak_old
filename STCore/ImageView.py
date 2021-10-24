@@ -25,7 +25,7 @@ from matplotlib.colors import Normalize, PowerNorm, LogNorm
 from matplotlib.artist import setp, getp
 import tkinter as tk
 from tkinter import ttk
-from STCore.item.Star import StarItem, CURRENT_VER
+from STCore.item.Star import *
 from STCore import SetStar, Tracker
 import STCore.DataManager
 from time import time
@@ -237,7 +237,7 @@ def CreateSidebar(root):
 		with filedialog.asksaveasfile(mode="w", filetypes=[("Valores separados por comas", "*.csv"), ("Archivo de texto", "*.txt")]) as f:
 			n=0
 			for star in Stars:
-				star.PrintData(header= n==0, sep= ",", stdout=f)
+				star.PrintData((NAME, SUM, FBACK, AREA, SBR, VALUE, FLUX, BACK, BSIZE), header= n==0, sep= "{},", stdout=f)
 				n+=1
 
 

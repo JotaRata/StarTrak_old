@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from numpy.lib.function_base import append
-from STCore.item.Star import StarItem
+from STCore.item.Star import *
 import STCore.Tracker
 import STCore.utils.Icons as icons
 from matplotlib.patches import Rectangle
@@ -324,7 +324,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 		STCore.Tracker.DataChanged = True
 	
 	OnStarChange(st, starIndex)
-	st.PrintData(header= time() - closedTime > 60)
+	st.PrintData((NAME, LOC, SUM, FBACK, AREA, SBR, BSIZE), header= time() - closedTime > 60)
 	CloseWindow()
 
 	global xloc_var, yloc_var, lastRadius, lastBounds
