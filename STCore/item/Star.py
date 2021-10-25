@@ -8,17 +8,17 @@ LOC=	("Ubicacion", "(pix, pix)")
 SUM=	("Suma", "adu")
 
 RADIUS=	("Radio", "pix")
-AREA=	("Area", "pix^2")
+AREA=	("Area", "pix²")
 SBR=	("Señal/Fondo", "")
 BOUNDS=	("Limites", "pix")
 GUIDE=	("Guia", "")
 VALUE=	("Referencia", "adu")
-FLUX=	("Flujo", "adu/pix^2")
+FLUX=	("Flujo", "adu/pix²")
 
 FBACK=	("Fondo", "adu")
-MBACK=	("Media Fondo", "adu/pix^2")
+MBACK=	("Media Fondo", "adu/pix²")
 DBACK=	("Variacion Fondo", "adu")
-VBACK= 	("Valor Muestras", "adu")
+VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
 BSIZE=	("Ancho Muestra", "pix")
 
 class StarItem(object):
@@ -75,6 +75,6 @@ class StarItem(object):
 		elif attr ==DBACK[0]:
 			return "%.3f" % self.background[3]
 		elif attr ==VBACK[0]:
-			return self.background[0]
+			return tuple(self.background[0])
 		else:
 			raise ValueError("El parametro \"%s\" no existe" % attr)
