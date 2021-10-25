@@ -113,7 +113,7 @@ def Awake(root):
 	version_changed = False
 	index = 0
 	for star in Stars:
-		version_changed = CheckVersion(star, index)
+		version_changed = version_changed or CheckVersion(star, index)
 		index += 1
 
 	if version_changed:
@@ -237,7 +237,8 @@ def CreateSidebar(root):
 		with filedialog.asksaveasfile(mode="w", filetypes=[("Valores separados por comas", "*.csv"), ("Archivo de texto", "*.txt")]) as f:
 			n=0
 			for star in Stars:
-				star.PrintData((NAME, SUM, FBACK, AREA, SBR, VALUE, FLUX, BACK, BSIZE), header= n==0, sep= "{},", stdout=f)
+				# Reemplazar; con cualquier caracter separador                                                               v
+				star.PrintData((NAME, SUM, FBACK, AREA, SBR, VALUE, FLUX, MBACK, DBACK, VBACK, BSIZE), header= n==0, sep= "{};", stdout=f)
 				n+=1
 
 
@@ -350,7 +351,7 @@ def CheckVersion(star : StarItem, index):
 		
 		SetStar.Awake(Data, star, OnStarChange, skipUI = True, starIndex=index)
 		return True
-	changed = FALSE
+	changed = False
 
 	# File is from another version, needs to be re-registered
 	if star.version != CURRENT_VER:
