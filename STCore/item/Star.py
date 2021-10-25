@@ -6,17 +6,20 @@ CURRENT_VER = 1
 NAME=	("Nombre", "")
 LOC=	("Ubicacion", "(pix, pix)")
 SUM=	("Suma", "adu")
-BACK=	("Fondo Promedio", "adu/pix^2")
+
 RADIUS=	("Radio", "pix")
 AREA=	("Area", "pix^2")
 SBR=	("Señal/Fondo", "")
-BSIZE=	("Muestra", "pix")
 BOUNDS=	("Limites", "pix")
 GUIDE=	("Guia", "")
 VALUE=	("Referencia", "adu")
 FLUX=	("Flujo", "adu/pix^2")
-FBACK=	("Fondo", "adu")
 
+FBACK=	("Fondo", "adu")
+MBACK=	("Media Fondo", "adu/pix^2")
+DBACK=	("Variacion Fondo", "adu")
+VBACK= 	("Valor Muestras", "adu")
+BSIZE=	("Ancho Muestra", "pix")
 
 class StarItem(object):
 	def __init__(self):
@@ -29,11 +32,11 @@ class StarItem(object):
 		self.threshold = 100
 		self.radius = 0
 		self.snr = 0
-		self.background = 1
+		self.background : tuple = None		# [0]: values, [1]: status, [2]: mean, [3]: std
 		self.bsample = 3
 		self.version = 0
 
-	def PrintData(self, attributes : tuple, header=True, sep="{:<15} ", stdout= None):
+	def PrintData(self, attributes : tuple, header=True, sep="{:^15} ", stdout= None):
 		base : str= sep* len(attributes)
 		if header:
 			
@@ -49,8 +52,8 @@ class StarItem(object):
 			return self.location
 		elif attr ==SUM[0]:
 			return int(self.flux)
-		elif attr ==BACK[0]:
-			return int(self.background)
+		elif attr ==MBACK[0]:
+			return int(self.background[2])
 		elif attr ==RADIUS[0]:
 			return self.radius
 		elif attr ==AREA[0]:
@@ -68,6 +71,10 @@ class StarItem(object):
 		elif attr ==VALUE[0]:
 			return self.value
 		elif attr ==FBACK[0]:
-			return int(self.background * (2*self.radius)**2)
+			return int(self.background[2] * (2*self.radius)**2)
+		elif attr ==DBACK[0]:
+			return "%.3f" % self.background[3]
+		elif attr ==VBACK[0]:
+			return self.background[0]
 		else:
 			raise ValueError("El parametro \"%s\" no existe" % attr)
