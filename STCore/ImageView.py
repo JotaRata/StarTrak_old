@@ -244,10 +244,10 @@ def CreateSidebar(root):
 
 	sidebar_buttons = ttk.Frame(App)
 	
-	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, style="Highlight.TButton")
+	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, style="Highlight.TButton", image=icons.GetIcon("add"), compound="left")
 
 	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = icons.GetIcon("prev"), command = CommandBack, compound="left")
-	ExpButton = ttk.Button(sidebar_buttons, text= "Exportar datos", command=CommandExport)
+	ExpButton = ttk.Button(sidebar_buttons, text= "Exportar datos", image=icons.GetIcon("export"), compound="left", command=CommandExport)
 	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = icons.GetIcon("next"), compound = "right")
 
 	AddButton.grid(row = 0, column = 0, columnspan=3, sticky = "ew")
