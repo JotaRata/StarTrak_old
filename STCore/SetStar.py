@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from numpy.lib.function_base import append
-from STCore.item.Star import StarItem
+from STCore.item.Star import *
 import STCore.Tracker
 import STCore.utils.Icons as icons
 from matplotlib.patches import Rectangle
@@ -268,20 +268,23 @@ def BackgroundMedian(crop, width):
 		sample4[0] = numpy.nan
 		sample4[2] = 0
 
-	# return new computed mean
-	# mean, status
-	return numpy.nanmean([sample1[0], sample2[0], sample3[0], sample4[0]]), [sample1[2], sample2[2], sample3[2], sample4[2]], std
+	values = [sample1[0], sample2[0], sample3[0], sample4[0]]
+	status = [sample1[2], sample2[2], sample3[2], sample4[2]]
+	mean = numpy.nanmean(values)
+
+	# values, status, mean, std
+	return values, status, mean, std
 
 def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
-	global Image, canvas, BrightLabel, ConfIcon, snr, bkg_median, sample_artists, square
+	global Image, canvas, BrightLabel, ConfIcon, snr, bkg_sample, sample_artists, square
 	radius = numpy.clip(radius, 2, min(data.shape))
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
 	Image.set_array(crop)
 
+	# [0]: values, [1]: status, [2]: mean, [3]: std
 	bkg_sample = BackgroundMedian(crop, sample_width)
-	bkg_median = bkg_sample[0]
-	bkg_status = bkg_sample[1]
+
 
 	for index in range(4):
 		# Values are divided by radius to keep the units in axis' units
@@ -290,9 +293,9 @@ def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 		sample_artists[index].set_xy(bounds[0])
 		sample_artists[index].set_width(bounds[1])
 		sample_artists[index].set_height(bounds[2])
-		sample_artists[index].set_edgecolor("orange" if bkg_status[index] == 1 else "red")
+		sample_artists[index].set_edgecolor("orange" if bkg_sample[1][index] == 1 else "red")
 	area = (2 * radius) ** 2
-	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkg_median))
+	snr = (crop[radius:3*radius, radius:3*radius].sum() / (area * bkg_sample[2]))
 	#BrightLabel.config(text = "Señal / Fondo: %.2f " % snr)
 
 	_conf = numpy.clip(ceil(snr), 1, 3)
@@ -313,7 +316,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 
 	st.snr = value[1] 	#"Señal a ruido"
 	st.flux = value[2]
-	st.background = bkg_median #"Fondo"
+	st.background = bkg_sample #"Fondo"
 	st.threshold = 1	#(threshold * 0.01)
 	st.bsample = sample_width		#sigma (deprecated)
 	st.version = 1 		#Version control
@@ -324,7 +327,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 		STCore.Tracker.DataChanged = True
 	
 	OnStarChange(st, starIndex)
-	st.PrintData(header= time() - closedTime > 60)
+	st.PrintData((NAME, LOC, SUM, FBACK, AREA, SBR, BSIZE, DBACK), header= time() - closedTime > 60)
 	CloseWindow()
 
 	global xloc_var, yloc_var, lastRadius, lastBounds
