@@ -20,6 +20,7 @@ MBACK=	("Media Fondo", "adu/pix²")
 DBACK=	("Variacion Fondo", "adu")
 VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
 BSIZE=	("Ancho Muestra", "pix")
+ABACK=  ("Area De Cada Fondo", "pix²")
 
 class StarItem(object):
 	def __init__(self):
@@ -34,6 +35,7 @@ class StarItem(object):
 		self.snr = 0
 		self.background : tuple = None		# [0]: values, [1]: status, [2]: mean, [3]: std
 		self.bsample = 3
+		self.barea = 0
 		self.version = 2
 
 	def PrintData(self, attributes : tuple, header=True, sep="{:^15} ", stdout= None):
@@ -76,5 +78,7 @@ class StarItem(object):
 			return "%.3f" % self.background[3]
 		elif attr ==VBACK[0]:
 			return tuple(self.background[0])
+		elif attr ==ABACK[0]:
+			return int(self.barea)
 		else:
 			raise ValueError("El parametro \"%s\" no existe" % attr)

@@ -319,6 +319,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	st.background = bkg_sample #"Fondo"
 	st.threshold = 1	#(threshold * 0.01)
 	st.bsample = sample_width		#sigma (deprecated)
+	st.barea = sample_width * radius*2
 	st.version = 2 		#Version control
 	
 	if starIndex == -1:
