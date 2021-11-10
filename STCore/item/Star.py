@@ -1,6 +1,6 @@
 #comentario pal primer commit: las guatitas son más malas que la chucha
 
-CURRENT_VER = 1
+CURRENT_VER = 2
 
 # Parameters (Name, Units)
 NAME=	("Nombre", "")
@@ -34,7 +34,7 @@ class StarItem(object):
 		self.snr = 0
 		self.background : tuple = None		# [0]: values, [1]: status, [2]: mean, [3]: std
 		self.bsample = 3
-		self.version = 0
+		self.version = 2
 
 	def PrintData(self, attributes : tuple, header=True, sep="{:^15} ", stdout= None):
 		base : str= sep* len(attributes)
@@ -53,7 +53,7 @@ class StarItem(object):
 		elif attr ==SUM[0]:
 			return int(self.flux)
 		elif attr ==MBACK[0]:
-			return int(self.background[2])
+			return int(self.background[])
 		elif attr ==RADIUS[0]:
 			return self.radius
 		elif attr ==AREA[0]:
