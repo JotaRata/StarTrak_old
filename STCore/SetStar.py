@@ -234,7 +234,7 @@ def GetSampleBounds(index, width, radius):
 	elif index == 2:
 		return (4 * radius - width - 0.5, radius-0.5), width - 0.5 , 2 * radius
 	elif index == 3:
-		return (-0.5, -0.5), 4 * radius, width
+		return (radius-0.5, -0.5), 2 * radius, width
 	else:
 		raise IndexError("index must be less than 5")
 	
