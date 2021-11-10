@@ -240,16 +240,16 @@ def GetSampleBounds(index, width, radius):
 	
 def BackgroundMedian(crop, width):
 	# sample: [ value, std, status: ENABLED, DISABLED ]
-	slice1 = crop[:, :width] 
+	slice1 = crop[width:-width, :width] 
 	sample1 = [numpy.nanmedian(slice1), numpy.std(slice1), 1]
 
-	slice2 = crop[-width:, :]
+	slice2 = crop[-width:, width:-width]
 	sample2 = [numpy.nanmedian(slice2), numpy.std(slice2), 1]
 
-	slice3 = crop[:, -width:]
+	slice3 = crop[width:-width, -width:]
 	sample3 = [numpy.nanmedian(slice3), numpy.std(slice3), 1]
 
-	slice4 = crop[:width, :]
+	slice4 = crop[:width, width:-width]
 	sample4 = [numpy.nanmedian(slice4), numpy.std(slice4), 1]
 
 	#mean = numpy.mean([sample1[0], sample2[0], sample3[0], sample4[0]])
