@@ -1,3 +1,5 @@
+import numpy
+
 #comentario pal primer commit: las guatitas son más malas que la chucha
 
 CURRENT_VER = 2
@@ -20,6 +22,7 @@ MBACK=	("Media Fondo", "adu/pix²")
 DBACK=	("Variacion Fondo", "adu")
 VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
 SUMVBACK=  ("Suma Muestras Fondo (L, B, R, U)", "(adu, adu, adu, adu)")
+FLUXBACK=  ("Flujo De Muestras Fondo (L, B ,R, U)", "(adu/pix², adu/pix², adu/pix², adu/pix²")
 BSIZE=	("Ancho Muestra", "pix")
 ABACK=  ("Area De Cada Fondo", "pix²")
 
@@ -77,11 +80,13 @@ class StarItem(object):
 			return int(self.background[2] * (2*self.radius)**2)
 		elif attr ==DBACK[0]:
 			return "%.3f" % self.background[3]
-		#elif attr ==VBACK[0]:
-		#	return tuple(self.background[0])
+		elif attr ==VBACK[0]:
+			return tuple(self.background[0])
 		elif attr ==SUMVBACK[0]:
 			return tuple(self.background[4])
 		elif attr ==ABACK[0]:
 			return int(self.barea)
+		elif attr ==FLUXBACK[0]:
+			return tuple(numpy.array(self.background[4])//self.barea)
 		else:
 			raise ValueError("El parametro \"%s\" no existe" % attr)

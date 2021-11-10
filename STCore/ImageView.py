@@ -239,7 +239,7 @@ def CreateSidebar(root):
 			for star in Stars:
 				# Reemplazar; con cualquier caracter separador                                                               v
 				#star.PrintData((NAME, SUM, FBACK, AREA, SBR, VALUE, FLUX, MBACK, DBACK, VBACK, BSIZE), header= n==0, sep= "{};", stdout=f)
-				star.PrintData((NAME, VALUE, SUM, AREA, FLUX, SUMVBACK, ABACK), header= n==0, sep= "{};", stdout=f)
+				star.PrintData((NAME, VALUE, SUM, AREA, FLUX, SUMVBACK, ABACK, FLUXBACK), header= n==0, sep= "{};", stdout=f)
 				n+=1
 
 
