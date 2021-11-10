@@ -3,23 +3,23 @@
 CURRENT_VER = 2
 
 # Parameters (Name, Units)
-NAME=	("Nombre", "")
-LOC=	("Ubicacion", "(pix, pix)")
-SUM=	("Suma", "adu")
+NAME=	("Nombre Estrella", "")
+LOC=	("Ubicacion Estrella", "(pix, pix)")
+SUM=	("Suma Estrella", "adu")
 
-RADIUS=	("Radio", "pix")
-AREA=	("Area", "pix²")
+RADIUS=	("Radio Estrella", "pix")
+AREA=	("Area Estrella", "pix²")
 SBR=	("Señal/Fondo", "")
 BOUNDS=	("Limites", "pix")
 GUIDE=	("Guia", "")
 VALUE=	("Referencia", "adu")
-FLUX=	("Flujo", "adu/pix²")
+FLUX=	("Flujo Estrella", "adu/pix²")
 
 FBACK=	("Fondo", "adu")
 MBACK=	("Media Fondo", "adu/pix²")
 DBACK=	("Variacion Fondo", "adu")
-#VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
-SUMVBACK=  ("Valor Muestras Fondo", "(adu, adu, adu, adu)")
+VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
+SUMVBACK=  ("Suma Muestras Fondo (L, B, R, U)", "(adu, adu, adu, adu)")
 BSIZE=	("Ancho Muestra", "pix")
 ABACK=  ("Area De Cada Fondo", "pix²")
 
