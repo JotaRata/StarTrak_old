@@ -18,7 +18,8 @@ FLUX=	("Flujo", "adu/pix²")
 FBACK=	("Fondo", "adu")
 MBACK=	("Media Fondo", "adu/pix²")
 DBACK=	("Variacion Fondo", "adu")
-VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
+#VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
+SUMVBACK=  ("Valor Muestras Fondo", "(adu, adu, adu, adu)")
 BSIZE=	("Ancho Muestra", "pix")
 ABACK=  ("Area De Cada Fondo", "pix²")
 
@@ -33,7 +34,7 @@ class StarItem(object):
 		self.threshold = 100
 		self.radius = 0
 		self.snr = 0
-		self.background : tuple = None		# [0]: values, [1]: status, [2]: mean, [3]: std
+		self.background : tuple = None		# [0]: values, [1]: status, [2]: mean, [3]: std, [4]: sum_values
 		self.bsample = 3
 		self.barea = 0
 		self.version = 2
@@ -76,8 +77,10 @@ class StarItem(object):
 			return int(self.background[2] * (2*self.radius)**2)
 		elif attr ==DBACK[0]:
 			return "%.3f" % self.background[3]
-		elif attr ==VBACK[0]:
-			return tuple(self.background[0])
+		#elif attr ==VBACK[0]:
+		#	return tuple(self.background[0])
+		elif attr ==SUMVBACK[0]:
+			return tuple(self.background[4])
 		elif attr ==ABACK[0]:
 			return int(self.barea)
 		else:

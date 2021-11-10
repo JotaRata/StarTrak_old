@@ -241,16 +241,16 @@ def GetSampleBounds(index, width, radius):
 def BackgroundMedian(crop, width):
 	# sample: [ value, std, status: ENABLED, DISABLED ]
 	slice1 = crop[width:-width, :width] 
-	sample1 = [numpy.nanmedian(slice1), numpy.std(slice1), 1]
+	sample1 = [numpy.nanmedian(slice1), numpy.std(slice1), 1, numpy.nansum(slice1)]
 
 	slice2 = crop[-width:, width:-width]
-	sample2 = [numpy.nanmedian(slice2), numpy.std(slice2), 1]
+	sample2 = [numpy.nanmedian(slice2), numpy.std(slice2), 1, numpy.nansum(slice2)]
 
 	slice3 = crop[width:-width, -width:]
-	sample3 = [numpy.nanmedian(slice3), numpy.std(slice3), 1]
+	sample3 = [numpy.nanmedian(slice3), numpy.std(slice3), 1, numpy.nansum(slice3)]
 
 	slice4 = crop[:width, width:-width]
-	sample4 = [numpy.nanmedian(slice4), numpy.std(slice4), 1]
+	sample4 = [numpy.nanmedian(slice4), numpy.std(slice4), 1, numpy.nansum(slice4)]
 
 	#mean = numpy.mean([sample1[0], sample2[0], sample3[0], sample4[0]])
 	std = numpy.mean([sample1[1], sample2[1], sample3[1], sample4[1]])
@@ -268,12 +268,13 @@ def BackgroundMedian(crop, width):
 		sample4[0] = numpy.nan
 		sample4[2] = 0
 
+	sum_values = [sample1[3], sample2[3], sample3[3], sample4[3]]
 	values = [sample1[0], sample2[0], sample3[0], sample4[0]]
 	status = [sample1[2], sample2[2], sample3[2], sample4[2]]
 	mean = numpy.nanmean(values)
 
 	# values, status, mean, std
-	return values, status, mean, std
+	return values, status, mean, std, sum_values
 
 def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 	global Image, canvas, BrightLabel, ConfIcon, snr, bkg_sample, sample_artists, square
@@ -282,7 +283,7 @@ def UpdateCanvas(data, stLoc, radius, sample_width, startRadius=10):
 	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
 	Image.set_array(crop)
 
-	# [0]: values, [1]: status, [2]: mean, [3]: std
+	# [0]: values, [1]: status, [2]: mean, [3]: std, [4]: sum_values
 	bkg_sample = BackgroundMedian(crop, sample_width)
 
 
