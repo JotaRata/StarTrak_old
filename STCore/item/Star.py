@@ -53,7 +53,7 @@ class StarItem(object):
 		elif attr ==SUM[0]:
 			return int(self.flux)
 		elif attr ==MBACK[0]:
-			return int(self.background[])
+			return int(self.background[2])
 		elif attr ==RADIUS[0]:
 			return self.radius
 		elif attr ==AREA[0]:
