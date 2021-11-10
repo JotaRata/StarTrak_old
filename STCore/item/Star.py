@@ -22,7 +22,7 @@ MBACK=	("Media Fondo", "adu/pix²")
 DBACK=	("Variacion Fondo", "adu")
 VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
 SUMVBACK=  ("Suma Muestras Fondo (L, B, R, U)", "(adu, adu, adu, adu)")
-FLUXBACK=  ("Flujo De Muestras Fondo (L, B ,R, U)", "(adu/pix², adu/pix², adu/pix², adu/pix²")
+FLUXBACK=  ("Flujo Fondo", "adu/pix²")
 BSIZE=	("Ancho Muestra", "pix")
 ABACK=  ("Area De Cada Fondo", "pix²")
 
@@ -87,6 +87,6 @@ class StarItem(object):
 		elif attr ==ABACK[0]:
 			return int(self.barea)
 		elif attr ==FLUXBACK[0]:
-			return tuple(numpy.array(self.background[4])//self.barea)
+			return int(sum(self.background[4])/(self.barea*4))
 		else:
 			raise ValueError("El parametro \"%s\" no existe" % attr)
