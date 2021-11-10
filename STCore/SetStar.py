@@ -232,7 +232,7 @@ def GetSampleBounds(index, width, radius):
 	elif index == 1:
 		return (radius-0.5, 4 * radius - width - 0.5), 2 * radius, width - 0.5
 	elif index == 2:
-		return (4 * radius - width - 0.5, -0.5), width - 0.5 , 4 * radius
+		return (4 * radius - width - 0.5, radius-0.5), width - 0.5 , 2 * radius
 	elif index == 3:
 		return (-0.5, -0.5), 4 * radius, width
 	else:
