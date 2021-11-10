@@ -228,7 +228,7 @@ def DrawCanvas(stLoc, radius, sample_width, data):
 # this is in axis's units which defaults to 10 pixels
 def GetSampleBounds(index, width, radius):
 	if index == 0:
-		return (-0.5, -0.5), width - 0.5, 4 * radius
+		return (-0.5, radius - 0.5), width - 0.5, 2 * radius
 	elif index == 1:
 		return (-0.5, 4 * radius - width - 0.5), 4 * radius, width - 0.5
 	elif index == 2:
