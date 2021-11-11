@@ -6,11 +6,13 @@ Changes unreleased.
 
 ### Feature
 
+- General:
+  - Background samples are now discarded when they deviate to much ([750ff0e](https://github.com/JotaRata/StarTrak/commit/750ff0e5aa5a2c3a3d7bb3b839cd7f3e42d996e2))
+  - Auto update stars from older versions ([03b5f86](https://github.com/JotaRata/StarTrak/commit/03b5f86ed8321b38b03ade0b16102ecbd262ee2b))
+  - Add a zoom feature for ImageView and Tracker ([14496b7](https://github.com/JotaRata/StarTrak/commit/14496b75a21bf8c2bbc9ea58c56b84d91f699a24)) ([#4](https://github.com/JotaRata/StarTrak/pull/4))
+
 - Tracker:
   - Added zoom controls and gizmo ([6e9b6e6](https://github.com/JotaRata/StarTrak/commit/6e9b6e6a38da2504ea087b23f1c3d4d763ccaab5)) ([#4](https://github.com/JotaRata/StarTrak/pull/4))
-
-- General:
-  - Add a zoom feature for ImageView and Tracker ([14496b7](https://github.com/JotaRata/StarTrak/commit/14496b75a21bf8c2bbc9ea58c56b84d91f699a24)) ([#4](https://github.com/JotaRata/StarTrak/pull/4))
 
 - Photometry:
   - Added SNR display ([4897d4b](https://github.com/JotaRata/StarTrak/commit/4897d4ba003d44ea730f62474f89e20d6fd416fe)) ([#1](https://github.com/JotaRata/StarTrak/pull/1))
