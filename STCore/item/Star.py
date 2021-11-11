@@ -7,7 +7,7 @@ CURRENT_VER = 2
 # Parameters (Name, Units)
 NAME=	("Nombre Estrella", "")
 LOC=	("Ubicacion Estrella", "(pix, pix)")
-SUM=	("Flujo Estrella", "adu")
+SUM=	("Flujo Estrella", "adu * pix²")
 
 RADIUS=	("Radio Estrella", "pix")
 AREA=	("Area Estrella", "pix²")
@@ -15,16 +15,16 @@ SBR=	("Señal/Fondo", "")
 BOUNDS=	("Limites", "pix")
 GUIDE=	("Guia", "")
 VALUE=	("Referencia", "adu")
-FLUX=	("Intensidad Estrella", "adu/pix²")
+FLUX=	("Intensidad Estrella", "adu")
 
-FBACK=	("Fondo", "adu")
-MBACK=	("Media Fondo", "adu/pix²")
+FBACK=	("Fondo", "adu * pix²")
+MBACK=	("Media Fondo", "adu")
 DBACK=	("Variacion Fondo", "adu")
-VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
-SUMVBACK=  ("Flujo Muestras Fondo (L, B, R, U)", "(adu, adu, adu, adu)")
-FLUXBACK=  ("Intensidad Fondo", "adu/pix²")
+VBACK= 	("Valor Muestras", "adu")
+SUMVBACK=  ("Flujo Muestras Fondo (L, B, R, U)", "adu * pix²")
+FLUXBACK=  ("Intensidad Fondo", "adu")
 BSIZE=	("Ancho Muestra", "pix")
-ABACK=  ("Area De Cada Fondo", "pix²")
+ABACK=  ("Area De Cada Muestra", "pix²")
 
 class StarItem(object):
 	def __init__(self):
