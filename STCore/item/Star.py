@@ -22,6 +22,7 @@ MBACK=	("Media Fondo", "adu")
 DBACK=	("Variacion Fondo", "adu")
 VBACK= 	("Valor Muestras", "adu")
 SUMVBACK=  ("Flujo Muestras Fondo (L, B, R, U)", "adu * pix²")
+BACKREFS= ("Referencias Fondo (L, B, R, U)", "adu")
 FLUXBACK=  ("Intensidad Fondo", "adu")
 BSIZE=	("Ancho Muestra", "pix")
 ABACK=  ("Area De Cada Muestra", "pix²")
@@ -37,7 +38,7 @@ class StarItem(object):
 		self.threshold = 100
 		self.radius = 0
 		self.snr = 0
-		self.background : tuple = None		# [0]: values, [1]: status, [2]: mean, [3]: std, [4]: sum_values
+		self.background : tuple = None		# [0]: values, [1]: status, [2]: mean, [3]: std, [4]: sum_values, [5]: background_references
 		self.bsample = 3
 		self.barea = 0
 		self.version = 2
@@ -88,5 +89,7 @@ class StarItem(object):
 			return int(self.barea)
 		elif attr ==FLUXBACK[0]:
 			return int(sum(self.background[4])/(self.barea*4))
+		elif attr ==BACKREFS[0]:
+			return tuple(self.background[5])
 		else:
 			raise ValueError("El parametro \"%s\" no existe" % attr)
