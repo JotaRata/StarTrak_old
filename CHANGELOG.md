@@ -22,6 +22,14 @@ Changes unreleased.
 
 ### Bug Fixes
 
+- general:
+  - fixed minor issues ([c7bf63e](https://github.com/JotaRata/StarTrak/commit/c7bf63eb07c599815e310dc82244e0276e86f27c))
+  - fixed minor issues ([6274a1a](https://github.com/JotaRata/StarTrak/commit/6274a1a1186da0a0bbf4e7d565e4ff895217a855))
+  - fixed minor issues ([301c0de](https://github.com/JotaRata/StarTrak/commit/301c0de50e2fa30cd3781883c3857d5a315fa3c6)) ([#9](https://github.com/JotaRata/StarTrak/pull/9))
+  - fixed minor issues ([35d6448](https://github.com/JotaRata/StarTrak/commit/35d64486ffbd421ad1c77ba250c4322c9d7b6dab)) ([#9](https://github.com/JotaRata/StarTrak/pull/9))
+  - fixed Tracker and ImageView minor issues ([a5fbfd0](https://github.com/JotaRata/StarTrak/commit/a5fbfd09e099e7e2efaa8639829a24d75871221b)) ([#9](https://github.com/JotaRata/StarTrak/pull/9))
+  - fixed minor issues ([24a340c](https://github.com/JotaRata/StarTrak/commit/24a340cd9fa26ca53f9c20a57a0208782bcd0685))
+
 - General:
   - Tracker window drawing before initializating Tracking data (#6) ([d83f949](https://github.com/JotaRata/StarTrak/commit/d83f949403c1178bc99710fa8326f320a1c3c0b1))
   - MousePress data is None when there are no artists in mpl viewport ([7bf6cb5](https://github.com/JotaRata/StarTrak/commit/7bf6cb540b50687c63ebd4d01932185350a5907d))
