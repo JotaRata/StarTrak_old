@@ -1,25 +1,30 @@
+import numpy
 
+#comentario pal primer commit: las guatitas son más malas que la chucha
 
-CURRENT_VER = 1
+CURRENT_VER = 2
 
 # Parameters (Name, Units)
-NAME=	("Nombre", "")
-LOC=	("Ubicacion", "(pix, pix)")
-SUM=	("Suma", "adu")
+NAME=	("Nombre Estrella", "")
+LOC=	("Ubicacion Estrella", "(pix, pix)")
+SUM=	("Flujo Estrella", "adu * pix²")
 
-RADIUS=	("Radio", "pix")
-AREA=	("Area", "pix²")
+RADIUS=	("Radio Estrella", "pix")
+AREA=	("Area Estrella", "pix²")
 SBR=	("Señal/Fondo", "")
 BOUNDS=	("Limites", "pix")
 GUIDE=	("Guia", "")
 VALUE=	("Referencia", "adu")
-FLUX=	("Flujo", "adu/pix²")
+FLUX=	("Intensidad Estrella", "adu")
 
-FBACK=	("Fondo", "adu")
-MBACK=	("Media Fondo", "adu/pix²")
+FBACK=	("Fondo", "adu * pix²")
+MBACK=	("Media Fondo", "adu")
 DBACK=	("Variacion Fondo", "adu")
-VBACK= 	("Valor Muestras", "(adu, adu, adu, adu)")
+VBACK= 	("Valor Muestras", "adu")
+SUMVBACK=  ("Flujo Muestras Fondo (L, B, R, U)", "adu * pix²")
+FLUXBACK=  ("Intensidad Fondo", "adu")
 BSIZE=	("Ancho Muestra", "pix")
+ABACK=  ("Area De Cada Muestra", "pix²")
 
 class StarItem(object):
 	def __init__(self):
@@ -32,9 +37,10 @@ class StarItem(object):
 		self.threshold = 100
 		self.radius = 0
 		self.snr = 0
-		self.background : tuple = None		# [0]: values, [1]: status, [2]: mean, [3]: std
+		self.background : tuple = None		# [0]: values, [1]: status, [2]: mean, [3]: std, [4]: sum_values
 		self.bsample = 3
-		self.version = 0
+		self.barea = 0
+		self.version = 2
 
 	def PrintData(self, attributes : tuple, header=True, sep="{:^15} ", stdout= None):
 		base : str= sep* len(attributes)
@@ -76,5 +82,11 @@ class StarItem(object):
 			return "%.3f" % self.background[3]
 		elif attr ==VBACK[0]:
 			return tuple(self.background[0])
+		elif attr ==SUMVBACK[0]:
+			return tuple(self.background[4])
+		elif attr ==ABACK[0]:
+			return int(self.barea)
+		elif attr ==FLUXBACK[0]:
+			return int(sum(self.background[4])/(self.barea*4))
 		else:
 			raise ValueError("El parametro \"%s\" no existe" % attr)
