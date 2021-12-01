@@ -27,6 +27,8 @@ FLUXBACK=  ("Intensidad Fondo", "adu")
 BSIZE=	("Ancho Muestra", "pix")
 ABACK=  ("Area De Cada Muestra", "pix²")
 
+NETFLUX= ("Intensidad Neta", "adu")
+
 class StarItem(object):
 	def __init__(self):
 		self.name = "Star"
@@ -91,5 +93,7 @@ class StarItem(object):
 			return int(sum(self.background[4])/(self.barea*4))
 		elif attr ==BACKREFS[0]:
 			return tuple(self.background[5])
+		elif attr ==NETFLUX[0]:
+			return int(int(self.flux / ((2*self.radius)**2)) - int(sum(self.background[4])/(self.barea*4)))
 		else:
 			raise ValueError("El parametro \"%s\" no existe" % attr)
