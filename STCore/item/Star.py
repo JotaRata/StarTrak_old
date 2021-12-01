@@ -28,7 +28,7 @@ BSIZE=	("Ancho Muestra", "pix")
 ABACK=  ("Area De Cada Muestra", "pix²")
 
 NETFLUX= ("Intensidad Neta", "adu")
-APPMAG= ('m (Celular)', "")
+APPMAG= ('Magnitud Aparente (Celular)', "")
 
 class StarItem(object):
 	def __init__(self):
