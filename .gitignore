@@ -12,3 +12,4 @@ AEFor/
 # Ignore StarTrak generated files
 *.ini
 *.bin
+*.log
