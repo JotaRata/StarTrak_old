@@ -1,61 +1,47 @@
 # coding=utf-8
-#en esta linea se cargan los modulos principales
-#en esta linea se cargan los modulos principales
-#en esta linea se cargan los modulos principales
+
+_name_ = "Main"
 try:
-	print("Cargando modulos principales..", end=" ") #en esta linea se cargan los modulos principales
-	import sys
-	if sys.version_info < (3, 0):
-		raise  SystemError("StarTrak debe ser ejecutado usando  Python3")
-		
-	from logging import log
-	from os.path import dirname, abspath, basename, isfile
-	import gc
-	import warnings
-	warnings.filterwarnings("ignore")	
-	print ("Listo")
+	import Debug
 except:
-	raise ImportError("StarTrak no pudo cargar los modulos del sistema.\nCompruebe su instalacion de python.")
+	raise ImportError("No se pudo importar algunos modulos")
+
+import sys
+if sys.version_info < (3, 0):
+	Debug.Error(_name_, "StarTrak debe ser ejecutado usando  Python3")
+	
+from os.path import dirname, abspath, basename, isfile
+import gc
+import warnings
+warnings.filterwarnings("ignore")	
 
 try:
-	print ("Iniciando modulos Tk..", end=" ")
+	Debug.Log(_name_, "Iniciando Tk..")
 	from tkinter import Toplevel, font
 	from tkinter.filedialog import FileDialog
 	import tkinter as tk
 	from tkinter import filedialog
 	from tkinter import messagebox
 	from tkinter import ttk
-	print ("Listo")
 except:
-	raise ImportError("No se pudo cargar los modulos de Tcl/Tk\nAsegurese que estos modulos esten activados en su instalacion de python.")
+	Debug.Error(_name_, "No se pudo cargar los modulos tkinter\nAsegurese que estos modulos esten activados en su instalacion de python.")
 
 try:
-	print("Iniciando NumPy..", end=" ")
-	from numpy.lib.npyio import load
-	print ("Listo")
-except:
-	raise ImportError("NumPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de NumPy usando:\npip3 install numpy")
-
-try:
-	print("Iniciando MatplotLib..", end=" ")
+	Debug.Log(_name_, "Iniciando MPL..")
 	import matplotlib.pyplot as plt
-	print ("Listo")
 except:
-	raise ImportError("MatplotLib no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de MatplotLib usando:\npip3 install matplotlib")
+	Debug.Error(_name_, "Matplotlib no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de MatplotLib usando:\npip3 install matplotlib")
 try:
-	print ("Iniciando AstroPy..", end=" ")
-	from astropy.io.fits.card import HIERARCH_VALUE_INDICATOR
-	from astropy.io.fits.convenience import info
-	print ("Listo")
+	Debug.Log(_name_, "Iniciando AstroPy..")
+	import astropy.io
 except:
-	raise ImportError("AstroPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de AstroPy usando:\npip3 install astropy")
+	Debug.Error(_name_, "AstroPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de AstroPy usando:\npip3 install astropy")
 
 try:
-	print ("Iniciando PIL..", end=" ")
+	Debug.Log (_name_, "Iniciando PIL..")
 	from PIL import Image, ImageTk
-	print ("Listo")
 except:
-	raise ImportError("No se pudo cargar Python Image Library\nAsegurate de instalarlo usando:\npip3 install pillow")
+	Debug.Error(_name_, "No se pudo cargar Python Image Library\nAsegurate de instalarlo usando:\npip3 install pillow")
 
 try:
 	sys.path.append(dirname(dirname(abspath(__file__))))
@@ -63,15 +49,14 @@ except NameError:  # We are the main py2exe script, not a module
 	sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
 
 try:
-	print ("Cargando paquetes..", end=" ")
-	import STCore.utils.Icons as icons
+	Debug.Log (_name_, "Cargando modulos de Startrak..")
+	import Icons
+	from Icons import GetIcon
 	from STCore import ImageSelector, ImageView, Results, Tracker, DataManager
 	from STCore import Settings
-	
 	from STCore import Composite, ResultsConfigurator, RuntimeAnalysis, Tools
-	print ("Listo")
-except Exception as e:
-	raise ImportError("Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n", e)
+except:
+	Debug.Error(_name_, "Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n")
 
 
 print ("=" * 60)
@@ -105,12 +90,12 @@ def Awake(root):
 	bottombar = tk.Frame(StartFrame, bg ="gray18", height=64)
 	bottombar.pack(expand=1, side=tk.BOTTOM, anchor=tk.SW, fill = tk.X)
 	bottombar.pack_propagate(0)
-	SessionButton = ttk.Button(bottombar, text = "Nueva Sesion",image = icons.GetIcon("run"), compound = "left", command = lambda: NewSessionTopLevel(root), width=32, style="Highlight.TButton")
+	SessionButton = ttk.Button(bottombar, text = "Nueva Sesion",image = GetIcon("run"), compound = "left", command = lambda: NewSessionTopLevel(root), width=32, style="Highlight.TButton")
 	SessionButton.pack(side= tk.RIGHT, anchor = tk.E)
-	FilesButton = ttk.Button(StartFrame, text = "Abrir Imagenes",image = icons.GetIcon("multi"), compound = "left", command = lambda:LoadFiles(root), width = 100)
+	FilesButton = ttk.Button(StartFrame, text = "Abrir Imagenes",image = GetIcon("multi"), compound = "left", command = lambda:LoadFiles(root), width = 100)
 	#FilesButton.pack()
 	#tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
-	LoadButton = ttk.Button(bottombar, text = "Cargar Sesion",image = icons.GetIcon("open"), compound = "left", command = Tools.OpenFileCommand, width=32)
+	LoadButton = ttk.Button(bottombar, text = "Cargar Sesion",image = GetIcon("open"), compound = "left", command = Tools.OpenFileCommand, width=32)
 	LoadButton.pack(side= tk.RIGHT, anchor = tk.E, after=SessionButton)
 
 	# Right panel Area
@@ -130,7 +115,7 @@ def CreateRecent(root):
 			#l.bind("<Button-1>", _helperOpenFile(p, root))
 			file_el.pack(anchor = tk.W, pady=4, fill=tk.X)
 
-			ttk.Button(file_el, image=icons.GetIcon("delete"), command=lambda:RemoveRecent(p, root), style="Highlight.TButton").pack(side=tk.RIGHT)
+			ttk.Button(file_el, image=GetIcon("delete"), command=lambda:RemoveRecent(p, root), style="Highlight.TButton").pack(side=tk.RIGHT)
 			
 def _helperLoadData(path, root):
 	if isfile(path):
@@ -413,51 +398,54 @@ def NewSessionTopLevel(root):
 	
 
 def PreloadComponents():
-	print ("Preloading components..")
+	Debug.Log (_name_, "Preloading components..")
 	ImageView.BuildLayout(Window)
 	Tracker.BuildLayout(Window)
 
-if __name__ == "__main__":
-	Window = tk.Tk()
-	
-	Window.configure(bg="black")
-	Window.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
-	Window.tk.call('package', 'require', 'awdark')
+try:
+	if __name__ == "__main__":
+		Window = tk.Tk()
+		
+		Window.configure(bg="black")
+		Window.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
+		Window.tk.call('package', 'require', 'awdark')
 
-	import Styles
+		import Styles
 
-	Settings.WorkingPath = dirname(abspath(__file__))
-	DataManager.WorkingPath = dirname(abspath(__file__))
-	icons.Initialize()
-	DataManager.Awake()
-	Settings.LoadSettings()
-	Tools.Awake(Window)
-	
-	#print DataManager.WorkingPath
-	DataManager.LoadRecent()
-	DataManager.TkWindowRef = Window
+		Settings.WorkingPath = dirname(abspath(__file__))
+		DataManager.WorkingPath = dirname(abspath(__file__))
+		Icons.Initialize()
+		DataManager.Awake()
+		Settings.LoadSettings()
+		Tools.Awake(Window)
+		
+		#print DataManager.WorkingPath
+		DataManager.LoadRecent()
+		DataManager.TkWindowRef = Window
 
 
-	StartFrame = None
-	Window.wm_title(string = "StarTrak 1.1.0")
-	Window.geometry("1280x640")
-	try:
-		Window.iconbitmap(DataManager.WorkingPath+"/icon.ico")
-	except:
-		pass
-	
-	PreloadComponents()
+		StartFrame = None
+		Window.wm_title(string = "StarTrak 1.1.0")
+		Window.geometry("1280x640")
+		try:
+			Window.iconbitmap(DataManager.WorkingPath+"/icon.ico")
+		except:
+			pass
+		
+		PreloadComponents()
 
-	Window.after(20, Awake, Window)
-	
-	# Pre-initialize UI components
-	
-	if len(sys.argv) > 1:
-		_helperLoadData(str(sys.argv[1]), Window)
-	
-	#print(style.theme_names())
-	
-	
-	Window.mainloop()
+		Window.after(20, Awake, Window)
+		
+		# Pre-initialize UI components
+		
+		if len(sys.argv) > 1:
+			_helperLoadData(str(sys.argv[1]), Window)
+		
+		#print(style.theme_names())
+		
+		
+		Window.mainloop()
+except:
+	Debug.Error(_name_, "Se ha detectado un error de ejecucion, revisa el registro para mas detalles")
 def GetWindow():
 	return Window 

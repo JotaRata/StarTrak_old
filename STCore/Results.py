@@ -12,7 +12,8 @@ from os.path import basename
 import STCore.ResultsConfigurator as Config
 from time import sleep, localtime, gmtime, strftime, time, mktime
 from multiprocessing import Pool
-import STCore.utils.Icons as icons
+
+from Icons import GetIcon
 from functools import partial
 import sys
 #region  Variables
@@ -55,13 +56,13 @@ def Awake(root, ItemList, TrackedStars):
 	buttonFrame = ttk.Frame(Sidebar)
 	buttonFrame.pack(side=tk.TOP, fill=tk.X)
 
-	exportbutton = ttk.Button(buttonFrame, text = "Exportar",image = icons.Icons["export"], compound = "left")
+	exportbutton = ttk.Button(buttonFrame, text = "Exportar",image = GetIcon("export"), compound = "left")
 	exportbutton.bind("<Button-1>", lambda event: PopupMenu(event, Exportmenu))
 	exportbutton.pack(side=tk.RIGHT, fill=tk.X)
 	if STCore.DataManager.RuntimeEnabled == False:
-		ttk.Button(buttonFrame, text = "Volver", command = cmdBack, image = icons.Icons["prev"], compound = "left").pack(side=tk.LEFT, fill=tk.X)
+		ttk.Button(buttonFrame, text = "Volver", command = cmdBack, image = GetIcon("prev"), compound = "left").pack(side=tk.LEFT, fill=tk.X)
 	else:
-		ttk.Button(buttonFrame, text = "Actualizar",image = icons.Icons["restart"], compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, STCore.Tracker.TrackedStars))).pack(side=tk.CENTER, anchor=tk.NW)
+		ttk.Button(buttonFrame, text = "Actualizar",image = GetIcon("restart"), compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, STCore.Tracker.TrackedStars))).pack(side=tk.CENTER, anchor=tk.NW)
 	#ttk.Button(Sidebar, text = "Configurar", image = icons.Icons["settings"], compound = "left", command = lambda: Config.Awake(root, ItemList, mini = True)).pack(side=tk.TOP)
 	ttk.Label(Sidebar, text="Leyenda").pack()
 	legend = figure.Figure(figsize = (1, len(TrackedStars) / 4.), dpi = 100, facecolor="0.25")

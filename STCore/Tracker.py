@@ -16,7 +16,7 @@ from os.path import basename
 from item.Track import TrackItem
 from utils.backgroundEstimator import GetBackground
 from utils.backgroundEstimator import GetBackgroundMean
-import STCore.utils.Icons as icons
+from Icons import GetIcon
 
 from STCore import Results, DataManager, ResultsConfigurator, Composite, RuntimeAnalysis, Settings
 
@@ -218,18 +218,18 @@ def CreateSidebar(root):
 
 	sidebar_buttons = ttk.Frame(App, width = 300)
 
-	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", command = CommandBack, image = icons.Icons["prev"], compound = "left")
+	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", command = CommandBack, image = GetIcon("prev"), compound = "left")
 	PrevButton.grid(row = 0, column = 0, sticky = tk.EW)
 	if DataManager.RuntimeEnabled == False:
 		TrackButton = ttk.Button(sidebar_buttons)
-		TrackButton.config(text = "Iniciar",image = icons.Icons["play"], compound = "left", command = lambda: (StartTracking(), SwitchTrackButton()))	
-		applyButton = ttk.Button(sidebar_buttons, text = "Continuar",image = icons.Icons["next"], compound = "right", command = cmdNext, state = tk.DISABLED)
+		TrackButton.config(text = "Iniciar",image = GetIcon("play"), compound = "left", command = lambda: (StartTracking(), SwitchTrackButton()))	
+		applyButton = ttk.Button(sidebar_buttons, text = "Continuar",image = GetIcon("next"), compound = "right", command = cmdNext, state = tk.DISABLED)
 		applyButton.bind("<Button-1>", lambda event: PopupMenu(event, ApplyMenu))
 		applyButton.grid(row = 0, column = 2, sticky = tk.EW)
 	else:
 		TrackButton = ttk.Button(sidebar_buttons)
-		TrackButton.config(text = "Detener Analisis", image = icons.Icons["stop"], compound = "left", command = lambda: (StopTracking(), SwitchTrackButton(True)))
-		RestartButton = ttk.Button(sidebar_buttons, text = "Reiniciar", image = icons.Icons["restart"], compound = "left", command = lambda: StartTracking())
+		TrackButton.config(text = "Detener Analisis", image = GetIcon("stop"), compound = "left", command = lambda: (StopTracking(), SwitchTrackButton(True)))
+		RestartButton = ttk.Button(sidebar_buttons, text = "Reiniciar", image = GetIcon("restart"), compound = "left", command = lambda: StartTracking())
 		RestartButton.grid(row = 0, column = 2, sticky = tk.EW)
 	TrackButton.grid(row = 0, column = 1, sticky = tk.EW)
 
@@ -242,10 +242,10 @@ def CreateNavigationBar():
 
 	ScrollFileLbd = PrevFile, NextFile
 
-	ttk.Button(FooterFrame, image = icons.Icons["prev"], command = ScrollFileLbd[0]).grid(row=0, column=0)
+	ttk.Button(FooterFrame, image = GetIcon("prev"), command = ScrollFileLbd[0]).grid(row=0, column=0)
 	FileLabel = ttk.Label(FooterFrame, text="Imagen",justify="center", width=20)
 	FileLabel.grid(row=0, column=1)
-	ttk.Button(FooterFrame, image = icons.Icons["next"], command = ScrollFileLbd[1]).grid(row=0, column=2)
+	ttk.Button(FooterFrame, image = GetIcon("next"), command = ScrollFileLbd[1]).grid(row=0, column=2)
 
 def Destroy():
 	global TrackedStars, implot, axis, zoom_factor, img_limits, img_offset, z_container, z_box
@@ -274,7 +274,7 @@ def Destroy():
 def OnRuntimeWindowClosed(root):
 	if DataManager.RuntimeEnabled == False:
 		return
-	CreateButton = ttk.Button(sidebar_buttons, text = "Mostrar Grafico", image = icons.Icons["plot"], compound = "left")
+	CreateButton = ttk.Button(sidebar_buttons, text = "Mostrar Grafico", image = GetIcon("plot"), compound = "left")
 	cmd = lambda: (CreateButton.destroy(), ResultsConfigurator.Awake(root, RuntimeAnalysis.filesList, TrackedStars))
 	DataManager.CurrentWindow = 3
 	CreateButton.grid(row = 0, column = 3, sticky = tk.EW)
@@ -283,12 +283,12 @@ def OnRuntimeWindowClosed(root):
 def SwitchTrackButton(RuntimeEnd = False):
 	global TrackButton, IsTracking
 	if RuntimeEnd == True:
-		TrackButton.config(text = "Componer Imagen", command = lambda: CompositeNow(root, ItemList), state = tk.NORMAL, image = icons.Icons["image"], compound = "left")
+		TrackButton.config(text = "Componer Imagen", command = lambda: CompositeNow(root, ItemList), state = tk.NORMAL, image = GetIcon("image"), compound = "left")
 		return;
 	if not IsTracking:
-		TrackButton.config(text = "Iniciar", image = icons.Icons["play"],command = lambda: (StartTracking(), SwitchTrackButton( )))
+		TrackButton.config(text = "Iniciar", image = GetIcon("play"),command = lambda: (StartTracking(), SwitchTrackButton( )))
 	else:
-		TrackButton.config(text = "Detener",image = icons.Icons["stop"], command = lambda: (StopTracking(), SwitchTrackButton()))
+		TrackButton.config(text = "Detener",image = GetIcon("stop"), command = lambda: (StopTracking(), SwitchTrackButton()))
 def PopupMenu(event, ApplyMenu):
 	ApplyMenu.post(event.x_root, event.y_root)
 
@@ -392,7 +392,7 @@ def OnFinishTrack():
 		if len(TrackedStars[0].trackedPos) > 0:
 			if DataManager.RuntimeEnabled == False:
 				applyButton.config(state = tk.NORMAL)
-				TrackButton.config(state = tk.NORMAL, image = icons.Icons["play"])
+				TrackButton.config(state = tk.NORMAL, image = GetIcon("play"))
 	if IsTracking:
 		IsTracking = False
 		UpdateSidebar()

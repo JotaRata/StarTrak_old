@@ -33,7 +33,8 @@ import STCore.Settings
 import STCore.RuntimeAnalysis
 import gc
 from PIL import Image
-import STCore.utils.Icons as icons
+
+from Icons import GetIcon
 from STCore import DataManager, RuntimeAnalysis
 from Component import Levels, StarElement
 
@@ -246,11 +247,11 @@ def CreateSidebar(root):
 
 	sidebar_buttons = ttk.Frame(App)
 	
-	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, style="Highlight.TButton", image=icons.GetIcon("add"), compound="left")
+	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, style="Highlight.TButton", image=GetIcon("add"), compound="left")
 
-	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = icons.GetIcon("prev"), command = CommandBack, compound="left")
-	ExpButton = ttk.Button(sidebar_buttons, text= "Exportar datos", image=icons.GetIcon("export"), compound="left", command=CommandExport)
-	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = icons.GetIcon("next"), compound = "right")
+	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = GetIcon("prev"), command = CommandBack, compound="left")
+	ExpButton = ttk.Button(sidebar_buttons, text= "Exportar datos", image=GetIcon("export"), compound="left", command=CommandExport)
+	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = GetIcon("next"), compound = "right")
 
 	AddButton.grid(row = 0, column = 0, columnspan=3, sticky = "ew")
 	PrevButton.grid(row = 1, column = 0, sticky = "ew")	

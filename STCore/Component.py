@@ -5,7 +5,7 @@ import numpy
 from STCore.item.Track import TrackItem
 from STCore.item.Star import StarItem
 from STCore.item.File import FileItem
-from STCore.utils.Icons import GetIcon
+from Icons import GetIcon
 import tkinter as tk
 from tkinter import ttk
 from os.path import basename, getsize

@@ -10,7 +10,7 @@ from matplotlib.colors import LogNorm
 from STCore.utils.Exporter import *
 import STCore.DataManager
 from time import time, sleep
-import STCore.utils.Icons as icons
+from Icons import GetIcon
 #region Variables
 CompositeFrame = None
 CompositeData = None
@@ -59,9 +59,9 @@ def Awake(root, ItemList, TrackedStars):
 	#Exportmenu.add_command(label="Exportar PDF", command=lambda: ExportPDF(canvas[1], canvas[2], TrackedStars))
 	buttonFrame = ttk.Frame(Sidebar)
 	buttonFrame.grid(row = 0,column = 0, columnspan = 2, sticky = tk.EW)
-	exportbutton = ttk.Button(buttonFrame, text = " Exportar",image = icons.Icons["export"], compound = "left", command = lambda: Export(ItemList, canvas[2]))
+	exportbutton = ttk.Button(buttonFrame, text = " Exportar",image = GetIcon("export"), compound = "left", command = lambda: Export(ItemList, canvas[2]))
 	exportbutton.grid(row = 0, column = 1)
-	ttk.Button(buttonFrame, text = " Volver",image = icons.Icons["prev"], compound = "left", command = cmdBack).grid(row = 0, column = 0)
+	ttk.Button(buttonFrame, text = " Volver",image = GetIcon("prev"), compound = "left", command = cmdBack).grid(row = 0, column = 0)
 	for c in range(3):
 		tk.Grid.columnconfigure(Sidebar, c, weight=1)
 	levelFrame = tk.LabelFrame(Sidebar, text = "Niveles:", bg="gray18")

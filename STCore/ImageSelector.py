@@ -15,7 +15,7 @@ from item.File import FileItem
 from STCore import ImageView, DataManager, Tracker
 import numpy
 from functools import partial
-import STCore.utils.Icons as icons
+from Icons import GetIcon
 
 #region Variables
 App : tk.Frame = None
@@ -61,16 +61,12 @@ def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	item.path = str(path)
 	item.data, item.header = fits.getdata(item.path, header = True)
 
-	#item.date = fits.header['NOTE'].split()[3]
-	# Request DATE-OBS keyword to extract date information (previously used NOTE keyword which was not always available)
 	try:
 		item.date = strptime(item.header["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
 	except:
 		print ("File has no DATE-OBS keyword in Header   -   using system time instead..")
 		item.date = gmtime(getmtime(item.path))
 		pass
-	#print strftime('%H/%M/%S', localtime(item.date))
-	#item.timee = header['NOTE'].split()[3]
 
 	item.active = 1
 	DataManager.FileItemList.append(item)
@@ -166,9 +162,9 @@ def CreateSidebar(root):
 	Sidebar = ttk.Frame(App, width = 200)
 	Sidebar.columnconfigure(0, weight=1)
 
-	CleanButton = ttk.Button(Sidebar, text="Limpiar todo", command = lambda: ClearList(root), state = tk.DISABLED,  image = icons.Icons["delete"], compound = "right")	
-	AddButton = ttk.Button(Sidebar, text=  "Agregar archivo", command = lambda: AddFiles(root), state = tk.DISABLED, image = icons.Icons["multi"], compound = "right")
-	ApplyButton = ttk.Button(Sidebar, text="Continuar", command = lambda: Apply(root), state = tk.DISABLED, image = icons.Icons["next"], compound = "right")
+	CleanButton = ttk.Button(Sidebar, text="Limpiar todo", command = lambda: ClearList(root), state = tk.DISABLED,  image = GetIcon("delete"), compound = "right")	
+	AddButton = ttk.Button(Sidebar, text=  "Agregar archivo", command = lambda: AddFiles(root), state = tk.DISABLED, image = GetIcon("multi"), compound = "right")
+	ApplyButton = ttk.Button(Sidebar, text="Continuar", command = lambda: Apply(root), state = tk.DISABLED, image = GetIcon("next"), compound = "right")
 	
 	CleanButton.grid(row=2, column=0, sticky = "ew", pady=5)
 	AddButton.grid(row=1, column=0, sticky = "ew", pady=5)
