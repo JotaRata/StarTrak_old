@@ -3,7 +3,6 @@
 from pickle import FALSE
 from sys import flags, version_info
 from tkinter import filedialog
-from STCore.Component import StarElement
 from logging import root
 from operator import contains
 from os import scandir
@@ -25,17 +24,18 @@ from matplotlib.colors import Normalize, PowerNorm, LogNorm
 from matplotlib.artist import setp, getp
 import tkinter as tk
 from tkinter import ttk
+from STCore.Component import StarElement
 from STCore.item.Star import *
-from STCore import SetStar, Tracker
+import SetStar, Tracker
 import STCore.DataManager
 from time import time
-import STCore.Settings
-import STCore.RuntimeAnalysis
+import Settings
+import RuntimeAnalysis
+import DataManager, RuntimeAnalysis
 import gc
 from PIL import Image
 
 from Icons import GetIcon
-from STCore import DataManager, RuntimeAnalysis
 from Component import Levels, StarElement
 
 #region Messages and Events
@@ -88,19 +88,19 @@ isInitialized = False
 def Awake(root):
 	global ViewerFrame, Data, Stars, canvas, implot, ImageFrame, axis, Sidebar, SidebarList, SliderLabel, level_perc, levelFrame, isInitialized
 
-	STCore.DataManager.CurrentWindow = 2
+	DataManager.CurrentWindow = 2
 	
 	App.pack(fill=tk.BOTH, expand=1)
 
 	#ViewerFrame = tk.Frame(root)
 	#ttk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
 	Data =  DataManager.FileItemList[0].data
-	level_perc = STCore.DataManager.Levels
+	level_perc = DataManager.Levels
 
 	# Setting Levels
 	if not isinstance(level_perc, tuple):
 		level_perc = (numpy.percentile(Data, 99.8), numpy.percentile(Data, 1))
-		STCore.DataManager.Levels = level_perc
+		DataManager.Levels = level_perc
 	
 	#BuildLayout(root)
 	if implot is None:
@@ -193,8 +193,8 @@ def DrawCanvas():
 	global canvas, implot, ImageFrame, axis
 
 	axis.clear()
-	implot = axis.imshow(Data, vmin = level_perc[1], vmax = level_perc[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
-	if STCore.Settings._SHOW_GRID_.get() == 1:
+	implot = axis.imshow(Data, vmin = level_perc[1], vmax = level_perc[0], cmap=ColorMaps[Settings._VISUAL_COLOR_.get()], norm = Modes[Settings._VISUAL_MODE_.get()])
+	if Settings._SHOW_GRID_.get() == 1:
 		axis.grid()
 	
 	axis.relim()
@@ -230,9 +230,9 @@ def CreateSidebar(root):
 		SetStar.Awake(Data, None, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
 	
 	def CommandBack():
-		import STCore.ImageSelector
+		import ImageSelector
 		Destroy()
-		STCore.ImageSelector.Awake(root, [])
+		ImageSelector.Awake(root, [])
 
 	def CommandExport():
 		with filedialog.asksaveasfile(mode="w", filetypes=[("Valores separados por comas", "*.csv"), ("Archivo de texto", "*.txt")]) as f:
@@ -442,10 +442,10 @@ def ChangeLevels():
 		
 		implot.norm.vmax = _max
 		implot.norm.vmin = _min + 0.01
-		implot.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
-		implot.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
+		implot.set_cmap(ColorMaps[Settings._VISUAL_COLOR_.get()])
+		implot.set_norm(Modes[Settings._VISUAL_MODE_.get()])
 
-		STCore.DataManager.Levels =  (_max, _min)
+		DataManager.Levels =  (_max, _min)
 		canvas.draw_idle()
 
 #endregion
@@ -655,4 +655,4 @@ def OnStarChange(star : StarItem = None, index = -1):
 	
 	UpdateStarList()
 	#UpdateCanvasOverlay()
-	STCore.DataManager.StarItemList = Stars
+	DataManager.StarItemList = Stars

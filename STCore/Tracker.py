@@ -2,7 +2,6 @@
 
 from tkinter.constants import S
 from STCore.Component import TrackElement
-from STCore.item.Star import StarItem
 from item import ResultSettings
 import numpy
 from matplotlib import use, figure
@@ -18,7 +17,8 @@ from utils.backgroundEstimator import GetBackground
 from utils.backgroundEstimator import GetBackgroundMean
 from Icons import GetIcon
 
-from STCore import Results, DataManager, ResultsConfigurator, Composite, RuntimeAnalysis, Settings
+from STCore.item.Star import StarItem
+import Results, DataManager, ResultsConfigurator, Composite, RuntimeAnalysis, Settings
 
 from threading import Thread, Lock
 from time import sleep, time

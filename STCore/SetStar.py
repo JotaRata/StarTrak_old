@@ -7,8 +7,9 @@ import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from numpy.lib.function_base import append
-from STCore.item.Star import *
-import STCore.Tracker
+import DataManager, Settings, ImageView
+from item.Star import *
+import Tracker
 from Icons import GetIcon
 from matplotlib.patches import Rectangle
 
@@ -199,8 +200,8 @@ def DrawCanvas(stLoc, radius, sample_width, data):
 	clipLoc = numpy.clip(stLoc, radius, (data.shape[0] - radius, data.shape[1] - radius))
 	crop = data[clipLoc[0]-radius*2 : clipLoc[0]+radius*2,clipLoc[1]-radius*2 : clipLoc[1]+radius*2]
 
-	levels = STCore.DataManager.Levels
-	Image = axis.imshow(crop, vmin = levels[1], vmax = levels[0], cmap=STCore.ImageView.ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = STCore.ImageView.Modes[STCore.Settings._VISUAL_MODE_.get()])
+	levels = DataManager.Levels
+	Image = axis.imshow(crop, vmin = levels[1], vmax = levels[0], cmap=ImageView.ColorMaps[Settings._VISUAL_COLOR_.get()], norm = ImageView.Modes[Settings._VISUAL_MODE_.get()])
 	canvas = FigureCanvasTkAgg(fig, master=App)
 	canvas.draw()
 
@@ -327,7 +328,7 @@ def Apply(name, loc, bounds, radius, Type, value, threshold, stars, OnStarChange
 	if starIndex == -1:
 		if OnStarAdd is not None:
 			OnStarAdd(st)
-		STCore.Tracker.DataChanged = True
+		Tracker.DataChanged = True
 	
 	OnStarChange(st, starIndex)
 	st.PrintData((NAME, LOC, SUM, FBACK, AREA, SBR, BSIZE, DBACK), header= time() - closedTime > 60)

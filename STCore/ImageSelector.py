@@ -12,7 +12,7 @@ from STCore.Component import FileListElement
 from STCore.item.File import _FILE_VERSION
 from item.File import FileItem
 
-from STCore import ImageView, DataManager, Tracker
+import Debug, ImageView, DataManager, Tracker
 import numpy
 from functools import partial
 from Icons import GetIcon
@@ -39,7 +39,6 @@ def LoadFiles(paths, root):
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
 	sortedP = sorted(paths, key=lambda f: Sort(f))
 	n = 0
-	print ("_"*60)
 	[SetFileItems(x, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root) for x in sortedP]
 	#map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
 	loadIndex = 0
@@ -56,7 +55,7 @@ def Sort(path):
 def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
 	global loadIndex
 
-	print (path)
+	Debug.Log(__name__, "Loaded "+path)
 	item = FileItem()
 	item.path = str(path)
 	item.data, item.header = fits.getdata(item.path, header = True)

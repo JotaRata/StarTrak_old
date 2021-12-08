@@ -52,9 +52,9 @@ try:
 	Debug.Log (_name_, "Cargando modulos de Startrak..")
 	import Icons
 	from Icons import GetIcon
-	from STCore import ImageSelector, ImageView, Results, Tracker, DataManager
-	from STCore import Settings
-	from STCore import Composite, ResultsConfigurator, RuntimeAnalysis, Tools
+	import ImageSelector, ImageView, Results, Tracker, DataManager
+	import Settings
+	import Composite, ResultsConfigurator, RuntimeAnalysis, Tools
 except:
 	Debug.Error(_name_, "Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n")
 

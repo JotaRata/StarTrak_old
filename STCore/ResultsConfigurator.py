@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-from STCore.item.ResultSettings import ResultSetting
-import STCore.Tracker, STCore.Results, STCore.DataManager
+from item.ResultSettings import ResultSetting
+import Tracker, Results, DataManager
 import numpy
 #region variables
 ConfiguratorFrame = None
@@ -55,7 +55,7 @@ def Apply(root, ItemList, TrackedStars):
 	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_, _XTICKS_, PlotWindow, _TIMELENGHT_, _PLOTKIND_
 	SettingsObject.sortingMode = _SORTINGMODE_.get()
 	SettingsObject.tickNumber = _XTICKS_.get()
-	STCore.DataManager.ResultSetting = SettingsObject
+	DataManager.ResultSetting = SettingsObject
 	SettingsObject.delLostTracks = _DELTRACKS_.get()
 	SettingsObject.delError = _DELERROR_.get()
 	SettingsObject.refStar = _REFSTAR_.get()
@@ -63,25 +63,25 @@ def Apply(root, ItemList, TrackedStars):
 	SettingsObject.timeLenght = (60*int(_TIMELENGHT_.get()))
 	SettingsObject.plotkind = _PLOTKIND_.get()
 
-	if STCore.DataManager.CurrentWindow == 3:
-		if STCore.DataManager.RuntimeEnabled == False:
-			STCore.Tracker.Destroy()
-			STCore.Results.Awake(root, ItemList, TrackedStars)
+	if DataManager.CurrentWindow == 3:
+		if DataManager.RuntimeEnabled == False:
+			Tracker.Destroy()
+			Results.Awake(root, ItemList, TrackedStars)
 		else:
-			STCore.Results.Reset()
+			Results.Reset()
 			if CheckWindowClear() == True:
 				PlotWindow = tk.Toplevel(root)
-				STCore.Results.Awake(PlotWindow, ItemList, TrackedStars)
+				Results.Awake(PlotWindow, ItemList, TrackedStars)
 			else:
 				PlotWindow.destroy()
 				PlotWindow = tk.Toplevel(root)
-				STCore.Results.Awake(PlotWindow, ItemList, TrackedStars)
-			PlotWindow.protocol("WM_DELETE_WINDOW", lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), PlotWindow.destroy()))
+				Results.Awake(PlotWindow, ItemList, TrackedStars)
+			PlotWindow.protocol("WM_DELETE_WINDOW", lambda: (Tracker.OnRuntimeWindowClosed(root), PlotWindow.destroy()))
 		return;
-	if STCore.DataManager.CurrentWindow == 4:
-		#STCore.Results.Constant = STCore.Results.GetConstant(ItemList[0].data, 0, 
+	if DataManager.CurrentWindow == 4:
+		#Results.Constant = Results.GetConstant(ItemList[0].data, 0, 
 		#										  max(SettingsObject.refStar, 0), TrackedStars, SettingsObject.refValue)
-		STCore.Results.UpdateGraph(ItemList)
+		Results.UpdateGraph(ItemList)
 		return;
 def Awake(root, ItemList, mini = False, toplevel = True):
 	global SettingsObject, _SORTINGMODE_, _DELTRACKS_, _DELERROR_, _REFSTAR_, _REFVALUE_
@@ -89,14 +89,14 @@ def Awake(root, ItemList, mini = False, toplevel = True):
 		ConfiguratorFrame = tk.Toplevel(root)
 		ConfiguratorFrame.wm_title(string = "Configurar analisis")
 		ConfiguratorFrame.resizable(False, False)
-		ConfiguratorFrame.protocol("WM_DELETE_WINDOW", lambda: (STCore.Tracker.OnRuntimeWindowClosed(root), ConfiguratorFrame.destroy()))
+		ConfiguratorFrame.protocol("WM_DELETE_WINDOW", lambda: (Tracker.OnRuntimeWindowClosed(root), ConfiguratorFrame.destroy()))
 		ConfiguratorFrame.attributes('-topmost', 'true')
 	else:
 		ConfiguratorFrame = root
 	Load()
 	MainPanel = ttk.Frame(ConfiguratorFrame)
 	MainPanel.pack(side=tk.LEFT, fill = tk.Y, anchor = tk.N)
-	TrackedStars = STCore.Tracker.TrackedStars
+	TrackedStars = Tracker.TrackedStars
 
 	ttk.Label(MainPanel, text="Tipo de grafico:").grid(row=2, column=0, sticky=tk.W)	
 	horizontalPanel = ttk.Frame(MainPanel)

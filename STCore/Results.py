@@ -4,12 +4,12 @@ from matplotlib import figure, use
 use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy
-import STCore.DataManager
-from STCore.utils.backgroundEstimator import GetBackground, GetBackgroundMean
-from STCore.utils.Exporter import *
+from utils.backgroundEstimator import GetBackground, GetBackgroundMean
+from utils.Exporter import *
 import math
 from os.path import basename
-import STCore.ResultsConfigurator as Config
+import DataManager, Tracker, ImageView
+import ResultsConfigurator as Config
 from time import sleep, localtime, gmtime, strftime, time, mktime
 from multiprocessing import Pool
 
@@ -40,14 +40,14 @@ def Reset():
 
 def Awake(root, ItemList, TrackedStars):
 	global ResultsFrame, TimeLenght
-	STCore.DataManager.CurrentWindow = 4
+	DataManager.CurrentWindow = 4
 	TimeLenght = Config.SettingsObject.timeLenght
 	ResultsFrame = ttk.Frame(root)
 	ResultsFrame.pack(fill = tk.BOTH, expand = 1)
 	canvas = CreateCanvas(root, ResultsFrame, ItemList, TrackedStars)
 	Sidebar = ttk.Frame(ResultsFrame, width = 400)
 	Sidebar.pack(side = tk.RIGHT, fill = tk.Y)
-	cmdBack = lambda: (Destroy(), STCore.Tracker.Awake(root, STCore.ImageView.Stars, ItemList))
+	cmdBack = lambda: (Destroy(), Tracker.Awake(root, ImageView.Stars, ItemList))
 	Exportmenu = tk.Menu(root, tearoff=0)
 	Exportmenu.add_command(label="Exportar grafico", command=lambda: ExportImage(canvas[1]))
 	Exportmenu.add_command(label="Exportar datos", command=lambda: ExportData(TrackedStars, canvas[2], GetTimeLabel(ItemList)))
@@ -59,10 +59,10 @@ def Awake(root, ItemList, TrackedStars):
 	exportbutton = ttk.Button(buttonFrame, text = "Exportar",image = GetIcon("export"), compound = "left")
 	exportbutton.bind("<Button-1>", lambda event: PopupMenu(event, Exportmenu))
 	exportbutton.pack(side=tk.RIGHT, fill=tk.X)
-	if STCore.DataManager.RuntimeEnabled == False:
+	if DataManager.RuntimeEnabled == False:
 		ttk.Button(buttonFrame, text = "Volver", command = cmdBack, image = GetIcon("prev"), compound = "left").pack(side=tk.LEFT, fill=tk.X)
 	else:
-		ttk.Button(buttonFrame, text = "Actualizar",image = GetIcon("restart"), compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, STCore.Tracker.TrackedStars))).pack(side=tk.CENTER, anchor=tk.NW)
+		ttk.Button(buttonFrame, text = "Actualizar",image = GetIcon("restart"), compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, Tracker.TrackedStars))).pack(side=tk.CENTER, anchor=tk.NW)
 	#ttk.Button(Sidebar, text = "Configurar", image = icons.Icons["settings"], compound = "left", command = lambda: Config.Awake(root, ItemList, mini = True)).pack(side=tk.TOP)
 	ttk.Label(Sidebar, text="Leyenda").pack()
 	legend = figure.Figure(figsize = (1, len(TrackedStars) / 4.), dpi = 100, facecolor="0.25")
@@ -91,7 +91,7 @@ def AddPoint(point, stIndex):
 def UpdateGraph(ItemList):
 	global MagData, PlotAxis
 	
-	TrackedStars = STCore.Tracker.TrackedStars
+	TrackedStars = Tracker.TrackedStars
 
 	PlotData = None
 	
@@ -181,7 +181,7 @@ def CreateCanvas(root, app, TrackList, TrackedStars):
 
 	DrawGraph(MagData,TrackList, TrackedStars)
 	
-	STCore.DataManager.ResultData = MagData
+	DataManager.ResultData = MagData
 	
 	GetLimits()
 	ticks = Config.SettingsObject.tickNumber
