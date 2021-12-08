@@ -1,12 +1,14 @@
 import numpy
 
+from STCore import Debug
+
 #comentario pal primer commit: las guatitas son más malas que la chucha
 
 CURRENT_VER = 2
 
 # Parameters (Name, Units)
-NAME=	("Nombre Estrella", "")
-LOC=	("Ubicacion Estrella", "(pix, pix)")
+NAME=	("Nombre", "")
+LOC=	("Ubicacion", "(pix, pix)")
 SUM=	("Flujo Estrella", "adu * pix²")
 
 RADIUS=	("Radio Estrella", "pix")
@@ -49,10 +51,9 @@ class StarItem(object):
 	def PrintData(self, attributes : tuple, header=True, sep="{:^15} ", stdout= None):
 		base : str= sep* len(attributes)
 		if header:
-			
-			print(base.format(*[i[0] for i in attributes]), file=stdout)
-			print(base.format(*[i[1] for i in attributes]), file=stdout)
-		print(base.format(*[str(self.GetAttribute(i[0])) for i in attributes]), file=stdout)
+			Debug.Log(__name__, base.format(*[i[0] for i in attributes]))
+			Debug.Log(__name__, base.format(*[i[1] for i in attributes]))
+		Debug.Log(__name__, base.format(*[str(self.GetAttribute(i[0])) for i in attributes]))
 
 	def GetAttribute(self, attribute : str):
 		attr = attribute.title()

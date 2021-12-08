@@ -1,4 +1,5 @@
 
+from STCore import Debug
 from STCore.item.Star import StarItem
 
 
@@ -14,7 +15,5 @@ class TrackItem(object):
 		self.lostPoints = []
 		self.active = -1
 	def PrintData(self):
-		print ("")
-		print (self.star.name, " Track Info: ")
-		print ("Last seen at file: ", self.lastSeen," in ", self.lastPos," with value ",self.lastValue, "tracked for", len(self.trackedPos), "frames")
-		print ("Lost Points: ", len(self.lostPoints))
+		Debug.Log(__name__, "Track info for: "+self.star.name)
+		Debug.Log(__name__, "Tracked frames: " + str(len(self.trackedPos)) + "\t Lost frames: " + str(len(self.lostPoints)))

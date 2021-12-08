@@ -240,7 +240,6 @@ def Reset():
 	RuntimeAnalysis.filesList = []
 	RuntimeAnalysis.startFile = ""
 
-	print ("Window Reset")
 	if DataManager.CurrentWindow == 0:
 		# No hacer nada #
 		return

@@ -118,7 +118,7 @@ def Awake(root):
 		index += 1
 
 	if version_changed:
-		print ("Se actualizaron las estrellas de una version anterior")
+		Debug.Warn (__name__, "Se actualizaron las estrellas de una version anterior")
 		SetStar.closedTime = 0
 
 
