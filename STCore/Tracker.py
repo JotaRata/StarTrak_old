@@ -1,31 +1,37 @@
 # coding=utf-8
 
 from tkinter.constants import S
-from STCore.Component import TrackElement
-from item import ResultSettings
+
 import numpy
-from matplotlib import use, figure
+from matplotlib import figure, use
+
+from item import ResultSettings
+from STCore.Component import TrackElement
+
 use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.patches import Rectangle, Polygon
-from matplotlib.artist import setp, getp
 import tkinter as tk
-from tkinter import ttk
-from os.path import basename
-from item.Track import TrackItem
-from utils.backgroundEstimator import GetBackground
-from utils.backgroundEstimator import GetBackgroundMean
-from Icons import GetIcon
-
-from STCore.item.Star import StarItem
-import Results, DataManager, ResultsConfigurator, Composite, RuntimeAnalysis, Settings
-
-from threading import Thread, Lock
-from time import sleep, time
 from functools import partial
+from os.path import basename
+from threading import Lock, Thread
+from time import sleep, time
+from tkinter import messagebox, ttk
+
+from matplotlib.artist import getp, setp
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.patches import Polygon, Rectangle
 from PIL import Image, ImageTk
-from tkinter import messagebox
 from scipy.ndimage import median_filter
+
+import Composite
+import DataManager
+import Results
+import ResultsConfigurator
+import RuntimeAnalysis
+import Settings
+from Icons import GetIcon
+from item.Track import TrackItem
+from STCore.item.Star import StarItem
+from utils.backgroundEstimator import GetBackground, GetBackgroundMean
 
 #region Variables
 App = None

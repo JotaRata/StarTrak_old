@@ -1,42 +1,38 @@
 # coding=utf-8
 
-from pickle import FALSE
-from sys import flags, version_info
 from tkinter import filedialog
-from logging import root
-from operator import contains
-from os import scandir
 from tkinter.constants import W
-import matplotlib
-from matplotlib import axes
+
 import numpy
-from matplotlib import use, figure
+from matplotlib import axes, figure, use
 from matplotlib.axes import Axes
 from numpy.lib.histograms import histogram
 
 from STCore.item import Star
-use("TkAgg")
 
-import matplotlib as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.patches import Rectangle
-from matplotlib.colors import Normalize, PowerNorm, LogNorm
-from matplotlib.artist import setp, getp
+try:
+	use("TkAgg")
+except:
+	Debug.Error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
 import tkinter as tk
 from tkinter import ttk
-from STCore.Component import StarElement
-from STCore.item.Star import *
-import SetStar, Tracker
-import STCore.DataManager
-from time import time
-import Settings
-import RuntimeAnalysis
-import DataManager, RuntimeAnalysis
-import gc
+
+import matplotlib as plt
+from matplotlib.artist import getp, setp
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.colors import LogNorm, Normalize, PowerNorm
+from matplotlib.patches import Rectangle
 from PIL import Image
 
-from Icons import GetIcon
+import DataManager
+import RuntimeAnalysis
+import SetStar
+import Settings
+import Tracker
 from Component import Levels, StarElement
+from Icons import GetIcon
+from STCore.Component import StarElement
+from STCore.item.Star import *
 
 #region Messages and Events
 params = {"ytick.color" : "w",

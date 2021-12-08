@@ -1,10 +1,9 @@
-from PIL import Image, ImageTk
 import tkinter as tk
 
 from astropy.units.equivalencies import with_H0
+from PIL import Image, ImageTk
 
 import Debug
-
 
 Icons = {}
 iconList = ["delete", "prev", "next", "add", "play", "stop", "restart", "multi",

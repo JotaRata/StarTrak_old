@@ -1,14 +1,15 @@
+import tkinter as tk
 from os import stat
-from PIL import Image, ImageTk
+from os.path import basename, getsize
+from tkinter import ttk
 
 import numpy
-from STCore.item.Track import TrackItem
-from STCore.item.Star import StarItem
-from STCore.item.File import FileItem
+from PIL import Image, ImageTk
+
 from Icons import GetIcon
-import tkinter as tk
-from tkinter import ttk
-from os.path import basename, getsize
+from STCore.item.File import FileItem
+from STCore.item.Star import StarItem
+from STCore.item.Track import TrackItem
 
 # This file contains different UI elements which are repeated along the program
 

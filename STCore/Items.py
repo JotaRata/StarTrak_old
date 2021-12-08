@@ -1,10 +1,10 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from sys import version
-from numpy import ndarray
-from astropy.io.fits import header as _header
 from time import struct_time
+
+from astropy.io.fits import header as _header
+from numpy import ndarray
 
 CURRENt_VERSION = 2
 

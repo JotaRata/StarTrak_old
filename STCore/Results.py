@@ -1,21 +1,28 @@
 import tkinter as tk
 from tkinter import ttk
-from matplotlib import figure, use
-use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import numpy
-from utils.backgroundEstimator import GetBackground, GetBackgroundMean
-from utils.Exporter import *
-import math
-from os.path import basename
-import DataManager, Tracker, ImageView
-import ResultsConfigurator as Config
-from time import sleep, localtime, gmtime, strftime, time, mktime
-from multiprocessing import Pool
 
-from Icons import GetIcon
-from functools import partial
+from matplotlib import figure, use
+from STCore import Debug
+
+try:
+	use("TkAgg")
+except:
+	Debug.Error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
 import sys
+from os.path import basename
+from time import  mktime, strftime
+
+import numpy
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+import DataManager
+import ImageView
+import ResultsConfigurator as Config
+import Tracker
+from Icons import GetIcon
+from utils.backgroundEstimator import  GetBackgroundMean
+from utils.Exporter import *
+
 #region  Variables
 ResultsFrame = None
 PlotAxis = None

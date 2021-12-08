@@ -1,8 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
+
+import DataManager
+import Results
+import Tracker
 from item.ResultSettings import ResultSetting
-import Tracker, Results, DataManager
-import numpy
+
 #region variables
 ConfiguratorFrame = None
 SettingsObject = None

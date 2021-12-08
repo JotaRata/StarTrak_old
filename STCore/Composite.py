@@ -1,16 +1,24 @@
 import tkinter as tk
 from tkinter import ttk
+
 import numpy
 import scipy.ndimage
-from matplotlib import use, figure
-use("TkAgg")
+from matplotlib import figure, use
+
+from STCore import Debug
+
+try:
+	use("TkAgg")
+except:
+	Debug.Error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
+from time import sleep, time
+
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import STCore.Settings
-from matplotlib.colors import LogNorm
-from STCore.utils.Exporter import *
 import STCore.DataManager
-from time import time, sleep
+import STCore.Settings
 from Icons import GetIcon
+from STCore.utils.Exporter import *
+
 #region Variables
 CompositeFrame = None
 CompositeData = None

@@ -7,22 +7,21 @@ except:
 	raise ImportError("No se pudo importar algunos modulos")
 
 import sys
+
 if sys.version_info < (3, 0):
 	Debug.Error(_name_, "StarTrak debe ser ejecutado usando  Python3")
 	
-from os.path import dirname, abspath, basename, isfile
 import gc
 import warnings
+from os.path import abspath, basename, dirname, isfile
+
 warnings.filterwarnings("ignore")	
 
 try:
 	Debug.Log(_name_, "Iniciando Tk..")
-	from tkinter import Toplevel, font
-	from tkinter.filedialog import FileDialog
 	import tkinter as tk
-	from tkinter import filedialog
-	from tkinter import messagebox
-	from tkinter import ttk
+	from tkinter import Toplevel, filedialog, font, messagebox, ttk
+	from tkinter.filedialog import FileDialog
 except:
 	Debug.Error(_name_, "No se pudo cargar los modulos tkinter\nAsegurese que estos modulos esten activados en su instalacion de python.")
 
@@ -50,11 +49,18 @@ except NameError:  # We are the main py2exe script, not a module
 
 try:
 	Debug.Log (_name_, "Cargando modulos de Startrak..")
+	import Composite
+	import DataManager
 	import Icons
-	from Icons import GetIcon
-	import ImageSelector, ImageView, Results, Tracker, DataManager
+	import ImageSelector
+	import ImageView
+	import Results
+	import ResultsConfigurator
+	import RuntimeAnalysis
 	import Settings
-	import Composite, ResultsConfigurator, RuntimeAnalysis, Tools
+	import Tools
+	import Tracker
+	from Icons import GetIcon
 except:
 	Debug.Error(_name_, "Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n")
 

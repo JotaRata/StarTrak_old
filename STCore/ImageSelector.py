@@ -1,21 +1,20 @@
 # coding=utf-8
 
 import tkinter as tk
-from typing import Collection
-from PIL import Image, ImageTk
+from os.path import basename, getmtime
+from time import gmtime, sleep, strptime
+from tkinter import filedialog, messagebox, ttk
+
 from astropy.io import fits
-#import pyfits as fits
-from os.path import basename, getmtime, isfile
-from time import sleep, strftime, localtime, strptime,gmtime
-from tkinter import Grid, Widget, filedialog, messagebox, ttk
+
+import DataManager
+import Debug
+import ImageView
+import Tracker
+from Icons import GetIcon
+from item.File import FileItem
 from STCore.Component import FileListElement
 from STCore.item.File import _FILE_VERSION
-from item.File import FileItem
-
-import Debug, ImageView, DataManager, Tracker
-import numpy
-from functools import partial
-from Icons import GetIcon
 
 #region Variables
 App : tk.Frame = None
@@ -110,7 +109,6 @@ def Awake(root, paths = []):
 				continue
 			elif item.version != _FILE_VERSION:
 				 _, item.header = fits.getdata(item.path, header = True)
-				 
 		for item in DataManager.FileItemList:
 			if item.data is None:
 				if item.Exists():
