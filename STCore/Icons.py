@@ -3,6 +3,8 @@ import tkinter as tk
 
 from astropy.units.equivalencies import with_H0
 
+import Debug
+
 
 Icons = {}
 iconList = ["delete", "prev", "next", "add", "play", "stop", "restart", "multi",
@@ -12,7 +14,7 @@ def GetIcon(key):
 	try:
 		return Icons[key]
 	except:
-		print ("El icono: "+key+" no existe.")
+		Debug.Warn (__name__, "El icono: "+key+" no existe.")
 		pass
 
 def Initialize():
@@ -25,6 +27,6 @@ def Initialize():
 			icon.thumbnail(ThumbSize)
 			Icons.update({s : ImageTk.PhotoImage(icon)})
 		except:
-			print ("El icono: "+s+" no se encontro.")
+			Debug.Warn (__name__, "El icono: "+s+" no se encontro.")
 			pass
-	print (len(iconList), " Iconos cargados")
+	Debug.Log (__name__, str(len(iconList))+ " Iconos cargados")
