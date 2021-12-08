@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+from posixpath import basename
 from time import struct_time
 
 from astropy.io.fits import header as _header
 from numpy import ndarray
 
-CURRENt_VERSION = 2
+CURRENT_VERSION = 2
 
 class TrackState(Enum):
 	"ACTIVE", 
@@ -44,6 +45,10 @@ class File(Item):
 
 	def printd(self):
 		pass
+	
+	def Exists(self):
+		from os.path import  isfile
+		return isfile(self.path)
 
 @dataclass
 class Star(Item):

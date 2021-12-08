@@ -182,7 +182,6 @@ class FileListElement(tk.Frame):
 				label.config(text = self.file.header[keywords[i]])
 			except:
 				label.config(text = "NA")
-				print ("La clave \"{0}\" no existe en el header".format(keywords[i]))
 
 			self.labels.append(label)
 		

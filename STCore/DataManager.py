@@ -9,10 +9,11 @@ WorkingPath = ""
 
 
 def Awake():
-	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, SessionName
+	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, SessionName, FileRefList
 	global TkWindowRef, ResultSetting, Levels, RecentFiles, ResultData, RuntimeEnabled, ResultConstant, RuntimeDirectory, RuntimeDirState
 	CurrentFilePath = ""
 	SessionName = ""
+	FileRefList = []
 	FileItemList = []
 	StarItemList = []
 	TrackItemList = []
@@ -58,7 +59,7 @@ def SaveData(filepath):
 	CurrentFilePath = filepath
 	with open(filepath, "wb") as out:
 		pickle.dump(SessionName, out, pickle.DEFAULT_PROTOCOL)
-		pickle.dump(FileItemList, out, pickle.HIGHEST_PROTOCOL)
+		pickle.dump(FileRefList, out, pickle.HIGHEST_PROTOCOL)
 		pickle.dump(StarItemList, out, pickle.HIGHEST_PROTOCOL)
 		pickle.dump(TrackItemList, out, pickle.HIGHEST_PROTOCOL)
 		pickle.dump(CurrentWindow, out, pickle.HIGHEST_PROTOCOL)
@@ -72,14 +73,14 @@ def SaveData(filepath):
 	Main.WindowName()
 
 def LoadData(filepath):
-	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels
+	global CurrentFilePath, FileItemList, StarItemList, TrackItemList, CurrentWindow, ResultSetting, Levels, FileRefList
 	global ResultData, ResultConstant, RuntimeEnabled, RuntimeDirectory, RuntimeDirState, SessionName
 	Reset()
 	CurrentFilePath = filepath
 	with open(filepath, "rb") as inp:
 		try:
 			SessionName = pickle.load(inp)
-			FileItemList = pickle.load(inp)
+			FileRefList = pickle.load(inp)
 			StarItemList = pickle.load(inp)
 			TrackItemList = pickle.load(inp)
 			CurrentWindow = pickle.load(inp)

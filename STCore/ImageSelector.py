@@ -12,9 +12,8 @@ import Debug
 import ImageView
 import Tracker
 from Icons import GetIcon
-from item.File import FileItem
+from Items import File, CURRENT_VERSION
 from STCore.Component import FileListElement
-from STCore.item.File import _FILE_VERSION
 
 #region Variables
 App : tk.Frame = None
@@ -38,8 +37,13 @@ def LoadFiles(paths, root):
 	#Progress.trace("w",lambda a,b,c:LoadWindow[0].update())
 	sortedP = sorted(paths, key=lambda f: Sort(f))
 	n = 0
-	[SetFileItems(x, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root) for x in sortedP]
-	#map(partial(SetFileItems, ListSize = listSize, PathSize = len(paths),loadWindow = LoadWindow, progress = Progress, root = root), sortedP)
+
+	for path in sortedP:
+		item = GetFileItem(path)
+		DataManager.FileItemList.append(item)
+		CreateElements(loadIndex + listSize, item, def_keywords)
+		loadIndex += 1	
+	
 	loadIndex = 0
 	
 	LoadWindow[0].destroy()
@@ -51,32 +55,24 @@ def Sort(path):
 	else:
 		return str(path)
 
-def SetFileItems(path, ListSize, PathSize, progress, loadWindow,  root):
-	global loadIndex
-
-	Debug.Log(__name__, "Loaded "+path)
-	item = FileItem()
-	item.path = str(path)
-	item.data, item.header = fits.getdata(item.path, header = True)
-
+def GetFileItem(path):
 	try:
-		item.date = strptime(item.header["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
+		data = fits.getdata(path, header = True)
+		date = None
+		try:
+			date = strptime(data[1]["DATE-OBS"], "%Y-%m-%dT%H:%M:%S.%f")
+		except:
+			Debug.Warn(__name__, "El archivo \"{0}\" no tiene la clave DATE-OBS, se usara la fecha del sistema".format(path))
+			date = gmtime(getmtime(path))
+
+		item = File(path, data[0], data[1], date)
+		item.name = basename(path)
+
+		Debug.Log(__name__, "Cargado \"{0}\"".format(item.name))
+		return item
 	except:
-		print ("File has no DATE-OBS keyword in Header   -   using system time instead..")
-		item.date = gmtime(getmtime(item.path))
-		pass
-
-	item.active = 1
-	DataManager.FileItemList.append(item)
-	CreateElements(loadIndex + ListSize, item, def_keywords)
-
-	progress.set(100*float(loadIndex)/PathSize)
-	loadWindow[1].config(text="Cargando archivo "+str(loadIndex)+" de "+str(PathSize))
-	loadWindow[0].update()
-	#loadWindow[2]["value"] = (100 * float(loadIndex)/PathSize)
-	sleep(0.01)
-	loadIndex += 1
-	#lock.relase()
+		Debug.Error(__name__, "No se pudo cargar el archivo \"{0}\"".format(path), stop=False)
+		return
 
 def Awake(root, paths = []):
 	global App, ListFrame, ScrollView, def_keywords
@@ -102,23 +98,18 @@ def Awake(root, paths = []):
 		LoadWindow = CreateLoadBar(root, Progress, title = "Cargando "+basename(DataManager.CurrentFilePath))
 		
 		index = 0
+		item:File
 		for item in DataManager.FileItemList:
 			# File item is too old, has to be re-made
 			if not hasattr(item, "version"):
 				item.data = None
 				continue
-			elif item.version != _FILE_VERSION:
+			elif item.version != CURRENT_VERSION:
 				 _, item.header = fits.getdata(item.path, header = True)
 		for item in DataManager.FileItemList:
 			if item.data is None:
 				if item.Exists():
-					item.data, item.header = fits.getdata(item.path, header = True)
-					try:
-						item.date = strptime(item.header["DATE-OBS"].split()[1]+"-"+item.header["DATE-OBS"].split()[3], "%Y-%m-%dT%H:%M:%S.%f")
-					except:
-						print ("File has no Header!   -   using system time instead..")
-						item.date = gmtime(getmtime(item.path))
-						pass
+					item = GetFileItem(item.path)
 					Progress.set(100*float(ind)/len(DataManager.FileItemList))
 					LoadWindow[0].update()
 				else:
@@ -219,7 +210,7 @@ def UpdateElements(keywords):
 	for element in ListElements:
 		element.SetLabels(keywords)
 
-def UpdateHeaders(sample_item : FileItem):
+def UpdateHeaders(sample_item : File):
 	global HeaderButtons
 	
 	i = 0
@@ -262,12 +253,15 @@ def Apply(root):
 	Destroy()
 	# Crea otra lista identica pero solo conteniendo los valores path y active  para liberar espacio al guardar #
 	LightList = []
-	for i in DataManager.FileItemList:
-		item = FileItem()
-		item.path = i.path
-		item.active = i.active
+	file : File
+	for file in DataManager.FileItemList:
+		item = File(file.path, None, file.header, file.date)
+		item.active = file.active
+		item.version = file.version
+		item.name = file.name
 		LightList.append(item)
 	DataManager.FileItemList = FilteredList
+	DataManager.FileRefList = LightList
 	ImageView.Awake(root)
 
 def ClearList(root):
@@ -285,7 +279,6 @@ def ClearList(root):
 
 def AddFiles(root):
 	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
-	#print (paths)
 	Tracker.DataChanged = True
 	LoadFiles(paths, root)
 
