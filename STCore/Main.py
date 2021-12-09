@@ -407,6 +407,8 @@ def PreloadComponents():
 	ImageView.BuildLayout(Window)
 	Tracker.BuildLayout(Window)
 
+def TkinterExceptionHandler(*args):
+	Debug.Error("Tk", "Se ha detectado un error de ejecuccion, revisa el registro para mas detalles.", stop=False)
 try:
 	if __name__ == "__main__":
 		Window = tk.Tk()
@@ -416,7 +418,7 @@ try:
 		Window.tk.call('package', 'require', 'awdark')
 
 		import Styles
-
+		Window.report_callback_exception = TkinterExceptionHandler
 		Settings.WorkingPath = dirname(abspath(__file__))
 		DataManager.WorkingPath = dirname(abspath(__file__))
 		Icons.Initialize()
@@ -427,7 +429,6 @@ try:
 		#print DataManager.WorkingPath
 		DataManager.LoadRecent()
 		DataManager.TkWindowRef = Window
-
 
 		StartFrame = None
 		Window.wm_title(string = "StarTrak 1.1.0")
@@ -451,6 +452,6 @@ try:
 		
 		Window.mainloop()
 except:
-	Debug.Error(_name_, "Se ha detectado un error de ejecucion, revisa el registro para mas detalles")
+	Debug.Error(_name_, "Ha ocurrido un error que ha hecho que Startrak deje de funcionar, revisa el registro paara mas detalles")
 def GetWindow():
 	return Window 

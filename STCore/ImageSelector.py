@@ -269,6 +269,7 @@ def ClearList(root):
 	for i in DataManager.FileItemList:
 		del i
 	DataManager.FileItemList = []
+	DataManager.FileRefList = []
 	try:
 		ScrollView.config(scrollregion=(0,0, root.winfo_width(), 1))
 		for child in ListFrame.winfo_children():
