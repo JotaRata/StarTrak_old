@@ -13,7 +13,7 @@ import ImageView
 import Tracker
 from Icons import GetIcon
 from Items import File, CURRENT_VERSION
-from STCore.Component import FileListElement
+from STCore.Drawables import FileListElement
 
 #region Variables
 App : tk.Frame = None

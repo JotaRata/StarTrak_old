@@ -6,7 +6,7 @@ import numpy
 from matplotlib import figure, use
 
 from item import ResultSettings
-from STCore.Component import TrackElement
+from STCore.Drawables import TrackElement
 
 use("TkAgg")
 import tkinter as tk
@@ -207,7 +207,7 @@ def CreateSidebar(root):
 	Sidebar.config(yscrollcommand=ScrollBar.set)  
 
 	def CommandBack():
-		# TODO: #8 Remove inter-dependence of components
+		# TODO: #8 Remove inter-dependence of Drawabless
 		import STCore.ImageView
 		Destroy()
 		STCore.ImageView.Awake(root)

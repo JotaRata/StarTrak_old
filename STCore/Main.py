@@ -402,8 +402,8 @@ def NewSessionTopLevel(root):
 	ttk.Button(button_frame, text = "Cancelar", command=CloseLevel, width=32).pack(side=tk.RIGHT, pady=16, padx=8)
 	
 
-def PreloadComponents():
-	Debug.Log (_name_, "Preloading components..")
+def PreloadDrawabless():
+	Debug.Log (_name_, "Preloading Drawabless..")
 	ImageView.BuildLayout(Window)
 	Tracker.BuildLayout(Window)
 
@@ -438,11 +438,11 @@ try:
 		except:
 			pass
 		
-		PreloadComponents()
+		PreloadDrawabless()
 
 		Window.after(20, Awake, Window)
 		
-		# Pre-initialize UI components
+		# Pre-initialize UI Drawabless
 		
 		if len(sys.argv) > 1:
 			_helperLoadData(str(sys.argv[1]), Window)

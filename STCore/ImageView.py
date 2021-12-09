@@ -29,10 +29,11 @@ import RuntimeAnalysis
 import SetStar
 import Settings
 import Tracker
-from Component import Levels, StarElement
+from Drawables import Levels, StarElement
 from Icons import GetIcon
-from STCore.Component import StarElement
+from STCore.Drawables import StarElement
 from STCore.item.Star import *
+from Items import Star
 
 #region Messages and Events
 params = {"ytick.color" : "w",
@@ -266,7 +267,7 @@ def CreateLevels():
 #region Update Funcions
 
 sidebar_dirty = False
-def AddStar(star : StarItem, onlyUI = False):
+def AddStar(star : Star, onlyUI = False):
 	global Stars, sidebar_elements
 	global SidebarList
 	
