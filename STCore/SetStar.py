@@ -10,7 +10,7 @@ from numpy.lib.function_base import append
 import DataManager, Settings, ImageView
 from item.Star import *
 import Tracker
-from Icons import GetIcon
+from icons import GetIcon
 from matplotlib.patches import Rectangle
 
 #region Variables

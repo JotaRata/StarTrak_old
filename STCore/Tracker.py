@@ -6,7 +6,7 @@ import numpy
 from matplotlib import figure, use
 
 from item import ResultSettings
-from STCore.Drawables import TrackElement
+from STCore.classes.drawables import TrackElement
 
 use("TkAgg")
 import tkinter as tk
@@ -28,7 +28,7 @@ import Results
 import ResultsConfigurator
 import RuntimeAnalysis
 import Settings
-from Icons import GetIcon
+from icons import GetIcon
 from item.Track import TrackItem
 from STCore.item.Star import StarItem
 from utils.backgroundEstimator import GetBackground, GetBackgroundMean
@@ -207,7 +207,7 @@ def CreateSidebar(root):
 	Sidebar.config(yscrollcommand=ScrollBar.set)  
 
 	def CommandBack():
-		# TODO: #8 Remove inter-dependence of Drawabless
+		# TODO: #8 Remove inter-dependence of classes.drawabless
 		import STCore.ImageView
 		Destroy()
 		STCore.ImageView.Awake(root)

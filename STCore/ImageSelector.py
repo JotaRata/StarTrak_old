@@ -11,9 +11,9 @@ import DataManager
 import Debug
 import ImageView
 import Tracker
-from Icons import GetIcon
-from Items import File, CURRENT_VERSION
-from STCore.Drawables import FileListElement
+from icons import GetIcon
+from classes.items import File, CURRENT_VERSION
+from STCore.classes.drawables import FileListElement
 
 #region Variables
 App : tk.Frame = None

@@ -16,7 +16,7 @@ from time import sleep, time
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import STCore.DataManager
 import STCore.Settings
-from Icons import GetIcon
+from icons import GetIcon
 from STCore.utils.Exporter import *
 
 #region Variables

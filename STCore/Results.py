@@ -19,7 +19,7 @@ import DataManager
 import ImageView
 import ResultsConfigurator as Config
 import Tracker
-from Icons import GetIcon
+from icons import GetIcon
 from utils.backgroundEstimator import  GetBackgroundMean
 from utils.Exporter import *
 

@@ -29,11 +29,11 @@ import RuntimeAnalysis
 import SetStar
 import Settings
 import Tracker
-from Drawables import Levels, StarElement
-from Icons import GetIcon
-from STCore.Drawables import StarElement
+from classes.drawables import Levels, StarElement
+from icons import GetIcon
+from STCore.classes.drawables import StarElement
 from STCore.item.Star import *
-from Items import Star
+from classes.items import Star
 
 #region Messages and Events
 params = {"ytick.color" : "w",
@@ -468,12 +468,12 @@ def Destroy():
 	#gc.collect()
 
 def Apply(root):
-	items = DataManager.FileItemList
+	Items = DataManager.FileItemList
 	
 	from tkinter import messagebox
 	if len(Stars) > 0:
 		Destroy()
-		Tracker.Awake(root, Stars, items)
+		Tracker.Awake(root, Stars, Items)
 		if DataManager.RuntimeEnabled == True:
 			RuntimeAnalysis.StartRuntime(root)
 	else:

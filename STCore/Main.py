@@ -51,7 +51,7 @@ try:
 	Debug.Log (_name_, "Cargando modulos de Startrak..")
 	import Composite
 	import DataManager
-	import Icons
+	import icons
 	import ImageSelector
 	import ImageView
 	import Results
@@ -60,14 +60,13 @@ try:
 	import Settings
 	import Tools
 	import Tracker
-	from Icons import GetIcon
+	from icons import GetIcon
 except:
 	Debug.Error(_name_, "Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n")
 
 
 print ("=" * 60)
 	
-
 def Awake(root):
 	global StartFrame, sidebar, bottombar
 	DataManager.CurrentWindow = 0
@@ -421,7 +420,7 @@ try:
 		Window.report_callback_exception = TkinterExceptionHandler
 		Settings.WorkingPath = dirname(abspath(__file__))
 		DataManager.WorkingPath = dirname(abspath(__file__))
-		Icons.Initialize()
+		icons.Initialize()
 		DataManager.Awake()
 		Settings.LoadSettings()
 		Tools.Awake(Window)
