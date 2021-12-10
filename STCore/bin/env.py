@@ -1,13 +1,16 @@
-from tkinter import Tk
-from STCore.Settings import WorkingPath
-from STCore.bin.app.ui import STView
-from bin.data_management import *
-from bin.app.ui import STView
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from tkinter import Tk
+	from STCore.bin.data_management import *
+	from STCore.bin.app.ui import STView
 #--------------------
-scope 			: str
-working_path 	: str
-tk				: Tk
-current_view 	: STView
-views 	: dict[str, STView]
-recent_manager	: RecentsManager
-session_manager	: SessionManager
+scope 			: str				= None
+working_path 	: str				= None
+tk				: Tk				= None
+current_view 	: STView			= None
+views 	: dict[str, STView]			= None
+recent_manager	: RecentsManager	= None
+session_manager	: SessionManager	= None
+settings_manager: SettingsManager	= None
