@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from posixpath import basename
 from time import struct_time
+from warnings import simplefilter
 
 from astropy.io.fits import header as _header
 from numpy import ndarray
@@ -19,16 +20,14 @@ class TrackState(Enum):
 @dataclass
 class Item(ABC):
 	@property
-	@classmethod
 	@abstractmethod
 	def name(cls):
-		raise NotADirectoryError
+		raise NotImplementedError
 		
 	@property
-	@classmethod
 	@abstractmethod
 	def version(cls):
-		raise NotADirectoryError
+		raise NotImplementedError
 	
 	@abstractmethod
 	def printd(self):
@@ -40,14 +39,16 @@ class File(Item):
 	version = 2
 	active = True
 	path : str
-	data : ndarray
-	header : _header
-	date : struct_time
+	data : ndarray		= None
+	header : _header	= None
+	date : struct_time	= None
+	relative_path :bool	= False
+	simple	:bool		= False
 
 	def printd(self):
 		pass
 	
-	def Exists(self):
+	def exists(self):
 		from os.path import  isfile
 		return isfile(self.path)
 

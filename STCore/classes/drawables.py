@@ -6,7 +6,7 @@ from tkinter import ttk
 import numpy
 from PIL import Image, ImageTk
 
-from icons import get_icon
+from Icons import get_icon
 from STCore.item.File import FileItem
 from STCore.item.Star import StarItem
 from STCore.item.Track import TrackItem

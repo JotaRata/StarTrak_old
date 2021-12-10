@@ -22,6 +22,7 @@ class SessionManager:
 	runtime		  : float 	= False
 	runtime_dir : str = ""
 	runtime_dir_state = []
+	window = 0
 
 	def __print__(self):
 		print (self.file_items)
@@ -37,7 +38,7 @@ class SessionManager:
 			pickle.dump(self.file_refs, out, pickle.HIGHEST_PROTOCOL)
 			pickle.dump(self.star_items, out, pickle.HIGHEST_PROTOCOL)
 			pickle.dump(self.track_items, out, pickle.HIGHEST_PROTOCOL)
-			pickle.dump(self.current_win, out, pickle.HIGHEST_PROTOCOL)
+			pickle.dump(self.window, out, pickle.HIGHEST_PROTOCOL)
 			pickle.dump(self.graph_setting, out, pickle.HIGHEST_PROTOCOL)
 			pickle.dump(self.viewer_levels, out, pickle.HIGHEST_PROTOCOL)
 			pickle.dump(self.graph_cache, out, pickle.HIGHEST_PROTOCOL)
@@ -56,7 +57,7 @@ class SessionManager:
 				self.file_refs = pickle.load(inp)
 				self.star_items = pickle.load(inp)
 				self.track_items = pickle.load(inp)
-				self.current_win = pickle.load(inp)
+				self.window = pickle.load(inp)
 				self.graph_setting = pickle.load(inp)
 				self.viewer_levels = pickle.load(inp)
 				self.graph_cache = pickle.load(inp)
@@ -72,8 +73,7 @@ class SessionManager:
 		self.save_recent()
 
 		Main.WindowName()
-		Main.LoadData(self.current_win)
-
+		Main.LoadData(self.window)
 #----------------------------------
 class RecentsManager:
 	recent_files = []
@@ -82,33 +82,33 @@ class RecentsManager:
 		Main.Reset()
 
 	def save_recent(self):
-		with open(self.working_path+"/StarTrak.bin", "wb") as f:
+		with open(env.working_path+"/StarTrak.bin", "wb") as f:
 			pickle.dump(self.recent_files, f, pickle.HIGHEST_PROTOCOL)
 
 	def load_recent(self):
-		if (isfile(self.working_path + "/StarTrak.bin")):
-			with open(self.working_path + "/StarTrak.bin", "rb") as f:
+		if (isfile(env.working_path + "/StarTrak.bin")):
+			with open(env.working_path + "/StarTrak.bin", "rb") as f:
 				try:
 					self.recent_files = pickle.load(f)
 				except:
 					pass
 		else:
 			self.save_recent()
-
 #----------------------------------
 class SettingsManager:
-	loaded = False
-	keys = [
-		Setting(BooleanVar(),	"GENERAL",	 	"SHOW_RECENT", 	True),
-		Setting(IntVar(), 		"GENERAL", 		"THREADNUM", 	1),
-		Setting(BooleanVar(),	"VISUAL", 		"SHOW_GRID", 	False),
-		Setting(IntVar(), 		"VISUAL", 		"SCALE_MODE", 	0),
-	 	Setting(IntVar(), 		"VISUAL", 		"COLOR_MODE", 	0),
-	 	Setting(BooleanVar(), 	"TRACKING", 	"TRACK_PRED", 	True),
-		Setting(BooleanVar(),	"TRACKING", 	"SHOW_TRAILS", 	True),
-	]
+	def __init__(self):
+		self.loaded = False
+		self.keys = [
+			Setting(BooleanVar(),	"GENERAL",	 	"SHOW_RECENT", 	True),
+			Setting(IntVar(), 		"GENERAL", 		"THREADNUM", 	1),
+			Setting(BooleanVar(),	"VISUAL", 		"SHOW_GRID", 	False),
+			Setting(IntVar(), 		"VISUAL", 		"SCALE_MODE", 	0),
+			Setting(IntVar(), 		"VISUAL", 		"COLOR_MODE", 	0),
+			Setting(BooleanVar(), 	"TRACKING", 	"TRACK_PRED", 	True),
+			Setting(BooleanVar(),	"TRACKING", 	"SHOW_TRAILS", 	True),
+		]
 	
-	def load(self):
+	def load_settings(self):
 		config = ConfigParser()
 		if (isfile(env.working_path + "/settings.ini")):
 			config.read(env.working_path + "/settings.ini")
