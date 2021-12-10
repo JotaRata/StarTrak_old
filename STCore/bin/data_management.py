@@ -1,16 +1,20 @@
 import __main__ as Main
+from configparser import ConfigParser
+from dataclasses import dataclass
 import pickle
 from os.path import isfile
+from tkinter import BooleanVar, IntVar, StringVar
+from STCore import Debug
+from STCore.bin import env
+from STCore.classes.items import Setting
 
 class SessionManager:
-	working_path : str 		= ""
 	current_path : str 		= ""
 	session_name : str		= ""
 	file_refs 	 : list 	= []
 	file_items 	 : list 	= []
 	star_items 	 : list 	= []
 	track_items  : list 	= []
-	current_win	 : int		= 0
 	graph_setting = None
 	graph_cache =  None
 	viewer_levels:  tuple	= None
@@ -70,6 +74,7 @@ class SessionManager:
 		Main.WindowName()
 		Main.LoadData(self.current_win)
 
+#----------------------------------
 class RecentsManager:
 	recent_files = []
 
@@ -90,7 +95,62 @@ class RecentsManager:
 		else:
 			self.save_recent()
 
+#----------------------------------
+class SettingsManager:
+	loaded = False
+	keys = [
+		Setting(BooleanVar(),	"GENERAL",	 	"SHOW_RECENT", 	True),
+		Setting(IntVar(), 		"GENERAL", 		"THREADNUM", 	1),
+		Setting(BooleanVar(),	"VISUAL", 		"SHOW_GRID", 	False),
+		Setting(IntVar(), 		"VISUAL", 		"SCALE_MODE", 	0),
+	 	Setting(IntVar(), 		"VISUAL", 		"COLOR_MODE", 	0),
+	 	Setting(BooleanVar(), 	"TRACKING", 	"TRACK_PRED", 	True),
+		Setting(BooleanVar(),	"TRACKING", 	"SHOW_TRAILS", 	True),
+	]
+	
+	def load(self):
+		config = ConfigParser()
+		if (isfile(env.working_path + "/settings.ini")):
+			config.read(env.working_path + "/settings.ini")
+		else:
+			Debug.Warn(__name__, "Settings file not found, creating new file..")
+			self.save_default()
+			self.load_settings()
+			return
 
-def __init__():
-	global recent_manager
-	recent_manager = RecentsManager()
+		for key in self.keys:
+			try:
+				key.set(config.get(key.group, key.name))
+			except:
+				Debug.Warn(__name__, "La clave {0} no se ha encontrado en la configuracion".format(key.name))
+				continue
+		self.loaded = True
+
+	def save(self):
+		config = ConfigParser()
+
+		config.add_section("GENERAL")
+		config.add_section("VISUAL")
+		config.add_section("TRACKING")
+
+		for key in self.keys:
+			config.set(key.group, key.name, key.get())
+
+		with open(env.working_path + '/settings.ini', 'w') as configfile:
+			config.write(configfile)
+			
+	def save_default(self):
+		config = ConfigParser()
+
+		config.add_section("GENERAL")
+		config.add_section("VISUAL")
+		config.add_section("TRACKING")
+
+		for key in self.keys:
+			config.set(key.group, key.name, key.default)
+
+		with open(env.working_path + '/settings.ini', 'w') as configfile:
+			config.write(configfile)
+
+
+		#CloseWindow()
