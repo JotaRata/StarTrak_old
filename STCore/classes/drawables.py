@@ -6,7 +6,7 @@ from tkinter import ttk
 import numpy
 from PIL import Image, ImageTk
 
-from icons import GetIcon
+from icons import get_icon
 from STCore.item.File import FileItem
 from STCore.item.Star import StarItem
 from STCore.item.Track import TrackItem
@@ -63,7 +63,7 @@ class StarElement(tk.Frame):
 
 		self.config(bg="gray10")
 
-		delete_icon = GetIcon("delete")
+		delete_icon = get_icon("delete")
 		self.config(bg="gray8")
 		self.grid_columnconfigure(1, weight=1)
 

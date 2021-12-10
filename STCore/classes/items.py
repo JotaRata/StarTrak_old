@@ -6,6 +6,7 @@ from time import struct_time
 
 from astropy.io.fits import header as _header
 from numpy import ndarray
+from tkinter import Variable
 
 CURRENT_VERSION = 2
 
@@ -78,4 +79,14 @@ class Track(Item):
 	def printd(self):
 		pass
 
-	
+@dataclass
+class Setting(object):
+	value 	: Variable
+	group 	: str
+	name :	 str
+	default : object
+
+	def set(self, value):
+		self.value.set(value = value)
+	def get(self):
+		return self.value.get()
