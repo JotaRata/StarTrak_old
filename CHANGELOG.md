@@ -1,8 +1,20 @@
 # CHANGELOG
 
-## Unreleased
+## [v1.1.0](https://github.com/JotaRata/StarTrak/releases/tag/v1.1.0) - 2021-12-07 21:52:25
 
-Changes unreleased.
+StarTrak 1.1.0 comes with a handful of features:
+
+- Port to python 3.x
+- New design
+- Faster loading
+- Better tracking
+- Compositing
+- More options to photometry
+- Better background estimation
+- And a lot more
+
+Be sure to check CHANGELOG.md for further details
+
 
 ### Feature
 
