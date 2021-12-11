@@ -9,9 +9,10 @@ from PIL import ImageTk
 
 #from STCore import Settings, Tools
 from STCore.bin.data_management import SessionManager
-from STCore.classes.drawables import FileListElement
+from STCore.classes.drawables import Button, FileListElement, HButton
 from STCore.classes.items import  File
 from STCore.Icons import get_icon
+from STCore import styles
 
 def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
 #-------------------------
@@ -161,8 +162,8 @@ class MainScreenUI (STView, tk.Frame):
 		#Tracker.DataChanged = False
 		self.set_window_name(master)
 		self.create_sidebar()
-		self.create_bottom(master)
-		self.config(width = 1100, height = 400, bg="gray18")
+		self.create_bottom()
+		self.config(width = 1100, height = 400, **styles.FRAME)
 
 		self.sidebar.pack(side = tk.LEFT, anchor = tk.NW, fill = tk.Y, expand = 0)
 		self.sidebar.pack_propagate(0)
@@ -171,7 +172,7 @@ class MainScreenUI (STView, tk.Frame):
 
 	def build(self, master):
 		self.pack(expand=1, fill = "both")
-		self.session_button.config(command = lambda: self.callbacks["toplevel"]())
+		self.session_button.config(cmd = self.callbacks["toplevel"])
 		#self.load_button.config(command = Tools.OpenFileCommand)
 		#self.create_recent(master)
 
@@ -183,20 +184,23 @@ class MainScreenUI (STView, tk.Frame):
 		# Callbarck: toplevel, load_data
 		self.callbacks = args
 
-	def create_bottom(self, master):
-		self.bottombar = tk.Frame(self, bg ="gray18", height=64)
-		self.session_button = ttk.Button(self.bottombar, text = "Nueva Sesion",image = get_icon("run"), compound = "left",  width=32, style="Highlight.TButton")
+	def create_bottom(self):
+		self.bottombar = tk.Frame(self, height=64, **styles.SFRAME)
+		
+		self.session_button = HButton(self.bottombar, None, text = "Nueva Sesion", width=196)
 		self.session_button.pack(side= tk.RIGHT, anchor = tk.E)
 
-		self.load_button = ttk.Button(self.bottombar, text = "Cargar Sesion",image = get_icon("open"), compound = "left", width=32)
+		self.load_button = Button(self.bottombar, None, text = "Cargar Sesion", width=196)
 		self.load_button.pack(side= tk.RIGHT, anchor = tk.E, after=self.session_button)
 
 	def create_sidebar(self):
-		self.sidebar = tk.Frame(self, bg="gray15", width=400)
-		logo = ImageTk.PhotoImage(file ="STCore/StarTrak.png")
-		logo_label = tk.Label(self.sidebar,image= logo, bg = "gray15")
+		self.sidebar = tk.Frame(self, width=300, bg = styles.hover_dark)
+		logo = tk.PhotoImage(file ="STCore/StarTrak.png")
+		logo_label = tk.Label(self.sidebar,image= logo, bg = styles.hover_dark)
+		logo_label.photo = logo
 		logo_label.pack(pady=16)
-		tk.Label(self.sidebar, text = "Bienvenido a StarTrak",font="-weight bold", bg = "gray15", fg = "gray80").pack(pady=16)
+
+		tk.Label(self.sidebar, text = "Bienvenido a StarTrak",font="-weight bold", **styles.SLABEL, background = styles.hover_primary).pack(pady=16)
 
 	# def create_recent(self, master):
 		# if Settings._RECENT_FILES_.get() == 1:

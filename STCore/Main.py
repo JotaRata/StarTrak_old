@@ -6,6 +6,7 @@ import gc
 from tkinter.constants import END
 import warnings
 from os.path import abspath, basename, dirname, isfile
+
 warnings.filterwarnings("ignore")	
 
 try:
@@ -61,6 +62,8 @@ try:
 	from STCore.bin.app.ui import MainScreenUI, STView, SelectorUI
 	from STCore.bin.data_management import RecentsManager, SettingsManager, SessionManager
 	from STCore.bin.app.ui import SessionDialog
+	from STCore import styles
+
 
 except:
 	Debug.Error(_name_, "Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n")
@@ -181,6 +184,7 @@ try:
 		master.tk.call('package', 'require', 'awdark')
 		master.report_callback_exception = TkinterExceptionHandler
 		
+		styles.load_styles()
 		preload_view(master)
 		env.recent_manager = RecentsManager()
 		env.settings_manager = SettingsManager()

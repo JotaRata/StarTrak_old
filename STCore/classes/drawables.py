@@ -7,6 +7,7 @@ import numpy
 from PIL import Image, ImageTk
 
 from Icons import get_icon
+from STCore import styles
 from STCore.item.File import FileItem
 from STCore.item.Star import StarItem
 from STCore.item.Track import TrackItem
@@ -15,8 +16,7 @@ from STCore.item.Track import TrackItem
 
 # Levels creates two sliders on the bottom of the ImageView viewport
 # It allow to control the brightness and contrast of an image
-class Levels(tk.Frame):
-	
+class Levels(tk.Frame):	
 	def __init__(self, master, command, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
 
@@ -53,6 +53,81 @@ class Levels(tk.Frame):
 	def setMax(self, lvl):
 		self._LEVEL_MAX_.set(lvl)
 		self.maxScale.set(lvl)
+# ------------------------------------
+class Button(tk.Label):
+	def __init__(self, master, cmd, *args,**kwargs):
+		tk.Label.__init__(self, master, image=styles.button_base, **kwargs)
+		self.config(compound ="center", height = 32, width = 164, **styles.BUTTON)
+		self.command = cmd
+		self.config(bg = master["bg"])
+		def on_enter(e):
+			e.widget["image"] = styles.button_hover
+		def on_leave(e): 
+			e.widget["image"] = styles.button_base
+		def on_press(e): 
+			e.widget["image"] = styles.button_press
+			e.widget["relief"] = "flat"
+		def on_release(e): 
+			e.widget["image"] = styles.button_base
+			e.widget["relief"] = "flat"
+			if cmd is not None:
+				self.ommand(*args)
+		
+		self.bind("<Enter>", on_enter)
+		self.bind("<Leave>", on_leave)
+		self.bind('<Button-1>', on_press)
+		self.bind("<ButtonRelease-1>", on_release)
+		# self.photo = styles.button_base
+	def setup_image(self):
+		self.photo = styles.button_base
+	def config(self, **kwargs):
+		if "cmd" in kwargs:
+			self.command = kwargs["cmd"]
+			kwargs.pop("cmd")
+		if "command" in kwargs:
+			self.command = kwargs["command"]
+			kwargs.pop("command")
+			
+		self.configure(**kwargs)
+class HButton(tk.Label):
+	def __init__(self, master, cmd, args = None,**kwargs):
+		tk.Label.__init__(self, master, image=styles.hbutton_base, **kwargs)
+		self.config(compound ="center", height = 32, width = 164, **styles.HBUTTON)
+		self.command = cmd
+		self.config(bg = master["bg"])
+		def on_enter(e):
+			e.widget["image"] = styles.hbutton_hover
+		def on_leave(e): 
+			e.widget["image"] = styles.hbutton_base
+		def on_press(e): 
+			e.widget["image"] = styles.hbutton_press
+			e.widget["relief"] = "flat"
+		def on_release(e): 
+			e.widget["image"] = styles.hbutton_base
+			e.widget["relief"] = "flat"
+			if self.command is not None:
+				if args is None:
+					self.command()
+				else:
+					self.command(*args)
+		
+		self.bind("<Enter>", on_enter)
+		self.bind("<Leave>", on_leave)
+		self.bind('<Button-1>', on_press)
+		self.bind("<ButtonRelease-1>", on_release)
+		# self.photo = styles.button_base
+	def setup_image(self):
+		self.photo = styles.button_base
+	def config(self, **kwargs):
+		if "cmd" in kwargs:
+			self.command = kwargs["cmd"]
+			kwargs.pop("cmd")
+		if "command" in kwargs:
+			self.command = kwargs["command"]
+			kwargs.pop("command")
+			
+		self.configure(**kwargs)
+
 
 # This class is instancesmin the sidebar of ImageView
 # It shows status and properties of the stars created
@@ -82,7 +157,6 @@ class StarElement(tk.Frame):
 	def update_star(self, star : StarItem):
 		self.main_button.config(text=star.name)
 		self.gvar.set(star.type)
-	
 
 # TrackElelement displays some information about the curent tracking status
 # It is instanced in the sidebar of Tracker
@@ -203,3 +277,5 @@ class FileListElement(tk.Frame):
 		thumb.thumbnail((150, 150))
 			
 		return thumb
+
+	
