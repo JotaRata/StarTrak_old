@@ -164,12 +164,13 @@ class MainScreenUI (STView, tk.Frame):
 		#Tracker.DataChanged = False
 		self.set_window_name(master)
 		self.create_sidebar()
-		self.create_bottom()
+		self.create_top()
 		self.config(width = 1100, height = 400, **styles.FRAME)
 
 		self.sidebar.pack(side = tk.LEFT, anchor = tk.NW, fill = tk.Y, expand = 0)
 		self.sidebar.pack_propagate(0)
-		self.bottombar.pack(expand=1, side=tk.BOTTOM, anchor=tk.SW, fill = tk.X)
+
+		self.bottombar.pack(expand=1, side=tk.TOP, anchor=tk.NW, fill = tk.X)
 		self.bottombar.pack_propagate(0)
 
 	def build(self, master):
@@ -186,7 +187,7 @@ class MainScreenUI (STView, tk.Frame):
 		# Callbarck: toplevel, load_data
 		self.callbacks = args
 
-	def create_bottom(self):
+	def create_top(self):
 		self.bottombar = tk.Frame(self, height=64, **styles.SFRAME)
 		
 		self.session_button = HButton(self.bottombar, None, text = "Nueva Sesion", width=196)
@@ -225,13 +226,13 @@ class MainScreenUI (STView, tk.Frame):
 	def set_window_name(self, master):
 		if False:
 		#if len(session_manager.current_path) > 0:
-			master.wm_title(string = "StarTrak 1.1.0 - "+ basename(session_manager.current_path))
+			master.wm_title(string = "StarTrak 1.2.0 - "+ basename(session_manager.current_path))
 		else:
-			master.wm_title(string = "StarTrak 1.1.0")
+			master.wm_title(string = "StarTrak 1.2.0")
 	
 class SessionDialog(STView, tk.Toplevel):
 	def __init__(self, master, *args, **kwargs) :
-		center = (master.winfo_width()/2 + master.winfo_x() - 360,  master.winfo_height()/2 + master.winfo_y() - 240)
+		center = (master.winfo_width()/2 + master.winfo_x() - 360 + 100,  master.winfo_height()/2 + master.winfo_y() - 240 + 60)
 		Toplevel.__init__(self, master, *args, **kwargs)
 		
 		self.config(bg = styles.press_primary, bd=4)
@@ -352,7 +353,7 @@ class SessionDialog(STView, tk.Toplevel):
 			#RuntimeAnalysis.startFile = directory_path
 			#RuntimeAnalysis.Awake(root)
 		if self.session.runtime == 1:
-			self.close
+			self.close()
 			#Destroy()
 			#ImageSelector.Awake(root, file_paths)
 

@@ -60,17 +60,22 @@ class Button(tk.Label):
 		self.config(compound ="center", height = 32, width = 164, **styles.BUTTON)
 		self.command = cmd
 		self.config(bg = master["bg"])
+		hover = False
 		def on_enter(e):
+			nonlocal hover
 			e.widget["image"] = styles.button_hover
+			hover = True
 		def on_leave(e): 
+			nonlocal hover
 			e.widget["image"] = styles.button_base
+			hover = False
 		def on_press(e): 
 			e.widget["image"] = styles.button_press
 			e.widget["relief"] = "flat"
 		def on_release(e): 
 			e.widget["image"] = styles.button_base
 			e.widget["relief"] = "flat"
-			if cmd is not None:
+			if cmd is not None and hover:
 				self.command(*args)
 		
 		self.bind("<Enter>", on_enter)
@@ -95,17 +100,22 @@ class HButton(tk.Label):
 		self.config(compound ="center", height = 32, width = 164, **styles.HBUTTON)
 		self.command = cmd
 		self.config(bg = master["bg"])
+		hover = False
 		def on_enter(e):
+			nonlocal hover
 			e.widget["image"] = styles.hbutton_hover
+			hover = True
 		def on_leave(e): 
+			nonlocal hover
 			e.widget["image"] = styles.hbutton_base
+			hover = False
 		def on_press(e): 
 			e.widget["image"] = styles.hbutton_press
 			e.widget["relief"] = "flat"
 		def on_release(e): 
 			e.widget["image"] = styles.hbutton_base
 			e.widget["relief"] = "flat"
-			if self.command is not None:
+			if self.command is not None and hover:
 				if args is None:
 					self.command()
 				else:

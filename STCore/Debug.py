@@ -17,7 +17,7 @@ class bcolors:
 
 if __name__ == "Debug":
 	with open(DEBUG_PATH, "w") as f:
-		f.write("Startrak log\nversion: 1.1.0\npython {0}.{1}.{2}\n".format(ver.major, ver.micro, ver.minor))
+		f.write("Startrak log\nversion: 1.2.0\npython {0}.{1}.{2}\n".format(ver.major, ver.micro, ver.minor))
 
 def Log (provider, message):
 	print(bcolors.HEADER + "["+provider+"]", bcolors.OKBLUE + message + bcolors.ENDC)
