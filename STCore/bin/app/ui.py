@@ -1,13 +1,7 @@
-
-from pickle import FRAME
 import tkinter as tk
-# from os import basename, dirname
 from abc import ABC, abstractmethod
-from tkinter import Grid, Toplevel, ttk
+from tkinter import Toplevel, ttk
 from tkinter import filedialog
-
-from PIL import ImageTk
-from astropy.io.fits import column
 
 #from STCore import Settings, Tools
 from STCore.bin.data_management import SessionManager
@@ -15,6 +9,8 @@ from STCore.classes.drawables import Button, FileListElement, HButton
 from STCore.classes.items import  File
 from STCore.Icons import get_icon
 from STCore import styles
+from STCore.bin import env
+import os
 
 def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
 #-------------------------
@@ -31,7 +27,7 @@ class STView(ABC):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def close(self):
+	def close(self, master):
 		raise NotImplementedError()
 	
 	@abstractmethod
@@ -66,7 +62,7 @@ class SelectorUI(STView, tk.Frame):
 		self.apply_button.config(command = lambda: self.callbacks["apply"](master))
 
 
-	def close(self):
+	def close(self, master):
 		self.destroy()
 	def config_callback(self, **args):
 		# Callbacks: clear, add, apply
@@ -179,7 +175,7 @@ class MainScreenUI (STView, tk.Frame):
 		#self.load_button.config(command = Tools.OpenFileCommand)
 		#self.create_recent(master)
 
-	def close(self):
+	def close(self, master):
 		self.sidebar.destroy()
 		self.bottombar.destroy()
 		self.destroy()
@@ -224,23 +220,24 @@ class MainScreenUI (STView, tk.Frame):
 
 
 	def set_window_name(self, master):
-		if False:
-		#if len(session_manager.current_path) > 0:
-			master.wm_title(string = "StarTrak 1.2.0 - "+ basename(session_manager.current_path))
-		else:
-			master.wm_title(string = "StarTrak 1.2.0")
+		master.wm_title(string = "StarTrak 1.2.0")
+		if env.session_manager is None:
+			return
+		if len(env.session_manager.current_path) > 0:
+			master.wm_title(string = "StarTrak 1.2.0 - "+ os.basename(env.session_manager.current_path))
 	
 class SessionDialog(STView, tk.Toplevel):
-	def __init__(self, master, *args, **kwargs) :
+	def __init__(self, master : tk.Tk, *args, **kwargs) :
 		center = (master.winfo_width()/2 + master.winfo_x() - 360 + 100,  master.winfo_height()/2 + master.winfo_y() - 240 + 60)
 		Toplevel.__init__(self, master, *args, **kwargs)
 		
 		self.config(bg = styles.press_primary, bd=4)
 		self.session = SessionManager()
 		self.geometry("720x480+%d+%d" % center)
-		try:
+		self.grab_set()
+		try:	 # If is Linux
 			self.wm_attributes('-type', 'splash')
-		except:
+		except:	 # If is Windows
 			self.overrideredirect(True)
 			
 		self.rowconfigure((6), weight=1)
@@ -293,8 +290,41 @@ class SessionDialog(STView, tk.Toplevel):
 		button_frame = tk.Frame(self, **styles.SFRAME)
 		button_frame.grid(row=7, columnspan=2, sticky="ew")
 
-		HButton(button_frame, text = "Continuar", cmd=self.apply, width=40).pack(side=tk.RIGHT, pady=16, padx=8)
-		Button(button_frame, text = "Cancelar", cmd=self.close, width=32).pack(side=tk.RIGHT, pady=16, padx=8)
+		HButton(button_frame, text = "Continuar", cmd=	lambda:self.apply(master), width=40).pack(side=tk.RIGHT, pady=16, padx=8)
+		Button(button_frame, text = "Cancelar", cmd=	lambda:self.close(master), width=32).pack(side=tk.RIGHT, pady=16, padx=8)
+		
+		def raise_level(event):
+			self.attributes('-topmost', 1)
+			self.attributes('-topmost', 0)
+		def sync_windows(event):
+			raise_level(event)
+			x = master.winfo_width()/2 + master.winfo_x() - 360 + 100
+			y = master.winfo_height()/2 + master.winfo_y() - 240 + 60
+			self.geometry("720x480+%d+%d" % (x,y)) 
+
+		self.sync_call = master.bind("<Configure>", lambda e : sync_windows(e))
+		self.raise_call= master.bind("<FocusIn>", 	lambda e : raise_level(e))
+
+	def build(self, master):
+		pass
+	def config_callback(self, **args):
+		pass
+	def close(self, master):
+		master.unbind("<FocusIn>", self.raise_call)
+		master.unbind("<Configure>", self.sync_call)
+		self.grab_release()
+		self.destroy()	
+	
+	def apply(self, master):
+		self.session.session_name = str(self.name_var.get())
+		if self.session.runtime == 0:
+			self.close(master)
+			#RuntimeAnalysis.startFile = directory_path
+			#RuntimeAnalysis.Awake(root)
+		if self.session.runtime == 1:
+			self.close(master)
+			#Destroy()
+			#ImageSelector.Awake(root, file_paths)
 
 	def get_filepaths(self):
 		file_paths = filedialog.askopenfilenames(parent = self, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
@@ -339,22 +369,5 @@ class SessionDialog(STView, tk.Toplevel):
 		asbutton.config(bg = styles.base_highlight if mode == 1 else styles.base_primary)
 		for c in asbutton.winfo_children():
 			c.config(bg = styles.base_highlight if mode == 1 else styles.base_primary, fg = "white" if mode == 1 else "gray70")
-	def build(self):
-		pass
-	def config_callback(self, **args):
-		pass
-	def close(self):
-		self.destroy()	
 	
-	def apply(self):
-		self.session.session_name = str(self.name_var.get())
-		if self.session.runtime == 0:
-			self.close()
-			#RuntimeAnalysis.startFile = directory_path
-			#RuntimeAnalysis.Awake(root)
-		if self.session.runtime == 1:
-			self.close()
-			#Destroy()
-			#ImageSelector.Awake(root, file_paths)
-
 	
