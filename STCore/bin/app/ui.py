@@ -1,11 +1,13 @@
 
+from pickle import FRAME
 import tkinter as tk
 # from os import basename, dirname
 from abc import ABC, abstractmethod
-from tkinter import Toplevel, ttk
+from tkinter import Grid, Toplevel, ttk
 from tkinter import filedialog
 
 from PIL import ImageTk
+from astropy.io.fits import column
 
 #from STCore import Settings, Tools
 from STCore.bin.data_management import SessionManager
@@ -52,8 +54,8 @@ class SelectorUI(STView, tk.Frame):
 		self.create_sidebar(master)
 		#self.update_header(session_manager.file_items[0])
 	
-		self.header.grid(row= 0, column= 0, columnspan=3, sticky="ew")
-		self.scroll_view.grid(row=1, column=0, rowspan=3, columnspan=3, sticky="news")
+		self.header.grid(row= 0, column= 0, columnspan=2, sticky="ew")
+		self.scroll_view.grid(row=1, column=0, rowspan=3, columnspan=2, sticky="news")
 		self.sidebar.grid(row=0, column=4, rowspan=3, sticky="news")
 		
 	def build(self, master):
@@ -230,29 +232,35 @@ class MainScreenUI (STView, tk.Frame):
 class SessionDialog(STView, tk.Toplevel):
 	def __init__(self, master, *args, **kwargs) :
 		center = (master.winfo_width()/2 + master.winfo_x() - 360,  master.winfo_height()/2 + master.winfo_y() - 240)
-
 		Toplevel.__init__(self, master, *args, **kwargs)
 		
+		self.config(bg = styles.press_primary, bd=4)
 		self.session = SessionManager()
 		self.geometry("720x480+%d+%d" % center)
+		try:
+			self.wm_attributes('-type', 'splash')
+		except:
+			self.overrideredirect(True)
+			
+		self.rowconfigure((6), weight=1)
+		self.columnconfigure(( 1), weight=1)
 		self.wm_title(string = "Nueva Sesion")
+		self.name_var = tk.StringVar(self, value="Nueva Sesion")
 
-		ttk.Label(self, text="Crear nueva sesion", font="-weight bold").pack(side=tk.TOP, anchor=tk.NW, fill=tk.X, pady=16, padx=8)
-		
-		ttk.Label(self, text="Nombre de la sesion").pack(side=tk.TOP, anchor=tk.N, fill=tk.X, pady=16, padx=16)
+		tk.Label(self, text="Crear nueva sesion", font="-weight bold", bg = styles.press_primary, fg="white").grid(row= 0, columnspan=2 , sticky="ew")
+		tk.Label(self, text="Nombre de la sesion:",  bg = styles.press_primary, fg="gray60", font = (None, 12)).grid(row= 1, column= 0, sticky="ew", pady=12)
 
-		self.load_frame = ttk.Frame(self)
-		self.load_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=1, pady=16)
+		self.load_frame = tk.Frame(self, bg= styles.press_primary, height=128)
 		self.info_label = None
 		
-		name_var = tk.StringVar(self, value="Nueva Sesion")
-		entry = ttk.Entry(self, textvariable=name_var)
-		entry.pack(side=tk.TOP, anchor=tk.N, fill=tk.X, padx=32)
+		entry = tk.Entry(self, textvariable= self.name_var, font=(None, 16), bg = styles.press_primary, fg ="gray80")
+		entry.grid(row= 1, column= 1, sticky="ew", padx=8)
 
-		rtsession = tk.Frame(self, relief=tk.FLAT, bg="gray18", height=4)
-		rtsession.pack(anchor=tk.CENTER, fill=tk.X, pady=8)
-		assession = tk.Frame(self, relief=tk.FLAT, bg="gray18", height=4)
-		assession.pack(anchor=tk.CENTER, fill=tk.X, pady=8)
+		rtsession = tk.Frame(self ,height=8, **styles.SFRAME)
+		assession = tk.Frame(self ,height=8, **styles.SFRAME)
+
+		rtsession.grid(row= 3, columnspan=2,  sticky="news", pady=4)
+		assession.grid(row= 4, columnspan=2,  sticky="news", pady=4)
 
 		rt_cmd = lambda e: self.set_mode(0, rtsession, assession)
 		as_cmd = lambda e: self.set_mode(1, rtsession, assession)
@@ -260,31 +268,32 @@ class SessionDialog(STView, tk.Toplevel):
 		rtsession.bind('<Button-1>', rt_cmd)
 		assession.bind('<Button-1>', as_cmd)
 
-		rt_title = tk.Label(rtsession,text="Analisis en tiempo real", font="-weight bold", fg="gray80")
-		rt_title.pack(side=tk.TOP)
+		rt_title = tk.Label(rtsession,text="Analisis en tiempo real", justify="center",font="-weight bold", **styles.HLABEL)
+		as_title = tk.Label(assession,text="Analisis asincrono", justify="center", font="-weight bold", **styles.HLABEL)
 		
-		as_title = tk.Label(assession,text="Analisis asincrono", font="-weight bold", fg="gray80")
-		as_title.pack(side=tk.TOP)
+		rt_title.pack(fill="x")
+		as_title.pack(fill="x")
 		
-		rt_label = tk.Label(rtsession, text="Comienza un analisis fotometrico en tiempo real con el telescopio\nDebes seleccionar un archivo de muestra que se encuentre en la misma carpeta donde se exportaran los archivos FITS desde el CCD", fg="gray60")
-		rt_label.pack(side=tk.BOTTOM)
-		
-		as_label = tk.Label(assession, text="Selecciona varias imagenes tomadas anteriormente para comenzar un analisis fotometrico de estas\nTambien puedes apilar estas imagenes", fg="gray60")
-		as_label.pack(side=tk.BOTTOM)
+		rt_label = tk.Label(rtsession, text="Comienza un analisis fotometrico en tiempo real con el telescopio\nDebes seleccionar un archivo de muestra que se encuentre en la misma carpeta donde se exportaran los archivos FITS desde el CCD", **styles.LABEL)
+		as_label = tk.Label(assession, text="Selecciona varias imagenes tomadas anteriormente para comenzar un analisis fotometrico de estas\nTambien puedes apilar estas imagenes", **styles.LABEL)
+
+		as_label.pack(fill="x")
+		rt_label.pack(fill="x")
 		
 		rt_title.bind('<Button-1>', rt_cmd)
 		as_title.bind('<Button-1>', as_cmd)
 
 		rt_label.bind('<Button-1>', rt_cmd)
 		as_label.bind('<Button-1>', as_cmd)
-
 		self.set_mode(-1, rtsession, assession)
+		
+		self.load_frame.grid(row=5, columnspan=2, sticky="news")
 
-		button_frame = ttk.Frame(self)
-		button_frame.pack(side=tk.BOTTOM, fill=tk.X)
+		button_frame = tk.Frame(self, **styles.SFRAME)
+		button_frame.grid(row=7, columnspan=2, sticky="ew")
 
-		ttk.Button(button_frame, text = "Continuar", style="Highlight.TButton", command=self.Continue, width=40).pack(side=tk.RIGHT, pady=16, padx=8)
-		ttk.Button(button_frame, text = "Cancelar", command=self.CloseLevel, width=32).pack(side=tk.RIGHT, pady=16, padx=8)
+		HButton(button_frame, text = "Continuar", cmd=self.apply, width=40).pack(side=tk.RIGHT, pady=16, padx=8)
+		Button(button_frame, text = "Cancelar", cmd=self.close, width=32).pack(side=tk.RIGHT, pady=16, padx=8)
 
 	def get_filepaths(self):
 		file_paths = filedialog.askopenfilenames(parent = self, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
@@ -304,37 +313,31 @@ class SessionDialog(STView, tk.Toplevel):
 	def set_mode(self, mode, rtbutton, asbutton):
 		self.session.runtime = mode == 1
 
-		rtcolor = "gray20"
-		ascolor = "gray20"
 		selectText = ""
 		if mode == 0:
-			rtcolor="gray30"
-			ascolor="gray20"
 			
 			for c in self.load_frame.winfo_children():
 				c.destroy()
-			ttk.Label(self.load_frame, text="Abrir la primera imagen de la sesion").pack()
-			ttk.Button(self.load_frame, text="Arbir archivo", command=self.get_directory, width=28).pack()
+			tk.Label(self.load_frame, text="Abrir la primera imagen de la sesion", **styles.LABEL).pack()
+			Button(self.load_frame, text="Arbir archivo", cmd=self.get_directory, width=28).pack()
 		
 		if mode == 1:
-			rtcolor ="gray20"
-			ascolor ="gray30"
 			for c in self.load_frame.winfo_children():
 				c.destroy()
 			
-			ttk.Label(self.load_frame, text="Abrir varias imagenes").pack()
-			ttk.Button(self.load_frame, text="Arbir archivos", command=self.get_filepaths, width=28).pack()
+			tk.Label(self.load_frame, text="Abrir varias imagenes", **styles.LABEL).pack()
+			Button(self.load_frame, text="Arbir archivos", cmd=self.get_filepaths, width=28).pack()
 
-		self.info_label = ttk.Label(self.load_frame, text = "")
+		self.info_label = tk.Label(self.load_frame, text = "", **styles.LABEL)
 		self.info_label.pack()
 
-		rtbutton.config(bg=rtcolor)
+		rtbutton.config(bg = styles.base_highlight if mode == 0 else styles.base_primary)
 		for c in rtbutton.winfo_children():
-			c.config(bg=rtcolor)
+			c.config(bg = styles.base_highlight if mode == 0 else styles.base_primary, fg = "white" if mode == 0 else "gray70")
 
-		asbutton.config(bg=ascolor)
+		asbutton.config(bg = styles.base_highlight if mode == 1 else styles.base_primary)
 		for c in asbutton.winfo_children():
-			c.config(bg=ascolor)
+			c.config(bg = styles.base_highlight if mode == 1 else styles.base_primary, fg = "white" if mode == 1 else "gray70")
 	def build(self):
 		pass
 	def config_callback(self, **args):
@@ -342,15 +345,15 @@ class SessionDialog(STView, tk.Toplevel):
 	def close(self):
 		self.destroy()	
 	
-	# def apply(self):
-	# 	DataManager.SessionName = str(name_var.get())
-	# 	if sessionType == 0:
-	# 		CloseLevel(False)
-	# 		RuntimeAnalysis.startFile = directory_path
-	# 		RuntimeAnalysis.Awake(root)
-	# 	if sessionType == 1:
-	# 		CloseLevel(False)
-	# 		Destroy()
-	# 		ImageSelector.Awake(root, file_paths)
+	def apply(self):
+		self.session.session_name = str(self.name_var.get())
+		if self.session.runtime == 0:
+			self.close()
+			#RuntimeAnalysis.startFile = directory_path
+			#RuntimeAnalysis.Awake(root)
+		if self.session.runtime == 1:
+			self.close
+			#Destroy()
+			#ImageSelector.Awake(root, file_paths)
 
 	

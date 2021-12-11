@@ -9,14 +9,14 @@ loaded_images = {}
 iconList = ["delete", "prev", "next", "add", "play", "stop", "restart", "multi",
 		   "run", "open","plot","check","image", "export", "settings",
 		   "conf1","conf2","conf3"] # Lista Constante con los nombres de los iconos sin extension
-def GetIcon(key):
+def get_icon(key):
 	try:
 		return loaded_images[key]
 	except:
 		Debug.Warn (__name__, "El icono: "+key+" no existe.")
 		pass
 
-def Initialize():
+def load_icons():
 	global loaded_images
 	ThumbSize = 20,20
 	

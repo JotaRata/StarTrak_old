@@ -71,7 +71,7 @@ class Button(tk.Label):
 			e.widget["image"] = styles.button_base
 			e.widget["relief"] = "flat"
 			if cmd is not None:
-				self.ommand(*args)
+				self.command(*args)
 		
 		self.bind("<Enter>", on_enter)
 		self.bind("<Leave>", on_leave)

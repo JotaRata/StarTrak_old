@@ -1,37 +1,52 @@
+# coding=utf-8
+import tkinter as tk
+# A class that stores kwagrs to be used with tkinter tk module
+# ---------------------------
 
-from tkinter import ttk
-import matplotlib.pyplot as plt
+# Colors
+base_primary = 		"#37474F"
+base_dark = 		"#102027"
+base_light = 		"#62727b"
+base_highlight =	"#007769"
 
-plt.style.use("dark_background")
+hover_primary = "#525c61"
+hover_dark =	"#3a4448"
+hover_highlight="307a71"
 
-style =ttk.Style()
-style.theme_use("awdark")
-style.configure("Vertical.TScrollbar", gripcount=3,
-			background="#367783", lightcolor="gray35",
-			troughcolor="gray18", bordercolor="gray10", arrowcolor="azure2", relief ="flat",
-			width="20", borderwidth = 0)
-style.map("Vertical.TScrollbar",
-	background=[ ('!active','#367783'),('pressed', '#49A0AE'), ('active', '#49A0AE')]
-	)
+press_primary = "#29353b"
+press_dark =	"#0c181d"
+press_highlight="#00594f"
+# Images
+button_base = None
+button_hover = None
+button_press = None
 
-style.configure("Horizontal.TScale", gripcount=3,
-			background="#49A0AE", lightcolor="gray35",
-			troughcolor="gray8", bordercolor="gray10", arrowcolor="azure2", relief ="flat",
-			width="20", borderwidth = 0)
-style.map("Horizontal.TScale",
-	background=[ ('!active','#49A0AE'),('pressed', '#49A0AE'), ('active', '#49A0AE')]
-	)
-style.configure("TFrame", background = "gray15", relief="flat")
-style.configure("TLabel", background = "gray15", foreground ="gray80")
-style.configure("TLabelFrame", background = "gray15", highlightcolor="gray15")
+hbutton_base = None
+hbutton_hover = None
+hbutton_press = None
+# img = Image.open("STCore/button.gif")
+def load_styles():
+	global button_base, button_hover, button_press
+	global hbutton_base, hbutton_hover, hbutton_press
+	button_base = tk.PhotoImage(file="STCore/res/button_base.png")
+	button_hover = tk.PhotoImage(file="STCore/res/button_hover.png")
+	button_press = tk.PhotoImage(file="STCore/res/button_press.png")
+	hbutton_base = tk.PhotoImage(file="STCore/res/hbutton_base.png")
+	hbutton_hover = tk.PhotoImage(file="STCore/res/hbutton_hover.png")
+	hbutton_press = tk.PhotoImage(file="STCore/res/hbutton_press.png")
 
-style.configure("TButton", relief = "flat")
-style.map("TButton",
-	foreground=[('!active', 'gray90'),('pressed', 'gray95'), ('active', 'gray90')],
-	background=[ ('!active','grey20'),('pressed', 'gray26'), ('active', 'gray24')]
-	)	
-style.configure("Highlight.TButton", relief = "flat")
-style.map("Highlight.TButton",
-	foreground=[('!active', 'gray90'),('pressed', 'gray95'), ('active', 'gray90')],
-	background=[ ('!active','aquamarine4'),('pressed', 'aquamarine2'), ('active', 'aquamarine4')]
-	)	
+# Styles
+FRAME =		{"bg" : base_dark, "relief" : "flat"}
+SFRAME = 	{"bg" : base_primary, "relief" : "raised"}
+HFRAME = 	{"bg" : base_light, "relief" : "flat"}
+
+LABEL =		{"bg" : base_dark, "fg" : "gray70", "relief" : "flat"}
+SLABEL = 	{"bg" : base_primary, "fg" : "gray80", "relief" : "flat"}
+HLABEL = 	{"bg" : base_light, "fg" : "white", "relief" : "flat"}
+
+
+BUTTON = 	{"bg" : base_primary, "fg" : "white", "relief" : "flat"	,	"border":0 } 
+DBUTTON =	{"bg" : base_dark, "fg" : "gray70", "relief" : "flat"	,	"border":0 }
+HBUTTON =	{"bg" : base_highlight, "fg" : "white", "relief" : "flat" 	,"border":0} 
+# SLIGHT =	{"bg" : "#48a697", "fg" : "black", "relief" : "flat"}
+# SDARK = 	{"bg" : "#004a3f", "fg" : "gray80", "relief":"flat"}
