@@ -6,11 +6,12 @@ from tkinter import ttk
 import numpy
 from PIL import Image, ImageTk
 
-from Icons import get_icon
-from STCore import styles
-from STCore.item.File import FileItem
-from STCore.item.Star import StarItem
-from STCore.item.Track import TrackItem
+import STCore as st
+# from ..icons import get_icon
+# from STCore import st.styles
+#from STCore.item.File import FileItem
+#from STCore.item.Star import StarItem
+#from STCore.item.Track import TrackItem
 
 # This file contains different UI elements which are repeated along the program
 
@@ -56,24 +57,24 @@ class Levels(tk.Frame):
 # ------------------------------------
 class Button(tk.Label):
 	def __init__(self, master, cmd, *args,**kwargs):
-		tk.Label.__init__(self, master, image=styles.button_base, **kwargs)
-		self.config(compound ="center", height = 32, width = 164, **styles.BUTTON)
+		tk.Label.__init__(self, master, image=st.styles.button_base, **kwargs)
+		self.config(compound ="center", height = 32, width = 164, **st.styles.BUTTON)
 		self.command = cmd
 		self.config(bg = master["bg"])
 		hover = False
 		def on_enter(e):
 			nonlocal hover
-			e.widget["image"] = styles.button_hover
+			e.widget["image"] = st.styles.button_hover
 			hover = True
 		def on_leave(e): 
 			nonlocal hover
-			e.widget["image"] = styles.button_base
+			e.widget["image"] = st.styles.button_base
 			hover = False
 		def on_press(e): 
-			e.widget["image"] = styles.button_press
+			e.widget["image"] = st.styles.button_press
 			e.widget["relief"] = "flat"
 		def on_release(e): 
-			e.widget["image"] = styles.button_base
+			e.widget["image"] = st.styles.button_base
 			e.widget["relief"] = "flat"
 			if cmd is not None and hover:
 				self.command(*args)
@@ -82,9 +83,9 @@ class Button(tk.Label):
 		self.bind("<Leave>", on_leave)
 		self.bind('<Button-1>', on_press)
 		self.bind("<ButtonRelease-1>", on_release)
-		# self.photo = styles.button_base
+		# self.photo = st.styles.button_base
 	def setup_image(self):
-		self.photo = styles.button_base
+		self.photo = st.styles.button_base
 	def config(self, **kwargs):
 		if "cmd" in kwargs:
 			self.command = kwargs["cmd"]
@@ -96,24 +97,24 @@ class Button(tk.Label):
 		self.configure(**kwargs)
 class HButton(tk.Label):
 	def __init__(self, master, cmd, args = None,**kwargs):
-		tk.Label.__init__(self, master, image=styles.hbutton_base, **kwargs)
-		self.config(compound ="center", height = 32, width = 164, **styles.HBUTTON)
+		tk.Label.__init__(self, master, image=st.styles.hbutton_base, **kwargs)
+		self.config(compound ="center", height = 32, width = 164, **st.styles.HBUTTON)
 		self.command = cmd
 		self.config(bg = master["bg"])
 		hover = False
 		def on_enter(e):
 			nonlocal hover
-			e.widget["image"] = styles.hbutton_hover
+			e.widget["image"] = st.styles.hbutton_hover
 			hover = True
 		def on_leave(e): 
 			nonlocal hover
-			e.widget["image"] = styles.hbutton_base
+			e.widget["image"] = st.styles.hbutton_base
 			hover = False
 		def on_press(e): 
-			e.widget["image"] = styles.hbutton_press
+			e.widget["image"] = st.styles.hbutton_press
 			e.widget["relief"] = "flat"
 		def on_release(e): 
-			e.widget["image"] = styles.hbutton_base
+			e.widget["image"] = st.styles.hbutton_base
 			e.widget["relief"] = "flat"
 			if self.command is not None and hover:
 				if args is None:
@@ -125,9 +126,9 @@ class HButton(tk.Label):
 		self.bind("<Leave>", on_leave)
 		self.bind('<Button-1>', on_press)
 		self.bind("<ButtonRelease-1>", on_release)
-		# self.photo = styles.button_base
+		# self.photo = st.styles.button_base
 	def setup_image(self):
-		self.photo = styles.button_base
+		self.photo = st.styles.button_base
 	def config(self, **kwargs):
 		if "cmd" in kwargs:
 			self.command = kwargs["cmd"]
@@ -143,12 +144,12 @@ class HButton(tk.Label):
 # It shows status and properties of the stars created
 # Also it allows the user to edit the star
 class StarElement(tk.Frame):
-	def __init__(self, master, star : StarItem, index, command_setstar, command_setguide, command_delete, *args, **kwargs):
+	def __init__(self, master, star : st.classes.items.Star, index, command_setstar, command_setguide, command_delete, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
 
 		self.config(bg="gray10")
 
-		delete_icon = get_icon("delete")
+		delete_icon = st.icons.get_icon("delete")
 		self.config(bg="gray8")
 		self.grid_columnconfigure(1, weight=1)
 
@@ -164,14 +165,14 @@ class StarElement(tk.Frame):
 		self.main_button.grid(row=0, column=1, sticky="news")
 		self.deleteButton.grid(row=0, column=2)
 	
-	def update_star(self, star : StarItem):
+	def update_star(self, star : st.classes.items.Star):
 		self.main_button.config(text=star.name)
 		self.gvar.set(star.type)
 
 # TrackElelement displays some information about the curent tracking status
 # It is instanced in the sidebar of Tracker
 class TrackElement(tk.Frame):
-	def __init__(self, master, track : TrackItem, *args, **kwargs):
+	def __init__(self, master, track : st.classes.items.Track, *args, **kwargs):
 		tk.Frame.__init__(self, master , *args, **kwargs)
 
 		self.config(bg="gray8")
@@ -200,7 +201,7 @@ class TrackElement(tk.Frame):
 		self.trust.grid(row=3, column=1, padx=4)
 
 
-	def update_track(self, track : TrackItem):
+	def update_track(self, track : st.classes.items.Track):
 		variation = int(100 * (1 - abs(track.currValue - track.star.value) / track.star.value))
 
 		if track.active == 1:
@@ -222,7 +223,7 @@ class TrackElement(tk.Frame):
 		self.trust.config(text = str(variation))
 
 class FileListElement(tk.Frame):
-	def __init__(self, master, item : FileItem, *args, **kwargs):
+	def __init__(self, master, item : st.classes.items.File, *args, **kwargs):
 		tk.Frame.__init__(self, master , *args, **kwargs)
 		
 		self.styles = {"bg":"gray25", "fg":"gray70", "relief":"flat", "font":(None, 10, "bold"), "wraplength":100}

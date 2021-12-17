@@ -2,6 +2,8 @@ from os import getcwd
 from os.path import join
 from sys import version_info as ver
 from traceback import format_exc
+from tkinter import messagebox
+
 DEBUG_PATH = join(getcwd(), "Startrak.log")
 
 class bcolors:
@@ -15,28 +17,29 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-if __name__ == "Debug":
+if __name__ == "debug":
 	with open(DEBUG_PATH, "w") as f:
 		f.write("Startrak log\nversion: 1.2.0\npython {0}.{1}.{2}\n".format(ver.major, ver.micro, ver.minor))
 
-def Log (provider, message):
+def log (provider, message):
 	print(bcolors.HEADER + "["+provider+"]", bcolors.OKBLUE + message + bcolors.ENDC)
-	Flush("["+provider+"]\tL: "+ message)
+	flush("["+provider+"]\tL: "+ message)
 
-def Warn(provider, message):
+def warn(provider, message):
 	print(bcolors.HEADER + "["+provider+"]", bcolors.WARNING + message + bcolors.ENDC)
-	Flush("["+provider+"]\tW: "+ message)
+	flush("["+provider+"]\tW: "+ message)
 
-def Error(provider, message, stop = True):
+def error(provider, message, stop = True):
 	end = ""
 	if stop: end = "\n\nEnd of log"
 	print(bcolors.HEADER + "["+provider+"]", bcolors.FAIL + message + bcolors.ENDC)
+	messagebox.showerror("Error", message)
 
-	Flush("["+provider+"]\tE: "+ message + "\n" + "-"*20+"\n"+format_exc()+end)
+	flush("["+provider+"]\tE: "+ message + "\n" + "-"*20+"\n"+format_exc()+end)
 	if stop: 
 		print("Log saved at", DEBUG_PATH)
 		quit()
 
-def Flush(message):
+def flush(message):
 	with open(DEBUG_PATH, "a") as f:
 		f.write(message+"\n")

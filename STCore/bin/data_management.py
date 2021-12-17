@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import pickle
 from os.path import isfile
 from tkinter import BooleanVar, IntVar, StringVar
-from STCore import Debug
+from STCore import debug
 from STCore.bin import env
 from STCore.classes.items import Setting
 
@@ -113,7 +113,7 @@ class SettingsManager:
 		if (isfile(env.working_path + "/settings.ini")):
 			config.read(env.working_path + "/settings.ini")
 		else:
-			Debug.Warn(__name__, "Settings file not found, creating new file..")
+			debug.warn(__name__, "Settings file not found, creating new file..")
 			self.save_default()
 			self.load_settings()
 			return
@@ -122,7 +122,7 @@ class SettingsManager:
 			try:
 				key.set(config.get(key.group, key.name))
 			except:
-				Debug.Warn(__name__, "La clave {0} no se ha encontrado en la configuracion".format(key.name))
+				debug.warn(__name__, "La clave {0} no se ha encontrado en la configuracion".format(key.name))
 				continue
 		self.loaded = True
 

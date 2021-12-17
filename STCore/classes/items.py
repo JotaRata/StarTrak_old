@@ -10,13 +10,13 @@ from numpy import ndarray
 from tkinter import Variable
 
 CURRENT_VERSION = 2
-
+#----------------------------------
 class TrackState(Enum):
 	"ACTIVE", 
 	"INACTIVE", 
 	"LOST", 
 	"RUNNING"
-
+#--------------------------------------------------
 @dataclass
 class Item(ABC):
 	@property
@@ -32,7 +32,7 @@ class Item(ABC):
 	@abstractmethod
 	def printd(self):
 		raise NotImplementedError
-
+#--------------------------------------------------
 @dataclass
 class File(Item):
 	name = "Archivo"
@@ -51,7 +51,7 @@ class File(Item):
 	def exists(self):
 		from os.path import  isfile
 		return isfile(self.path)
-
+#--------------------------------------------------
 @dataclass
 class Star(Item):
 	name = "Estrella"
@@ -66,7 +66,7 @@ class Star(Item):
 
 	def printd(self):
 		pass
-
+#--------------------------------------------------
 @dataclass
 class Track(Item):	
 	name = "Rastreador"
@@ -79,15 +79,24 @@ class Track(Item):
 
 	def printd(self):
 		pass
-
+#--------------------------------------------------
 @dataclass
 class Setting(object):
 	value 	: Variable
 	group 	: str
-	name :	 str
+	name 	:	 str
 	default : object
 
 	def set(self, value):
 		self.value.set(value = value)
 	def get(self):
 		return self.value.get()
+#--------------------------------------------------
+@dataclass
+class Language(object):
+	filepath	: str
+	id 			= ""
+	name 		= ""
+	version 	= -1
+	dictionary  = None
+	header_end 	= 0

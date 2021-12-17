@@ -7,7 +7,7 @@ from tkinter import filedialog
 from STCore.bin.data_management import SessionManager
 from STCore.classes.drawables import Button, FileListElement, HButton
 from STCore.classes.items import  File
-from STCore.Icons import get_icon
+from STCore.icons import get_icon
 from STCore import styles
 from STCore.bin import env
 import os
@@ -193,9 +193,9 @@ class MainScreenUI (STView, tk.Frame):
 		self.load_button.pack(side= tk.RIGHT, anchor = tk.E, after=self.session_button)
 
 	def create_sidebar(self):
-		self.sidebar = tk.Frame(self, width=300, bg = styles.hover_dark)
+		self.sidebar = tk.Frame(self, width=300, bg = styles.base_light)
 		logo = tk.PhotoImage(file ="STCore/StarTrak.png")
-		logo_label = tk.Label(self.sidebar,image= logo, bg = styles.hover_dark)
+		logo_label = tk.Label(self.sidebar,image= logo, bg = styles.base_light)
 		logo_label.photo = logo
 		logo_label.pack(pady=16)
 
@@ -369,5 +369,4 @@ class SessionDialog(STView, tk.Toplevel):
 		asbutton.config(bg = styles.base_highlight if mode == 1 else styles.base_primary)
 		for c in asbutton.winfo_children():
 			c.config(bg = styles.base_highlight if mode == 1 else styles.base_primary, fg = "white" if mode == 1 else "gray70")
-	
 	
