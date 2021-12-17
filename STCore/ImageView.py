@@ -13,7 +13,7 @@ from STCore.item import Star
 try:
 	use("TkAgg")
 except:
-	Debug.Error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
+	debug.error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
 import tkinter as tk
 from tkinter import ttk
 
@@ -30,7 +30,7 @@ import SetStar
 import Settings
 import Tracker
 from classes.drawables import Levels, StarElement
-from icons import GetIcon
+from icons import get_icon
 from STCore.classes.drawables import StarElement
 from STCore.item.Star import *
 from classes.items import Star
@@ -115,7 +115,7 @@ def Awake(root):
 		index += 1
 
 	if version_changed:
-		Debug.Warn (__name__, "Se actualizaron las estrellas de una version anterior")
+		debug.warn (__name__, "Se actualizaron las estrellas de una version anterior")
 		SetStar.closedTime = 0
 
 
@@ -244,11 +244,11 @@ def CreateSidebar(root):
 
 	sidebar_buttons = ttk.Frame(App)
 	
-	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, style="Highlight.TButton", image=GetIcon("add"), compound="left")
+	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, style="Highlight.TButton", image=get_icon("add"), compound="left")
 
-	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = GetIcon("prev"), command = CommandBack, compound="left")
-	ExpButton = ttk.Button(sidebar_buttons, text= "Exportar datos", image=GetIcon("export"), compound="left", command=CommandExport)
-	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = GetIcon("next"), compound = "right")
+	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = get_icon("prev"), command = CommandBack, compound="left")
+	ExpButton = ttk.Button(sidebar_buttons, text= "Exportar datos", image=get_icon("export"), compound="left", command=CommandExport)
+	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = get_icon("next"), compound = "right")
 
 	AddButton.grid(row = 0, column = 0, columnspan=3, sticky = "ew")
 	PrevButton.grid(row = 1, column = 0, sticky = "ew")	

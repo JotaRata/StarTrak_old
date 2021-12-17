@@ -1,12 +1,14 @@
 # coding=utf-8
 import tkinter as tk
+
+from STCore import debug
 # A class that stores kwagrs to be used with tkinter tk module
 # ---------------------------
 
 # Colors
 base_primary = 		"#37474F"
-base_dark = 		"#102027"
-base_light = 		"#62727b"
+base_dark = 		"#232931"
+base_light = 		"#393E46"
 base_highlight =	"#007769"
 
 hover_primary = "#525c61"
@@ -28,12 +30,15 @@ hbutton_press = None
 def load_styles():
 	global button_base, button_hover, button_press
 	global hbutton_base, hbutton_hover, hbutton_press
-	button_base = tk.PhotoImage(file="STCore/res/button_base.png")
-	button_hover = tk.PhotoImage(file="STCore/res/button_hover.png")
-	button_press = tk.PhotoImage(file="STCore/res/button_press.png")
-	hbutton_base = tk.PhotoImage(file="STCore/res/hbutton_base.png")
-	hbutton_hover = tk.PhotoImage(file="STCore/res/hbutton_hover.png")
-	hbutton_press = tk.PhotoImage(file="STCore/res/hbutton_press.png")
+	try:
+		button_base = tk.PhotoImage(file="STCore/res/button_base.png")
+		button_hover = tk.PhotoImage(file="STCore/res/button_hover.png")
+		button_press = tk.PhotoImage(file="STCore/res/button_press.png")
+		hbutton_base = tk.PhotoImage(file="STCore/res/hbutton_base.png")
+		hbutton_hover = tk.PhotoImage(file="STCore/res/hbutton_hover.png")
+		hbutton_press = tk.PhotoImage(file="STCore/res/hbutton_press.png")
+	except Exception as e:
+		debug.warn(__name__, "Algunos resursos no pudieron ser cargados: " + e.__str__())
 
 # Styles
 FRAME =		{"bg" : base_dark, "relief" : "flat"}

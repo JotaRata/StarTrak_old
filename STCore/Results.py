@@ -2,12 +2,12 @@ import tkinter as tk
 from tkinter import ttk
 
 from matplotlib import figure, use
-from STCore import Debug
+from STCore import debug
 
 try:
 	use("TkAgg")
 except:
-	Debug.Error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
+	debug.error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
 import sys
 from os.path import basename
 from time import  mktime, strftime
@@ -19,7 +19,7 @@ import DataManager
 import ImageView
 import ResultsConfigurator as Config
 import Tracker
-from icons import GetIcon
+from icons import get_icon
 from utils.backgroundEstimator import  GetBackgroundMean
 from utils.Exporter import *
 
@@ -63,13 +63,13 @@ def Awake(root, ItemList, TrackedStars):
 	buttonFrame = ttk.Frame(Sidebar)
 	buttonFrame.pack(side=tk.TOP, fill=tk.X)
 
-	exportbutton = ttk.Button(buttonFrame, text = "Exportar",image = GetIcon("export"), compound = "left")
+	exportbutton = ttk.Button(buttonFrame, text = "Exportar",image = get_icon("export"), compound = "left")
 	exportbutton.bind("<Button-1>", lambda event: PopupMenu(event, Exportmenu))
 	exportbutton.pack(side=tk.RIGHT, fill=tk.X)
 	if DataManager.RuntimeEnabled == False:
-		ttk.Button(buttonFrame, text = "Volver", command = cmdBack, image = GetIcon("prev"), compound = "left").pack(side=tk.LEFT, fill=tk.X)
+		ttk.Button(buttonFrame, text = "Volver", command = cmdBack, image = get_icon("prev"), compound = "left").pack(side=tk.LEFT, fill=tk.X)
 	else:
-		ttk.Button(buttonFrame, text = "Actualizar",image = GetIcon("restart"), compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, Tracker.TrackedStars))).pack(side=tk.CENTER, anchor=tk.NW)
+		ttk.Button(buttonFrame, text = "Actualizar",image = get_icon("restart"), compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, Tracker.TrackedStars))).pack(side=tk.CENTER, anchor=tk.NW)
 	#ttk.Button(Sidebar, text = "Configurar", image = icons.Icons["settings"], compound = "left", command = lambda: Config.Awake(root, ItemList, mini = True)).pack(side=tk.TOP)
 	ttk.Label(Sidebar, text="Leyenda").pack()
 	legend = figure.Figure(figsize = (1, len(TrackedStars) / 4.), dpi = 100, facecolor="0.25")

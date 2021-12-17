@@ -1,6 +1,6 @@
 import numpy
 
-from STCore import Debug
+from STCore import debug
 
 #comentario pal primer commit: las guatitas son más malas que la chucha
 
@@ -51,9 +51,9 @@ class StarItem(object):
 	def PrintData(self, attributes : tuple, header=True, sep="{:^15} ", stdout= None):
 		base : str= sep* len(attributes)
 		if header:
-			Debug.Log(__name__, base.format(*[i[0] for i in attributes]))
-			Debug.Log(__name__, base.format(*[i[1] for i in attributes]))
-		Debug.Log(__name__, base.format(*[str(self.GetAttribute(i[0])) for i in attributes]))
+			debug.log(__name__, base.format(*[i[0] for i in attributes]))
+			debug.log(__name__, base.format(*[i[1] for i in attributes]))
+		debug.log(__name__, base.format(*[str(self.GetAttribute(i[0])) for i in attributes]))
 
 	def GetAttribute(self, attribute : str):
 		attr = attribute.title()

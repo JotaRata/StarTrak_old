@@ -3,6 +3,7 @@
 _name_ = "STCore"
 import sys
 import gc
+from tkinter import Event
 from tkinter.constants import END
 import warnings
 from os.path import abspath, basename, dirname, isfile
@@ -10,42 +11,42 @@ from os.path import abspath, basename, dirname, isfile
 warnings.filterwarnings("ignore")	
 
 try:
-	import Debug
+	import debug
 except:
 	raise ImportError("No se pudo importar algunos modulos")
 if sys.version_info < (3, 0):
-	Debug.Error(_name_, "StarTrak debe ser ejecutado usando  Python3")
+	debug.Error(_name_, "StarTrak debe ser ejecutado usando  Python3")
 
 try:
-	Debug.Log(_name_, "Iniciando Tk..")
+	debug.log(_name_, "Iniciando Tk..")
 	import tkinter as tk
 	from tkinter import Toplevel, filedialog, font, messagebox, ttk
 	from tkinter.filedialog import FileDialog
 except:
-	Debug.Error(_name_, "No se pudo cargar los modulos tkinter\nAsegurese que estos modulos esten activados en su instalacion de python.")
+	debug.error(_name_, "No se pudo cargar los modulos tkinter\nAsegurese que estos modulos esten activados en su instalacion de python.")
 
 try:
-	Debug.Log(_name_, "Iniciando MPL..")
+	debug.log(_name_, "Iniciando MPL..")
 	import matplotlib.pyplot as plt
 except:
-	Debug.Error(_name_, "Matplotlib no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de MatplotLib usando:\npip3 install matplotlib")
+	debug.error(_name_, "Matplotlib no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de MatplotLib usando:\npip3 install matplotlib")
 try:
-	Debug.Log(_name_, "Iniciando AstroPy..")
+	debug.log(_name_, "Iniciando AstroPy..")
 	import astropy.io
 except:
-	Debug.Error(_name_, "AstroPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de AstroPy usando:\npip3 install astropy")
+	debug.error(_name_, "AstroPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de AstroPy usando:\npip3 install astropy")
 
 try:
-	Debug.Log (_name_, "Iniciando PIL..")
+	debug.log (_name_, "Iniciando PIL..")
 	from PIL import Image, ImageTk
 except:
-	Debug.Error(_name_, "No se pudo cargar Python Image Library\nAsegurate de instalarlo usando:\npip3 install pillow")
+	debug.error(_name_, "No se pudo cargar Python Image Library\nAsegurate de instalarlo usando:\npip3 install pillow")
 try:
 	sys.path.append(dirname(dirname(abspath(__file__))))
 except NameError:  # We are the main py2exe script, not a module
 	sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
 try:
-	Debug.Log (_name_, "Cargando modulos de Startrak..")
+	debug.log (_name_, "Cargando modulos de Startrak..")
 	# from STCore import Composite
 	# from STCore import DataManager
 	# from STCore import ImageSelector
@@ -57,8 +58,8 @@ try:
 	#from STCore import Tools
 	# from STCore import Tracker
 	# from STCore import Styles
-	from STCore import Icons
 	from STCore.bin import env
+	from STCore import Icons
 	from STCore.bin.app.ui import MainScreenUI, STView, SelectorUI
 	from STCore.bin.data_management import RecentsManager, SettingsManager, SessionManager
 	from STCore.bin.app.ui import SessionDialog
@@ -66,7 +67,7 @@ try:
 
 
 except:
-	Debug.Error(_name_, "Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n")
+	debug.error(_name_, "Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n")
 print ("=" * 60)
 
 # Define scope
@@ -100,7 +101,7 @@ def create_session():
 def load_session(path):
 	if not isfile(path):
 		messagebox.showerror("Error", "Este archivo no existe")
-		Debug.Error(_name_, "El archivo {0} no existe".format(path))
+		debug.error(_name_, "El archivo {0} no existe".format(path))
 		# DataManager.RecentFiles.remove(path)
 		# DataManager.SaveRecent()
 		return
@@ -164,12 +165,11 @@ def reset():
 	
 
 def preload_view(root):
-	Debug.Log (_name_, "Preloading Views..")
+	debug.log (_name_, "Preloading Views..")
 	env.views = { "main" : MainScreenUI(root), 
 				"selector" : SelectorUI(root)}
-
-def TkinterExceptionHandler(*args):
-	Debug.Error("Tk", "Se ha detectado un error de ejecuccion, revisa el registro para mas detalles.", stop=False)
+def tk_exception(*args):
+	debug.error("Tk", "Se ha detectado un error de ejecuccion, revisa el registro para mas detalles.", stop=False)
 
 # -----------------------------------
 try:
@@ -179,13 +179,14 @@ try:
 		env.working_path = dirname(abspath(__file__))
 
 		master = tk.Tk()
+		master.state('zoomed')
 		master.configure(bg="black")
-		master.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
-		master.tk.call('package', 'require', 'awdark')
-		master.report_callback_exception = TkinterExceptionHandler
+		# master.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
+		# master.tk.call('package', 'require', 'awdark')
+		master.minsize(1140, 550)
+		master.report_callback_exception = tk_exception
 		
 		styles.load_styles()
-		preload_view(master)
 		env.recent_manager = RecentsManager()
 		env.settings_manager = SettingsManager()
 		env.tk = master
@@ -193,6 +194,8 @@ try:
 		Icons.load_icons()
 		env.settings_manager.load_settings()
 		env.recent_manager.load_recent()
+		
+		preload_view(master),
 
 		env.views["main"].config_callback(toplevel = create_session, load_data = load_session)
 		main_view = change_view("main")
@@ -222,6 +225,6 @@ try:
 		
 		master.mainloop()
 except:
-	Debug.Error(_name_, "Ha ocurrido un error que ha hecho que Startrak deje de funcionar, revisa el registro para mas detalles")
+	debug.error(_name_, "Ha ocurrido un error que ha hecho que Startrak deje de funcionar, revisa el registro para mas detalles")
 def GetWindow():
 	return master 

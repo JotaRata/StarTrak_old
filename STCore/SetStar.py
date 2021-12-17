@@ -10,7 +10,7 @@ from numpy.lib.function_base import append
 import DataManager, Settings, ImageView
 from item.Star import *
 import Tracker
-from icons import GetIcon
+from icons import get_icon
 from matplotlib.patches import Rectangle
 
 #region Variables
@@ -175,8 +175,8 @@ def Awake(Data, star : StarItem, OnStarChange, OnStarAdd = None, starIndex = -1,
 	controlButtons = ttk.Frame(App)
 	controlButtons.grid(row = 7, column=7)
 
-	CancelButton = ttk.Button(controlButtons, text = "Cancelar", command = CloseWindow, image = GetIcon("delete"), compound = "left")
-	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = apply_command, image = GetIcon("check"), compound = "right", style="Highlight.TButton")
+	CancelButton = ttk.Button(controlButtons, text = "Cancelar", command = CloseWindow, image = get_icon("delete"), compound = "left")
+	ApplyButton = ttk.Button(controlButtons, text = "Aceptar", command = apply_command, image = get_icon("check"), compound = "right", style="Highlight.TButton")
 	
 	CancelButton.grid(row = 0, column = 0)
 	ApplyButton.grid(row = 0, column = 1, padx=4)
