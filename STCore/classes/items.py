@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from posixpath import basename
+from sys import path
 from time import struct_time
 from warnings import simplefilter
 
@@ -100,3 +101,31 @@ class Language(object):
 	version 	= -1
 	dictionary  = None
 	header_end 	= 0
+
+	def __getitem__(self, key: str) -> str:
+		if key in self.dictionary:
+			return self.dictionary[key]
+		else:
+			return key
+
+	def printd(self):
+		print(self.id, self.name, self.version, self.header_end, self.dictionary)
+
+	def validate(self):
+		path_complete = False
+		id_complete = False
+		name_complete = False
+		version_complete = False
+		header_complete = False
+		if self.filepath is not None:
+			if len(self.filepath) > 0:
+				path_complete = True
+		if len(self.id) >= 2:
+			id_complete = True
+		if len(self.name) >= 3:
+			name_complete = True
+		if self.version >= 0:
+			version_complete = True
+		if self.header_end > 0:
+			header_complete = True
+		return path_complete and id_complete and name_complete and version_complete and header_complete
