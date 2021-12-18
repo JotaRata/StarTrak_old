@@ -2,18 +2,22 @@ import tkinter as tk
 from abc import ABC, abstractmethod
 from tkinter import Toplevel, ttk
 from tkinter import filedialog
+from matplotlib import figure
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 #from STCore import Settings, Tools
 from STCore.bin.data_management import SessionManager
-from STCore.classes.drawables import Button, FileListElement, HButton
+from STCore.classes.drawables import Button, FileListElement, HButton, LevelsSlider
 from STCore.classes.items import  File
 from STCore.icons import get_icon
-from STCore import styles
 from STCore.bin import env
+
+import STCore as st
 import os
 
 def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
-#-------------------------
+#-----------------------------------------
 
 # Base abstract class for instancing windows
 class STView(ABC):
@@ -33,8 +37,7 @@ class STView(ABC):
 	@abstractmethod
 	def config_callback(self, **args):
 		raise NotImplementedError()
-
-#---------------------------
+#-------------------------------------------
 
 # Class for managing the selector window UI
 class SelectorUI(STView, tk.Frame):
@@ -149,8 +152,7 @@ class SelectorUI(STView, tk.Frame):
 			button.bind("<Button-1>", lambda event, index = i: OpenEnum(index, event))
 			
 			i += 1
-
-#---------------------------
+#-------------------------------------------
 
 class MainScreenUI (STView, tk.Frame):
 	def __init__(self, master, *args, **kwargs):
@@ -161,7 +163,7 @@ class MainScreenUI (STView, tk.Frame):
 		self.set_window_name(master)
 		self.create_sidebar()
 		self.create_top()
-		self.config(width = 1100, height = 400, **styles.FRAME)
+		self.config(width = 1100, height = 400, **st.styles.FRAME)
 
 		self.sidebar.pack(side = tk.LEFT, anchor = tk.NW, fill = tk.Y, expand = 0)
 		self.sidebar.pack_propagate(0)
@@ -184,7 +186,7 @@ class MainScreenUI (STView, tk.Frame):
 		self.callbacks = args
 
 	def create_top(self):
-		self.bottombar = tk.Frame(self, height=64, **styles.SFRAME)
+		self.bottombar = tk.Frame(self, height=64, **st.styles.SFRAME)
 		
 		self.session_button = HButton(self.bottombar, None, text = "Nueva Sesion", width=196)
 		self.session_button.pack(side= tk.RIGHT, anchor = tk.E)
@@ -193,13 +195,13 @@ class MainScreenUI (STView, tk.Frame):
 		self.load_button.pack(side= tk.RIGHT, anchor = tk.E, after=self.session_button)
 
 	def create_sidebar(self):
-		self.sidebar = tk.Frame(self, width=300, bg = styles.base_light)
+		self.sidebar = tk.Frame(self, width=300, bg = st.styles.base_light)
 		logo = tk.PhotoImage(file ="STCore/StarTrak.png")
-		logo_label = tk.Label(self.sidebar,image= logo, bg = styles.base_light)
+		logo_label = tk.Label(self.sidebar,image= logo, bg = st.styles.base_light)
 		logo_label.photo = logo
 		logo_label.pack(pady=16)
 
-		tk.Label(self.sidebar, text = "Bienvenido a StarTrak",font="-weight bold", **styles.SLABEL, background = styles.hover_primary).pack(pady=16)
+		tk.Label(self.sidebar, text = "Bienvenido a StarTrak",font="-weight bold", **st.styles.SLABEL, background = st.styles.hover_primary).pack(pady=16)
 
 	# def create_recent(self, master):
 		# if Settings._RECENT_FILES_.get() == 1:
@@ -225,13 +227,14 @@ class MainScreenUI (STView, tk.Frame):
 			return
 		if len(env.session_manager.current_path) > 0:
 			master.wm_title(string = "StarTrak 1.2.0 - "+ os.basename(env.session_manager.current_path))
-	
+#-------------------------------------------
+
 class SessionDialog(STView, tk.Toplevel):
 	def __init__(self, master : tk.Tk, *args, **kwargs) :
 		center = (master.winfo_width()/2 + master.winfo_x() - 360 + 100,  master.winfo_height()/2 + master.winfo_y() - 240 + 60)
 		Toplevel.__init__(self, master, *args, **kwargs)
 		
-		self.config(bg = styles.press_primary, bd=4)
+		self.config(bg = st.styles.press_primary, bd=4)
 		self.session = SessionManager()
 		self.geometry("720x480+%d+%d" % center)
 		self.grab_set()
@@ -245,17 +248,17 @@ class SessionDialog(STView, tk.Toplevel):
 		self.wm_title(string = "Nueva Sesion")
 		self.name_var = tk.StringVar(self, value="Nueva Sesion")
 
-		tk.Label(self, text="Crear nueva sesion", font="-weight bold", bg = styles.press_primary, fg="white").grid(row= 0, columnspan=2 , sticky="ew")
-		tk.Label(self, text="Nombre de la sesion:",  bg = styles.press_primary, fg="gray60", font = (None, 12)).grid(row= 1, column= 0, sticky="ew", pady=12)
+		tk.Label(self, text="Crear nueva sesion", font="-weight bold", bg = st.styles.press_primary, fg="white").grid(row= 0, columnspan=2 , sticky="ew")
+		tk.Label(self, text="Nombre de la sesion:",  bg = st.styles.press_primary, fg="gray60", font = (None, 12)).grid(row= 1, column= 0, sticky="ew", pady=12)
 
-		self.load_frame = tk.Frame(self, bg= styles.press_primary, height=128)
+		self.load_frame = tk.Frame(self, bg= st.styles.press_primary, height=128)
 		self.info_label = None
 		
-		entry = tk.Entry(self, textvariable= self.name_var, font=(None, 16), bg = styles.press_primary, fg ="gray80")
+		entry = tk.Entry(self, textvariable= self.name_var, font=(None, 16), bg = st.styles.press_primary, fg ="gray80")
 		entry.grid(row= 1, column= 1, sticky="ew", padx=8)
 
-		rtsession = tk.Frame(self ,height=8, **styles.SFRAME)
-		assession = tk.Frame(self ,height=8, **styles.SFRAME)
+		rtsession = tk.Frame(self ,height=8, **st.styles.SFRAME)
+		assession = tk.Frame(self ,height=8, **st.styles.SFRAME)
 
 		rtsession.grid(row= 3, columnspan=2,  sticky="news", pady=4)
 		assession.grid(row= 4, columnspan=2,  sticky="news", pady=4)
@@ -266,14 +269,14 @@ class SessionDialog(STView, tk.Toplevel):
 		rtsession.bind('<Button-1>', rt_cmd)
 		assession.bind('<Button-1>', as_cmd)
 
-		rt_title = tk.Label(rtsession,text="Analisis en tiempo real", justify="center",font="-weight bold", **styles.HLABEL)
-		as_title = tk.Label(assession,text="Analisis asincrono", justify="center", font="-weight bold", **styles.HLABEL)
+		rt_title = tk.Label(rtsession,text="Analisis en tiempo real", justify="center",font="-weight bold", **st.styles.HLABEL)
+		as_title = tk.Label(assession,text="Analisis asincrono", justify="center", font="-weight bold", **st.styles.HLABEL)
 		
 		rt_title.pack(fill="x")
 		as_title.pack(fill="x")
 		
-		rt_label = tk.Label(rtsession, text="Comienza un analisis fotometrico en tiempo real con el telescopio\nDebes seleccionar un archivo de muestra que se encuentre en la misma carpeta donde se exportaran los archivos FITS desde el CCD", **styles.LABEL)
-		as_label = tk.Label(assession, text="Selecciona varias imagenes tomadas anteriormente para comenzar un analisis fotometrico de estas\nTambien puedes apilar estas imagenes", **styles.LABEL)
+		rt_label = tk.Label(rtsession, text="Comienza un analisis fotometrico en tiempo real con el telescopio\nDebes seleccionar un archivo de muestra que se encuentre en la misma carpeta donde se exportaran los archivos FITS desde el CCD", **st.styles.LABEL)
+		as_label = tk.Label(assession, text="Selecciona varias imagenes tomadas anteriormente para comenzar un analisis fotometrico de estas\nTambien puedes apilar estas imagenes", **st.styles.LABEL)
 
 		as_label.pack(fill="x")
 		rt_label.pack(fill="x")
@@ -287,7 +290,7 @@ class SessionDialog(STView, tk.Toplevel):
 		
 		self.load_frame.grid(row=5, columnspan=2, sticky="news")
 
-		button_frame = tk.Frame(self, **styles.SFRAME)
+		button_frame = tk.Frame(self, **st.styles.SFRAME)
 		button_frame.grid(row=7, columnspan=2, sticky="ew")
 
 		HButton(button_frame, text = "Continuar", cmd=	lambda:self.apply(master), width=40).pack(side=tk.RIGHT, pady=16, padx=8)
@@ -349,24 +352,48 @@ class SessionDialog(STView, tk.Toplevel):
 			
 			for c in self.load_frame.winfo_children():
 				c.destroy()
-			tk.Label(self.load_frame, text="Abrir la primera imagen de la sesion", **styles.LABEL).pack()
+			tk.Label(self.load_frame, text="Abrir la primera imagen de la sesion", **st.styles.LABEL).pack()
 			Button(self.load_frame, text="Arbir archivo", cmd=self.get_directory, width=28).pack()
 		
 		if mode == 1:
 			for c in self.load_frame.winfo_children():
 				c.destroy()
 			
-			tk.Label(self.load_frame, text="Abrir varias imagenes", **styles.LABEL).pack()
+			tk.Label(self.load_frame, text="Abrir varias imagenes", **st.styles.LABEL).pack()
 			Button(self.load_frame, text="Arbir archivos", cmd=self.get_filepaths, width=28).pack()
 
-		self.info_label = tk.Label(self.load_frame, text = "", **styles.LABEL)
+		self.info_label = tk.Label(self.load_frame, text = "", **st.styles.LABEL)
 		self.info_label.pack()
 
-		rtbutton.config(bg = styles.base_highlight if mode == 0 else styles.base_primary)
+		rtbutton.config(bg = st.styles.base_highlight if mode == 0 else st.styles.base_primary)
 		for c in rtbutton.winfo_children():
-			c.config(bg = styles.base_highlight if mode == 0 else styles.base_primary, fg = "white" if mode == 0 else "gray70")
+			c.config(bg = st.styles.base_highlight if mode == 0 else st.styles.base_primary, fg = "white" if mode == 0 else "gray70")
 
-		asbutton.config(bg = styles.base_highlight if mode == 1 else styles.base_primary)
+		asbutton.config(bg = st.styles.base_highlight if mode == 1 else st.styles.base_primary)
 		for c in asbutton.winfo_children():
-			c.config(bg = styles.base_highlight if mode == 1 else styles.base_primary, fg = "white" if mode == 1 else "gray70")
+			c.config(bg = st.styles.base_highlight if mode == 1 else st.styles.base_primary, fg = "white" if mode == 1 else "gray70")
+#-------------------------------------------
+
+class ViewerUI(STView, tk.Frame):
+	def __init__(self, master):
+		tk.Frame.__init__(self, master, **st.styles.FRAME)
+
+		fig	= figure.Figure(figsize = (8,4), dpi = 100)
+		fig.set_facecolor("black")
+		self.canvas = FigureCanvasTkAgg(fig, master=self)
+
+		self.viewport = self.canvas.get_tk_widget()
+		self.viewport.config(bg = 'black', cursor='fleur')
+
+		self.levels = LevelsSlider(self, None)
+		# self.canvas.mpl_connect()
+		self.viewport.grid(row= 0, column=0, rowspan=2, columnspan=2, sticky='news')
+		self.levels.grid(row=2, column=0, columnspan=2, sticky='ew')
 	
+	def build(self, master):
+		pass
+	def close(self, master):
+		pass
+	def config_callback(self, **args):
+		pass
+

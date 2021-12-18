@@ -4,6 +4,8 @@ HEADER{
 	id=es
 	name=Español
 	version=2
-	header end
 }
-welcome='Bienvenido a StarTrak'
+welcome = Bienvenido a StarTrak
+runtime_error = Ha ocurrido un error que ha hecho que Startrak deje de funcionar, revisa el registro para mas detalles
+tk_error = Se ha detectado un error de ejecuccion, revisa el registro para mas detalles.
+levels = Niveles
