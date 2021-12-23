@@ -1,12 +1,14 @@
 import tkinter as tk
 from os import stat
 from os.path import basename, getsize
-from tkinter import ttk
+from tkinter import Label, ttk
 
 import numpy
 from PIL import Image, ImageTk
+from numpy.lib.arraypad import pad
 
 import STCore as st
+from STCore import styles
 # from ..icons import get_icon
 # from STCore import st.styles
 #from STCore.item.File import FileItem
@@ -17,49 +19,100 @@ import STCore as st
 
 # Levels creates two sliders on the bottom of the ImageView viewport
 # It allow to control the brightness and contrast of an image
-class Levels(tk.Frame):	
+class LevelsSlider(tk.Frame):	
 	def __init__(self, master, command, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
 
-		self.config(bg="gray8")
-		self._LEVEL_MIN_ = tk.IntVar(self.master, value = 0)
-		self._LEVEL_MAX_ = tk.IntVar(self.master, value = 1)
-		self._LEVEL_MIN_.trace("w", lambda a,b,c: command())
-		self._LEVEL_MAX_.trace("w", lambda a,b,c: command())
+		self.configure(bg= master['bg'])
+		self.columnconfigure(1, weight=1)
+		self.rowconfigure(0, weight=1)
+		self.__min = tk.DoubleVar(self.master, value = 0)
+		self.__max = tk.DoubleVar(self.master, value = 1)
 
-		for x in range(10):
-			tk.Grid.columnconfigure(self, x, weight=1)
+		label = tk.Label(self, text= st.lang.get('levels'), bg= master['bg'], fg= 'gray60')
+		rail  = tk.Frame(self, bg= master['bg'], height=34)
 
-		ttk.Label(self, text = "Maximo:").grid(row = 0,column = 0)
-		self.maxScale=ttk.Scale(self, orient=tk.HORIZONTAL,from_=0, to=1, variable = self._LEVEL_MAX_)
-		self.maxScale.grid(row = 0, column = 1, columnspan = 10, sticky = tk.EW)
+		tk.Frame(rail, height=3, bg= 'gray40').place(rely=0.5, relx=0, relwidth=1)
+		interval= tk.Frame(rail, bg= styles.hover_highlight)
+		max_handle = tk.Label(rail, image = styles.handle_base, compound='center', bg=master['bg'], cursor='sb_h_double_arrow')
+		min_handle = tk.Label(rail, image = styles.handle_base, compound='center', bg=master['bg'], cursor='sb_h_double_arrow')
+		interval.place(rely=0.5, height= 5)
+
+		def update_wdgt(widget, xdata):
+			if   widget is min_handle:
+				self.__min.set(value=xdata)
+			elif widget is max_handle:
+				self.__max.set(value=xdata)	
+			interval.place(x= min_handle.winfo_x(), width= (max_handle.winfo_x() - min_handle.winfo_x()))	
+		def handle_drag(e : tk.Event):
+			if e.widget is None:
+				return
+			rel_w = 16 / rail.winfo_width()
+			max_cut = self.__max.get() if e.widget is min_handle else 1
+			min_cut = self.__min.get() + rel_w if e.widget is max_handle else 0
+
+			x = (e.x + e.widget.winfo_x() - 8) / rail.winfo_width()
+			x = numpy.clip(x, min_cut, max_cut - rel_w)
+			e.widget.place(relx= x)
+			update_wdgt(e.widget, x)
+		def handle_hover(e : tk.Event):
+			e.widget['image'] = styles.handle_hover
+		def handle_release(e : tk.Event):
+			e.widget['image'] = styles.handle_base
+		def handle_press(e : tk.Event):
+			e.widget['image'] = styles.handle_press
+		self.on_config = lambda e: update_wdgt(None, 0)
+			
+		min_handle.place(y=1, relx= 0, width=16, height=32)
+		max_handle.place(y=1, relx= 0.5, width=16, height=32)
+
+		min_handle.bind('<B1-Motion>',    handle_drag)
+		min_handle.bind('<Button>', 	  handle_press)
+		min_handle.bind('<Enter>',		  handle_hover)
+		min_handle.bind('<Leave>', 		  handle_release)
+		min_handle.bind('<ButtonRelease>',handle_release)
+
+		max_handle.bind('<B1-Motion>',    handle_drag)
+		max_handle.bind('<Button>', 	  handle_press)
+		max_handle.bind('<Enter>',		  handle_hover)
+		max_handle.bind('<Leave>', 		  handle_release)
+		max_handle.bind('<ButtonRelease>',handle_release)
+		max_handle.bind('<Map>', self.on_config)
+
+		label.grid(row=0, column=0)
+		rail.grid(row=0, column=1, sticky='news', padx=4)
+
+
+		# for x in range(10):
+		# 	tk.Grid.columnconfigure(self, x, weight=1)
+
+		# ttk.Label(self, text = "Maximo:").grid(row = 0,column = 0)
+		# self.maxScale=ttk.Scale(self, orient=tk.HORIZONTAL,from_=0, to=1, variable = self.__max)
+		# self.maxScale.grid(row = 0, column = 1, columnspan = 10, sticky = tk.EW)
 		
-		ttk.Label(self, text = "Minimo:").grid(row = 1,column = 0)
-		self.minScale=ttk.Scale(self, from_=0, to= 1, orient=tk.HORIZONTAL, variable = self._LEVEL_MIN_)
-		self.minScale.grid(row = 1, column = 1, columnspan = 10, sticky = tk.EW)
-	
-	def set_limits(self, minimum, maximum):
-		self.minScale.config(from_=minimum, to=maximum)
-		self.maxScale.config(from_=minimum, to=maximum)
-	
-	def getMin(self):
-		return self._LEVEL_MIN_.get()
-	def getMax(self):
-		return self._LEVEL_MAX_.get()
-
-	def setMin(self, lvl):
-		self._LEVEL_MIN_.set(lvl)
-		self.minScale.set(lvl)
-
-	def setMax(self, lvl):
-		self._LEVEL_MAX_.set(lvl)
-		self.maxScale.set(lvl)
+		# ttk.Label(self, text = "Minimo:").grid(row = 1,column = 0)
+		# self.minScale=ttk.Scale(self, from_=0, to= 1, orient=tk.HORIZONTAL, variable = self.__min)
+		# self.minScale.grid(row = 1, column = 1, columnspan = 10, sticky = tk.EW)
+	def get(self) -> tuple:
+		return self.__min.get(), self.__max.get()
+	def set(self, levels : tuple):
+		self.minScale.set(levels[0])
+		self.maxScale.set(levels[1])
+		self.on_config()
+	def config(self, **kwargs):
+		if "cmd" in kwargs:
+			self.command = kwargs["cmd"]
+			kwargs.pop("cmd")
+		elif "command" in kwargs:
+			self.command = kwargs["command"]
+			kwargs.pop("command")
+		self.configure(**kwargs)
 # ------------------------------------
 class Button(tk.Label):
-	def __init__(self, master, cmd, *args,**kwargs):
+	def __init__(self, master, cmd = None, *args,**kwargs):
 		tk.Label.__init__(self, master, image=st.styles.button_base, **kwargs)
+		self.config(**kwargs)
 		self.config(compound ="center", height = 32, width = 164, **st.styles.BUTTON)
-		self.command = cmd
 		self.config(bg = master["bg"])
 		hover = False
 		def on_enter(e):
@@ -95,6 +148,7 @@ class Button(tk.Label):
 			kwargs.pop("command")
 			
 		self.configure(**kwargs)
+# ------------------------------------
 class HButton(tk.Label):
 	def __init__(self, master, cmd, args = None,**kwargs):
 		tk.Label.__init__(self, master, image=st.styles.hbutton_base, **kwargs)
@@ -138,8 +192,80 @@ class HButton(tk.Label):
 			kwargs.pop("command")
 			
 		self.configure(**kwargs)
+# ------------------------------------
+class Scrollbar(tk.Frame):
+	def __init__(self, master, cmd= None, **kwargs):
+		tk.Frame.__init__(self, master, **kwargs)
+		
+		if 'bg' not in kwargs:
+			self.config(bg= master['bg'], border=1)
+		self.config(border=1)
 
+		rail = tk.Frame(self, bg= 'gray40')
+		self.handle = tk.Label(self, bg= styles.base_highlight)
+		self.orientation = 'vertical'
+		self.range = (0, 1)
+		self.value = 0
+		self.command = cmd
+		def on_config(e : tk.Event):
+			self.handle_size = abs(self.range[1] - self.range[0])
+			self.orientation = 'vertical' if self.winfo_height() > self.winfo_width() else 'horizontal'
+			if 	 self.orientation == 'vertical':
+				self.handle.place(rely=self.value, relwidth=1, relheight=self.handle_size)
+				rail.place(relx=0.5, relheight=1, width=2, anchor='n')
+			elif self.orientation == 'horizontal':
+				self.handle.place(relx=self.value, relheight=1, relwidth= self.handle_size)
+				rail.place(rely=0.5, relwidth=1, height=2, anchor='e')
+		def on_change(value):
+			self.handle_size = abs(self.range[1] - self.range[0])
+			if  self.orientation == 'vertical':
+				self.handle.place(rely=value, relheight=self.handle_size)
+				self.value = value
+			elif self.orientation == 'horizontal':
+				self.handle.place(relx=value, relwidth=self.handle_size)
+				self.value = value
+			self.command(value)
+		def on_hover(e : tk.Event):
+			self.handle['bg'] = styles.hover_highlight
+		def on_release(e : tk.Event):
+			self.handle['bg'] = styles.base_highlight
+		def on_press(e : tk.Event):
+			self.handle['bg'] = styles.press_highlight
+		def on_drag(e : tk.Event):
+			if e.widget is not self.handle:
+				return
+			on_press(e)
+			rel_pos = 0
+			if   self.orientation == 'vertical':
+				rel_pos = (e.y + e.widget.winfo_y()) / self.winfo_height() - self.handle_size*0.5
+			elif self.orientation == 'horizontal':
+				rel_pos = (e.x + e.widget.winfo_x()) / self.winfo_width() - self.handle_size*0.5
+			on_change(rel_pos)
 
+		self.handle.bind('<B1-Motion>', on_drag)
+		self.handle.bind('<Button>', on_press)
+		self.handle.bind('<Enter>', on_hover)
+		self.handle.bind('<Leave>', on_release)
+		self.handle.bind('<ButtonRelease>', on_release)
+		self.bind('<Map>', on_config)
+
+		self.__update_shape = lambda: on_change(self.value)
+		self.__update_value = lambda v: on_change(v)
+	def config(self, **kwargs):
+		if "cmd" in kwargs:
+			self.command = kwargs["cmd"]
+			kwargs.pop("cmd")
+		elif "command" in kwargs:
+			self.command = kwargs["command"]
+			kwargs.pop("command")
+		self.configure(**kwargs)
+	def set_range(self, lower, upper):
+		print(lower, upper)
+		self.range = (float(lower), float(upper))
+		self.__update_shape()
+	def set_value(self, value):
+		self.__update_value(float(value))
+# ------------------------------------
 # This class is instancesmin the sidebar of ImageView
 # It shows status and properties of the stars created
 # Also it allows the user to edit the star
@@ -168,7 +294,7 @@ class StarElement(tk.Frame):
 	def update_star(self, star : st.classes.items.Star):
 		self.main_button.config(text=star.name)
 		self.gvar.set(star.type)
-
+# ------------------------------------
 # TrackElelement displays some information about the curent tracking status
 # It is instanced in the sidebar of Tracker
 class TrackElement(tk.Frame):
@@ -221,6 +347,7 @@ class TrackElement(tk.Frame):
 		self.lastPos.config(text = str(track.lastPos))
 		self.lost.config(text = str(len(track.lostPoints)))
 		self.trust.config(text = str(variation))
+# ------------------------------------
 
 class FileListElement(tk.Frame):
 	def __init__(self, master, item : st.classes.items.File, *args, **kwargs):
