@@ -13,23 +13,17 @@ base_highlight =	"#007769"
 
 hover_primary = "#525c61"
 hover_dark =	"#3a4448"
-hover_highlight="307a71"
+hover_highlight="#307a71"
 
 press_primary = "#29353b"
 press_dark =	"#0c181d"
 press_highlight="#00594f"
-# Images
-button_base = None
-button_hover = None
-button_press = None
 
-hbutton_base = None
-hbutton_hover = None
-hbutton_press = None
 # img = Image.open("STCore/button.gif")
 def load_styles():
 	global button_base, button_hover, button_press
 	global hbutton_base, hbutton_hover, hbutton_press
+	global handle_base, handle_hover, handle_press
 	try:
 		button_base = tk.PhotoImage(file="STCore/res/button_base.png")
 		button_hover = tk.PhotoImage(file="STCore/res/button_hover.png")
@@ -37,6 +31,10 @@ def load_styles():
 		hbutton_base = tk.PhotoImage(file="STCore/res/hbutton_base.png")
 		hbutton_hover = tk.PhotoImage(file="STCore/res/hbutton_hover.png")
 		hbutton_press = tk.PhotoImage(file="STCore/res/hbutton_press.png")
+
+		handle_base = tk.PhotoImage(file="STCore/res/handle/handle_base.png")
+		handle_hover = tk.PhotoImage(file="STCore/res/handle/handle_hover.png")
+		handle_press = tk.PhotoImage(file="STCore/res/handle/handle_press.png")
 	except Exception as e:
 		debug.warn(__name__, "Algunos resursos no pudieron ser cargados: " + e.__str__())
 

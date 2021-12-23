@@ -8,3 +8,8 @@ import STCore.bin.data_management
 import STCore.classes.drawables
 import STCore.classes.ui
 import STCore.classes.items
+
+
+def tk_exception(*args):
+	debug.error(
+		"Tk", lang.get("tk_error"), stop=False)

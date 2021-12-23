@@ -29,7 +29,7 @@ import RuntimeAnalysis
 import SetStar
 import Settings
 import Tracker
-from classes.drawables import Levels, StarElement
+from classes.drawables import LevelsSlider, StarElement
 from icons import get_icon
 from STCore.classes.drawables import StarElement
 from STCore.item.Star import *
@@ -70,7 +70,7 @@ z_container : Rectangle = None
 z_box : Rectangle = None
 
 App : ttk.Frame = None
-levelFrame : Levels = None
+levelFrame : LevelsSlider = None
 Viewport : tk.Canvas = None
 Sidebar : tk.Canvas = None 
 sidebar_buttons : tk.Frame = None
@@ -258,7 +258,7 @@ def CreateSidebar(root):
 
 def CreateLevels():
 	global levelFrame
-	levelFrame = Levels(App, ChangeLevels)
+	levelFrame = LevelsSlider(App, ChangeLevels)
 
 #endregion
 

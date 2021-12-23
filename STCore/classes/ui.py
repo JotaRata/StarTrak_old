@@ -5,10 +5,11 @@ from tkinter import filedialog
 from matplotlib import figure
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from STCore import styles
 
 #from STCore import Settings, Tools
 from STCore.bin.data_management import SessionManager
-from STCore.classes.drawables import Button, FileListElement, HButton, LevelsSlider
+from STCore.classes.drawables import Button, FileListElement, HButton, LevelsSlider, Scrollbar
 from STCore.classes.items import  File
 from STCore.icons import get_icon
 from STCore.bin import env
@@ -43,28 +44,50 @@ class STView(ABC):
 class SelectorUI(STView, tk.Frame):
 	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
+		self.config(**styles.HFRAME)
 		#session_manager.CurrentWindow = 1
-		self.columnconfigure((0, 1), weight=1)
-		self.columnconfigure(( 4), weight=1)
-		self.rowconfigure((1, 2), weight=1)		
+		canvas = tk.Canvas(self, scrollregion= (0, 0, 0, 0), highlightthickness=0, **styles.FRAME)
+		scrollbar = Scrollbar(self, width= 12, cmd= canvas.yview_moveto, bg= styles.base_dark)
 
-		self.create_canvas()
-		self.create_header(def_keywords)
-		self.create_sidebar(master)
+		frame = tk.Frame(canvas, **styles.FRAME)
+		window = canvas.create_window(0, 0, window=frame, anchor='nw')
+		canvas.config(yscrollcommand= scrollbar.set_range)
+
+		self.columnconfigure(0, weight=1)
+		self.rowconfigure(0, weight=1)
+		canvas.grid(row= 0, column=0, sticky='news', padx=4, pady= 4)
+		scrollbar.grid(row= 0, column=1, sticky='ns')
+
+		def on_config(e):
+			canvas.itemconfig(window, width=self.winfo_width())
+			canvas.config(scrollregion= canvas.bbox('all'))
+		def add_element():
+			tk.Frame(frame, height=48).pack(expand=1, fill='x', pady=32)
+			canvas.update_idletasks()
+
+		self.__add = add_element
+		self.bind('<Map>', on_config)
+		# self.columnconfigure((0, 1), weight=1)
+		# self.columnconfigure(( 4), weight=1)
+		# self.rowconfigure((1, 2), weight=1)		
+
+		# self.create_canvas()
+		# self.create_header(def_keywords)
+		# self.create_sidebar(master)
 		#self.update_header(session_manager.file_items[0])
 	
-		self.header.grid(row= 0, column= 0, columnspan=2, sticky="ew")
-		self.scroll_view.grid(row=1, column=0, rowspan=3, columnspan=2, sticky="news")
-		self.sidebar.grid(row=0, column=4, rowspan=3, sticky="news")
-		
-	def build(self, master):
-		self.pack(master, expand=1)
+		# self.header.grid(row= 0, column= 0, columnspan=2, sticky="ew")
+		# self.scroll_view.grid(row=1, column=0, rowspan=3, columnspan=2, sticky="news")
+		# self.sidebar.grid(row=0, column=4, rowspan=3, sticky="news")
+	def Add(self):
+		self.__add()
+	def build(self, master : tk.Widget):
+		pass
+		#self.pack(expand=1)
 
-		self.clear_button.config(command= lambda: self.callbacks["clear"](master))
-		self.add_button.config( command = lambda: self.callbacks["add"](master))
-		self.apply_button.config(command = lambda: self.callbacks["apply"](master))
-
-
+		# self.clear_button.config(command= lambda: self.callbacks["clear"](master))
+		# self.add_button.config( command = lambda: self.callbacks["add"](master))
+		# self.apply_button.config(command = lambda: self.callbacks["apply"](master))
 	def close(self, master):
 		self.destroy()
 	def config_callback(self, **args):
@@ -73,13 +96,13 @@ class SelectorUI(STView, tk.Frame):
 		
 	def create_canvas(self):
 		self.scroll_view = tk.Canvas(self, bg= "gray15", bd=0, relief="flat", highlightthickness=0)
-		self.scrollbar = ttk.Scrollbar(self, command=self.scroll_view.yview)
-		self.scroll_view.config(yscrollcommand=self.scrollbar.set)  
+		scrollbar = ttk.Scrollbar(self, command=self.scroll_view.yview)
+		self.scroll_view.config(yscrollcommand=scrollbar.set)  
 
 		self.list_frame = ttk.Frame(self.scroll_view)
 		self.list_frame.columnconfigure(0, weight=1)
 		self.scroll_view.create_window(0, 0, anchor = tk.NW, window = self.list_frame)
-		self.scrollbar.grid(row=1, column=3, rowspan=3, sticky="ns")
+		scrollbar.grid(row=1, column=3, rowspan=3, sticky="ns")
 
 	def create_sidebar(self, master):
 		self.sidebar = ttk.Frame(self, width = 200)
@@ -163,16 +186,15 @@ class MainScreenUI (STView, tk.Frame):
 		self.set_window_name(master)
 		self.create_sidebar()
 		self.create_top()
-		self.config(width = 1100, height = 400, **st.styles.FRAME)
+		self.config(**st.styles.FRAME)
+		self.columnconfigure((1), weight=1)
+		self.rowconfigure((1), weight=1)
 
-		self.sidebar.pack(side = tk.LEFT, anchor = tk.NW, fill = tk.Y, expand = 0)
-		self.sidebar.pack_propagate(0)
-
-		self.bottombar.pack(expand=1, side=tk.TOP, anchor=tk.NW, fill = tk.X)
-		self.bottombar.pack_propagate(0)
+		self.sidebar.grid(row=0, column=0, rowspan=2, sticky='ns')
+		self.bottombar.grid(row=0, column=1, columnspan=2, sticky='ew')
 
 	def build(self, master):
-		self.pack(expand=1, fill = "both")
+		#self.pack(expand=1, fill = "both")
 		self.session_button.config(cmd = self.callbacks["toplevel"])
 		#self.load_button.config(command = Tools.OpenFileCommand)
 		#self.create_recent(master)
@@ -376,19 +398,20 @@ class SessionDialog(STView, tk.Toplevel):
 
 class ViewerUI(STView, tk.Frame):
 	def __init__(self, master):
-		tk.Frame.__init__(self, master, **st.styles.FRAME)
+		tk.Frame.__init__(self, master, **st.styles.HFRAME)
 
-		fig	= figure.Figure(figsize = (8,4), dpi = 100)
+		tk.Label(self, bg= self['bg'], fg='gray70', text="Archivo").grid(row=0, columnspan=22)
+		fig	= figure.Figure(figsize = (10,7), dpi = 100)
 		fig.set_facecolor("black")
-		self.canvas = FigureCanvasTkAgg(fig, master=self)
+		canvas = FigureCanvasTkAgg(fig, master=self)
 
-		self.viewport = self.canvas.get_tk_widget()
+		self.viewport = canvas.get_tk_widget()
 		self.viewport.config(bg = 'black', cursor='fleur')
 
 		self.levels = LevelsSlider(self, None)
-		# self.canvas.mpl_connect()
-		self.viewport.grid(row= 0, column=0, rowspan=2, columnspan=2, sticky='news')
-		self.levels.grid(row=2, column=0, columnspan=2, sticky='ew')
+		# canvas.mpl_connect()
+		self.viewport.grid(row= 1, column=0, rowspan=2, columnspan=2, sticky='news', padx=4, pady=4)
+		self.levels.grid(row=3, column=0, columnspan=2, sticky='ew')	
 	
 	def build(self, master):
 		pass
@@ -396,4 +419,4 @@ class ViewerUI(STView, tk.Frame):
 		pass
 	def config_callback(self, **args):
 		pass
-
+#-------------------------------------------
