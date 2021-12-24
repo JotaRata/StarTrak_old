@@ -33,12 +33,6 @@ if __name__ == '__main__':
 		main.config_callback(toplevel=None)
 		main.build(tk)
 
-		main.Add()
-		main.Add()
-		main.Add()
-		main.Add()
-		main.Add()
-
 		tk.mainloop()
 	except:
 		debug.error(NAME, st.lang.get('runtime_error'))

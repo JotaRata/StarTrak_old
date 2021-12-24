@@ -1,6 +1,6 @@
 import tkinter as tk
 from abc import ABC, abstractmethod
-from tkinter import Toplevel, ttk
+from tkinter import Frame, Toplevel, ttk
 from tkinter import filedialog
 from matplotlib import figure
 
@@ -9,7 +9,7 @@ from STCore import styles
 
 #from STCore import Settings, Tools
 from STCore.bin.data_management import SessionManager
-from STCore.classes.drawables import Button, FileListElement, HButton, LevelsSlider, Scrollbar
+from STCore.classes.drawables import Button, FileEntry, FileListElement, HButton, LevelsSlider, Scrollbar
 from STCore.classes.items import  File
 from STCore.icons import get_icon
 from STCore.bin import env
@@ -45,49 +45,69 @@ class SelectorUI(STView, tk.Frame):
 	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
 		self.config(**styles.HFRAME)
+		elements = []
 		#session_manager.CurrentWindow = 1
 		canvas = tk.Canvas(self, scrollregion= (0, 0, 0, 0), highlightthickness=0, **styles.FRAME)
-		scrollbar = Scrollbar(self, width= 12, cmd= canvas.yview_moveto, bg= styles.base_dark)
-
-		frame = tk.Frame(canvas, **styles.FRAME)
+		scrollbar = Scrollbar(self, width= 12, cmd= canvas.yview_moveto)
+		frame = tk.Frame(canvas, **styles.HFRAME)
 		window = canvas.create_window(0, 0, window=frame, anchor='nw')
-		canvas.config(yscrollcommand= scrollbar.set_range)
+		header = tk.Frame(self, height=72,**styles.SFRAME)
+		footer = tk.Frame(self, height=72,**styles.SFRAME)
 
 		self.columnconfigure(0, weight=1)
-		self.rowconfigure(0, weight=1)
-		canvas.grid(row= 0, column=0, sticky='news', padx=4, pady= 4)
-		scrollbar.grid(row= 0, column=1, sticky='ns')
+		self.rowconfigure(1, weight=1)
+		frame.columnconfigure(0,weight=1)
 
 		def on_config(e):
 			canvas.itemconfig(window, width=self.winfo_width())
 			canvas.config(scrollregion= canvas.bbox('all'))
-		def add_element():
-			tk.Frame(frame, height=48).pack(expand=1, fill='x', pady=32)
+		def on_list_append(e):
+			item = FileEntry(frame, e)
+			elements.append((e, item))
+			item.grid(row= len(elements), column= 0, sticky='ew', pady=2, padx=4)
 			canvas.update_idletasks()
+		def on_file_add():
+			files = filedialog.askopenfilenames()
+			for file in files:
+				item = File(file, simple=True)
+				item.date_from_file()
+				on_list_append(item)
+			on_config(None)
+		def build_header():
+			header.columnconfigure((0, 4), minsize=16)
+			header.columnconfigure((1,2,3), weight=1)
+			header.rowconfigure((0, 1), weight=1)
 
-		self.__add = add_element
+			tk.Label(header, text= 'Nombre'	, **styles.SLABEL).grid(row= 1, column=1, sticky='ew')
+			tk.Label(header, text= 'Fecha'	, **styles.SLABEL).grid(row= 1, column=2, sticky='ew')
+			tk.Label(header, text= 'Tamaño'	, **styles.SLABEL).grid(row= 1, column=3, sticky='ew')	
+
+			header.grid_propagate(0)
+		def build_footer():
+			footer.columnconfigure((0,1), weight=1)
+			add_button = HButton(footer, on_file_add, text= "Añadir archivos")
+			clear_button = Button(footer, on_list_append, text= "Limpiar lista")
+
+			add_button.grid(row= 0, column= 0, sticky='news')
+			clear_button.grid(row= 0, column= 1, sticky='news')
+		
+		canvas.config(yscrollcommand= scrollbar.set_range)
+		canvas.grid(row= 1, column=0, sticky='news', padx=8, pady= 4)
+		scrollbar.grid(row= 1, column=1, sticky='ns')
+		
+		build_header()
+		header.grid(row= 0, column=0, columnspan=2, sticky='ew')
+		build_footer()
+		footer.grid(row= 2, column=0, columnspan=2, sticky='ew')
+		
+		self.__add = lambda e : on_list_append(e)
 		self.bind('<Map>', on_config)
-		# self.columnconfigure((0, 1), weight=1)
-		# self.columnconfigure(( 4), weight=1)
-		# self.rowconfigure((1, 2), weight=1)		
-
-		# self.create_canvas()
-		# self.create_header(def_keywords)
-		# self.create_sidebar(master)
-		#self.update_header(session_manager.file_items[0])
 	
-		# self.header.grid(row= 0, column= 0, columnspan=2, sticky="ew")
-		# self.scroll_view.grid(row=1, column=0, rowspan=3, columnspan=2, sticky="news")
-		# self.sidebar.grid(row=0, column=4, rowspan=3, sticky="news")
-	def Add(self):
-		self.__add()
-	def build(self, master : tk.Widget):
+	def add_element(self, item : File):
+		self.__add(item)
+	def build(self, master):
 		pass
-		#self.pack(expand=1)
-
-		# self.clear_button.config(command= lambda: self.callbacks["clear"](master))
-		# self.add_button.config( command = lambda: self.callbacks["add"](master))
-		# self.apply_button.config(command = lambda: self.callbacks["apply"](master))
+		
 	def close(self, master):
 		self.destroy()
 	def config_callback(self, **args):
