@@ -2,6 +2,7 @@ import tkinter as tk
 from os import stat
 from os.path import basename, getsize
 from tkinter import Label, ttk
+from astropy.io.fits import header
 
 import numpy
 from PIL import Image, ImageTk
@@ -201,7 +202,7 @@ class Scrollbar(tk.Frame):
 			self.config(bg= master['bg'], border=1)
 		self.config(border=1)
 
-		rail = tk.Frame(self, bg= 'gray40')
+		rail = tk.Frame(self, bg= styles.hover_highlight)
 		self.handle = tk.Label(self, bg= styles.base_highlight)
 		self.orientation = 'vertical'
 		self.range = (0, 1)
@@ -260,11 +261,32 @@ class Scrollbar(tk.Frame):
 			kwargs.pop("command")
 		self.configure(**kwargs)
 	def set_range(self, lower, upper):
-		print(lower, upper)
 		self.range = (float(lower), float(upper))
 		self.__update_shape()
 	def set_value(self, value):
 		self.__update_value(float(value))
+# ------------------------------------
+class FileEntry(tk.Frame):
+	def __init__(self, master, fileitem : st.classes.items.File, **kwargs):
+		tk.Frame.__init__(self, master, **kwargs)
+		self.columnconfigure((1,2,3, 4), weight=1)
+		self.rowconfigure(0, weight=1)
+		self.config(bg= styles.base_dark, height=48)
+
+		active   = tk.Checkbutton(self, width=1, **styles.DBUTTON)
+		filename = tk.Label(self, text= fileitem.name, **styles.LABEL)
+		filedate = tk.Label(self, text= fileitem.date, **styles.LABEL)
+		filesize = tk.Label(self, text= getsize(fileitem.path), **styles.LABEL)
+		delete   = tk.Button(self,text= 'del', **styles.DBUTTON)
+
+		active.grid(row= 0, column= 0, sticky='e')
+		filename.grid(row= 0, column= 1, sticky='ew')
+		filedate.grid(row= 0, column= 2, sticky='ew')
+		filesize.grid(row= 0, column= 3, sticky='ew')
+		delete.grid(row= 0, column= 4, sticky='w')
+
+		self.grid_propagate(0)
+
 # ------------------------------------
 # This class is instancesmin the sidebar of ImageView
 # It shows status and properties of the stars created
