@@ -18,8 +18,8 @@ if __name__ == '__main__':
 		tk.rowconfigure((0, 1), weight=1)
 
 		st.debug.initialize()
-		st.styles.load_styles()
-		st.icons.load_icons()
+		st.styles.load_resources()
+		# st.icons.load_icons()
 		st.lang.register_languages()
 		st.lang.set_current_language("es")
 

@@ -21,7 +21,7 @@ def load_icons():
 	
 	for s in iconList:
 		try:
-			icon = Image.open("STCore/res/"+s+".png")
+			icon = Image.open("STCore/res/icons/"+s+".png")
 			icon.thumbnail(ThumbSize)
 			loaded_images.update({s : ImageTk.PhotoImage(icon)})
 		except:

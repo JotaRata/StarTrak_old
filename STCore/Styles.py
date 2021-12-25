@@ -1,55 +1,58 @@
 # coding=utf-8
+from os import listdir, scandir
+from os.path import isdir, join, basename, splitext
 import tkinter as tk
-
 from STCore import debug
 # A class that stores kwagrs to be used with tkinter tk module
 # ---------------------------
 
 # Colors
-base_primary = 		"#37474F"
-base_dark = 		"#232931"
-base_light = 		"#393E46"
-base_highlight =	"#007769"
+base_primary = 	'#37474F'
+base_dark = 	'#232931'
+base_light = 	'#393E46'
+base_highlight ='#007769'
 
-hover_primary = "#525c61"
-hover_dark =	"#3a4448"
-hover_highlight="#307a71"
+hover_primary = '#525c61'
+hover_dark =	'#3a4448'
+hover_highlight='#307a71'
 
-press_primary = "#29353b"
-press_dark =	"#0c181d"
-press_highlight="#00594f"
+press_primary = '#29353b'
+press_dark =	'#0c181d'
+press_highlight='#00594f'
 
-# img = Image.open("STCore/button.gif")
-def load_styles():
-	global button_base, button_hover, button_press
-	global hbutton_base, hbutton_hover, hbutton_press
-	global handle_base, handle_hover, handle_press
+__res = {}
+def load_resources():
+	res_dir = 'STCore/res'
+	if not isdir(res_dir):
+		debug.error(__name__, 'No se pueden cargar los recursos de StarTrak')
+	
+	sub_dir = [f.path for f in scandir(res_dir) if f.is_dir()]
+	for directory in sub_dir:
+		for file in listdir(directory):
+			if '.png' in file:
+				name = splitext(basename(file))[0]
+				__res[name] = tk.PhotoImage(file= join(directory, file))
+
+def get_resource(name : str) -> tk.PhotoImage:
 	try:
-		button_base = tk.PhotoImage(file="STCore/res/button_base.png")
-		button_hover = tk.PhotoImage(file="STCore/res/button_hover.png")
-		button_press = tk.PhotoImage(file="STCore/res/button_press.png")
-		hbutton_base = tk.PhotoImage(file="STCore/res/hbutton_base.png")
-		hbutton_hover = tk.PhotoImage(file="STCore/res/hbutton_hover.png")
-		hbutton_press = tk.PhotoImage(file="STCore/res/hbutton_press.png")
-
-		handle_base = tk.PhotoImage(file="STCore/res/handle/handle_base.png")
-		handle_hover = tk.PhotoImage(file="STCore/res/handle/handle_hover.png")
-		handle_press = tk.PhotoImage(file="STCore/res/handle/handle_press.png")
-	except Exception as e:
-		debug.warn(__name__, "Algunos resursos no pudieron ser cargados: " + e.__str__())
-
+		return __res[name]
+	except:
+		debug.warn(__name__, 'No se puede cargar \'{0}\' '.format(name))
+		return None
+def get_resources(*names : tuple[str]) -> tuple[tk.PhotoImage]:
+	return (get_resource(res) for res in names)
 # Styles
-FRAME =		{"bg" : base_dark, "relief" : "flat"}
-SFRAME = 	{"bg" : base_primary, "relief" : "raised"}
-HFRAME = 	{"bg" : base_light, "relief" : "flat"}
+FRAME =		{'bg' : base_dark, 		'relief' : 'flat'}
+SFRAME = 	{'bg' : base_primary, 	'relief' : 'raised'}
+HFRAME = 	{'bg' : base_light, 	'relief' : 'flat'}
 
-LABEL =		{"bg" : base_dark, "fg" : "gray70", "relief" : "flat"}
-SLABEL = 	{"bg" : base_primary, "fg" : "gray80", "relief" : "flat"}
-HLABEL = 	{"bg" : base_light, "fg" : "white", "relief" : "flat"}
+LABEL =		{'bg' : base_dark, 	  'fg' : 'gray70', 	'relief' : 'flat'}
+SLABEL = 	{'bg' : base_primary, 'fg' : 'gray80', 	'relief' : 'flat'}
+HLABEL = 	{'bg' : base_light,   'fg' : 'white', 	'relief' : 'flat'}
 
 
-BUTTON = 	{"bg" : base_primary, "fg" : "white", "relief" : "flat"	,	"border":0 } 
-DBUTTON =	{"bg" : base_dark, "fg" : "gray70", "relief" : "flat"	,	"border":0 }
-HBUTTON =	{"bg" : base_highlight, "fg" : "white", "relief" : "flat" 	,"border":0} 
-# SLIGHT =	{"bg" : "#48a697", "fg" : "black", "relief" : "flat"}
-# SDARK = 	{"bg" : "#004a3f", "fg" : "gray80", "relief":"flat"}
+BUTTON = 	{'bg' : base_primary, 	 'fg' : 'white', 	'relief' : 'flat'	,	'border':0 , 'activebackground':press_primary} 
+DBUTTON =	{'bg' : base_dark, 		 'fg' : 'gray70', 	'relief' : 'flat'	,	'border':0 ,  'activebackground':press_dark}
+HBUTTON =	{'bg' : base_highlight,  'fg' : 'white', 	'relief' : 'flat' 	,	'border':0 , 'activebackground':press_highlight}  
+# SLIGHT =	{'bg' : '#48a697', 	 'fg' : 'black', 	'relief' : 'flat'}
+# SDARK = 	{'bg' : '#004a3f', 	 'fg' : 'gray80', 	'relief':'flat'}

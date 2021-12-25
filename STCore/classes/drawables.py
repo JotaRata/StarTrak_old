@@ -1,12 +1,11 @@
+from sys import maxsize
 import tkinter as tk
-from os import stat
 from os.path import basename, getsize
 from tkinter import Label, ttk
 from astropy.io.fits import header
 
 import numpy
 from PIL import Image, ImageTk
-from numpy.lib.arraypad import pad
 
 import STCore as st
 from STCore import styles
@@ -22,6 +21,8 @@ from STCore import styles
 # It allow to control the brightness and contrast of an image
 class LevelsSlider(tk.Frame):	
 	def __init__(self, master, command, *args, **kwargs):
+		st_base, st_hover, st_press = st.styles.get_resources('handle_base', 'handle_hover', 'handle_press')
+
 		tk.Frame.__init__(self, master, *args, **kwargs)
 
 		self.configure(bg= master['bg'])
@@ -35,8 +36,8 @@ class LevelsSlider(tk.Frame):
 
 		tk.Frame(rail, height=3, bg= 'gray40').place(rely=0.5, relx=0, relwidth=1)
 		interval= tk.Frame(rail, bg= styles.hover_highlight)
-		max_handle = tk.Label(rail, image = styles.handle_base, compound='center', bg=master['bg'], cursor='sb_h_double_arrow')
-		min_handle = tk.Label(rail, image = styles.handle_base, compound='center', bg=master['bg'], cursor='sb_h_double_arrow')
+		max_handle = tk.Label(rail, image = st_base, compound='center', bg=master['bg'], cursor='sb_h_double_arrow')
+		min_handle = tk.Label(rail, image = st_base, compound='center', bg=master['bg'], cursor='sb_h_double_arrow')
 		interval.place(rely=0.5, height= 5)
 
 		def update_wdgt(widget, xdata):
@@ -57,11 +58,11 @@ class LevelsSlider(tk.Frame):
 			e.widget.place(relx= x)
 			update_wdgt(e.widget, x)
 		def handle_hover(e : tk.Event):
-			e.widget['image'] = styles.handle_hover
+			e.widget['image'] = st_hover
 		def handle_release(e : tk.Event):
-			e.widget['image'] = styles.handle_base
+			e.widget['image'] = st_base
 		def handle_press(e : tk.Event):
-			e.widget['image'] = styles.handle_press
+			e.widget['image'] = st_press
 		self.on_config = lambda e: update_wdgt(None, 0)
 			
 		min_handle.place(y=1, relx= 0, width=16, height=32)
@@ -111,35 +112,36 @@ class LevelsSlider(tk.Frame):
 # ------------------------------------
 class Button(tk.Label):
 	def __init__(self, master, cmd = None, *args,**kwargs):
-		tk.Label.__init__(self, master, image=st.styles.button_base, **kwargs)
+		st_base, st_hover, st_press = styles.get_resources('button_base', 'button_hover', 'button_press')
+		tk.Label.__init__(self, master, image=st_base, **kwargs)
 		self.config(**kwargs)
-		self.config(compound ="center", height = 32, width = 164, **st.styles.BUTTON)
+		self.config(compound ="center", height = 32, width = 164, **styles.BUTTON)
 		self.config(bg = master["bg"])
-		hover = False
+		is_hover = False
 		def on_enter(e):
-			nonlocal hover
-			e.widget["image"] = st.styles.button_hover
-			hover = True
+			nonlocal is_hover
+			e.widget["image"] = st_hover
+			is_hover = True
 		def on_leave(e): 
-			nonlocal hover
-			e.widget["image"] = st.styles.button_base
-			hover = False
+			nonlocal is_hover
+			e.widget["image"] = st_base
+			is_hover = False
 		def on_press(e): 
-			e.widget["image"] = st.styles.button_press
+			e.widget["image"] = st_press
 			e.widget["relief"] = "flat"
 		def on_release(e): 
-			e.widget["image"] = st.styles.button_base
+			e.widget["image"] = st_base
 			e.widget["relief"] = "flat"
-			if cmd is not None and hover:
+			if cmd is not None and is_hover:
 				self.command(*args)
 		
 		self.bind("<Enter>", on_enter)
 		self.bind("<Leave>", on_leave)
 		self.bind('<Button-1>', on_press)
 		self.bind("<ButtonRelease-1>", on_release)
-		# self.photo = st.styles.button_base
+		# self.photo = styles.button_base
 	def setup_image(self):
-		self.photo = st.styles.button_base
+		self.photo = styles.button_base
 	def config(self, **kwargs):
 		if "cmd" in kwargs:
 			self.command = kwargs["cmd"]
@@ -152,24 +154,25 @@ class Button(tk.Label):
 # ------------------------------------
 class HButton(tk.Label):
 	def __init__(self, master, cmd, args = None,**kwargs):
-		tk.Label.__init__(self, master, image=st.styles.hbutton_base, **kwargs)
-		self.config(compound ="center", height = 32, width = 164, **st.styles.HBUTTON)
+		st_base, st_hover, st_press = styles.get_resources('hbutton_base', 'hbutton_hover', 'hbutton_press')
+		tk.Label.__init__(self, master, image=st_base, **kwargs)
+		self.config(compound ="center", height = 32, width = 164, **styles.HBUTTON)
 		self.command = cmd
 		self.config(bg = master["bg"])
 		hover = False
 		def on_enter(e):
 			nonlocal hover
-			e.widget["image"] = st.styles.hbutton_hover
+			e.widget["image"] = st_hover
 			hover = True
 		def on_leave(e): 
 			nonlocal hover
-			e.widget["image"] = st.styles.hbutton_base
+			e.widget["image"] = st_base
 			hover = False
 		def on_press(e): 
-			e.widget["image"] = st.styles.hbutton_press
+			e.widget["image"] = st_press
 			e.widget["relief"] = "flat"
 		def on_release(e): 
-			e.widget["image"] = st.styles.hbutton_base
+			e.widget["image"] = st_base
 			e.widget["relief"] = "flat"
 			if self.command is not None and hover:
 				if args is None:
@@ -181,7 +184,7 @@ class HButton(tk.Label):
 		self.bind("<Leave>", on_leave)
 		self.bind('<Button-1>', on_press)
 		self.bind("<ButtonRelease-1>", on_release)
-		# self.photo = st.styles.button_base
+		# self.photo = styles.button_base
 	def setup_image(self):
 		self.photo = st.styles.button_base
 	def config(self, **kwargs):
@@ -269,15 +272,15 @@ class Scrollbar(tk.Frame):
 class FileEntry(tk.Frame):
 	def __init__(self, master, fileitem : st.classes.items.File, **kwargs):
 		tk.Frame.__init__(self, master, **kwargs)
-		self.columnconfigure((1,2,3, 4), weight=1)
-		self.rowconfigure(0, weight=1)
+		self.columnconfigure((1,2,3, 4), weight=1, uniform='names')
+		# self.rowconfigure(0, weight=1)
 		self.config(bg= styles.base_dark, height=48)
 
 		active   = tk.Checkbutton(self, width=1, **styles.DBUTTON)
 		filename = tk.Label(self, text= fileitem.name, **styles.LABEL)
 		filedate = tk.Label(self, text= fileitem.date, **styles.LABEL)
-		filesize = tk.Label(self, text= getsize(fileitem.path), **styles.LABEL)
-		delete   = tk.Button(self,text= 'del', **styles.DBUTTON)
+		filesize = tk.Label(self, text= '{0} Mb'.format(fileitem.size), **styles.LABEL)
+		delete   = tk.Button(self,image= styles.get_resource('icon_clear-24'), **styles.DBUTTON)
 
 		active.grid(row= 0, column= 0, sticky='e')
 		filename.grid(row= 0, column= 1, sticky='ew')
