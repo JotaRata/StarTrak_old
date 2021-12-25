@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from genericpath import getmtime
+from genericpath import getmtime, getsize
 from posixpath import basename, splitext
 from sys import path, version
 from time import gmtime, strptime, struct_time
@@ -33,21 +33,22 @@ class Item(ABC):
 #--------------------------------------------------
 @dataclass
 class File(Item):
-	def __init__(self, filepath :str, simple : bool= True, relative_path :str = None, date_kw = 'DATE-OBS'):
+	def __init__(self, filepath :str, simple : bool= True, relative_path : bool = False, date_kw = 'DATE-OBS'):
 		self.path = filepath
 		self.relative_path = relative_path
 		self.simple	= simple
 		self.name = basename(filepath)
 		self.date_kw = date_kw
+		self.size = self.size_from_file(filepath)
 
 		self.load_header()
 		if not simple:
 			self.load_data()
 		
 		if self.date_kw in self.header:
-			self.date = self.date_from_file()
-		else:
 			self.date = self.date_from_header()
+		else:
+			self.date = self.date_from_file()
 			debug.warn(self.path, "The key {0} doesn't exist in header, using creation time instead")
 		self.active = True
 		self.version = 2
@@ -71,6 +72,8 @@ class File(Item):
 		return isfile(self.path)
 	def date_from_file(self):
 		return gmtime(getmtime(self.path))
+	def size_from_file(self, filepath):
+		return getsize(filepath) >> 20
 	def date_from_header(self):
 		return strptime(self.header[self.date_kw], "%Y-%m-%dT%H:%M:%S.%f")
 #--------------------------------------------------

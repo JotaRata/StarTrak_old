@@ -75,7 +75,7 @@ class SelectorUI(STView, tk.Frame):
 			on_config(None)
 		def build_header():
 			header.columnconfigure((0, 4), minsize=16)
-			header.columnconfigure((1,2,3), weight=1)
+			header.columnconfigure((1,2,3, 4), weight=1, uniform='names')
 			header.rowconfigure((0, 1), weight=1)
 
 			tk.Label(header, text= 'Nombre'	, **styles.SLABEL).grid(row= 1, column=1, sticky='ew')
@@ -419,6 +419,7 @@ class SessionDialog(STView, tk.Toplevel):
 class ViewerUI(STView, tk.Frame):
 	def __init__(self, master):
 		tk.Frame.__init__(self, master, **st.styles.HFRAME)
+		self.config(bg= styles.base_dark)
 
 		tk.Label(self, bg= self['bg'], fg='gray70', text="Archivo").grid(row=0, columnspan=22)
 		fig	= figure.Figure(figsize = (10,7), dpi = 100)
