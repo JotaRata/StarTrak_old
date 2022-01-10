@@ -24,37 +24,33 @@ class TrackState(Enum):
 #--------------------------------------------------
 @dataclass
 class Item(ABC):
-	name : str
-	version : int
+	name 	: str
+	version = 2
 	
-	@abstractmethod
 	def printd(self):
-		raise NotImplementedError
+		print(f'{self.name} Item info:')
+		print(self.__dict__)
 #--------------------------------------------------
 @dataclass
 class File(Item):
-	def __init__(self, filepath :str, simple : bool= True, relative_path : bool = False, date_kw = 'DATE-OBS'):
-		self.path = filepath
-		self.relative_path = relative_path
-		self.simple	= simple
-		self.name = basename(filepath)
-		self.date_kw = date_kw
-		self.size = self.size_from_file(filepath)
+	path 	: str
+	simple 		  = True
+	relative_path = False
+	date_kw		  = 'DATE-OBS'
 
+	def __post_init__(self):
+		self.size = self.size_from_file(self.path)
 		self.load_header()
-		if not simple:
+		if not self.simple:
 			self.load_data()
 		
 		if self.date_kw in self.header:
 			self.date = self.date_from_header()
 		else:
 			self.date = self.date_from_file()
-			debug.warn(self.path, "The key {0} doesn't exist in header, using creation time instead")
+			debug.warn(self.name, "The key {0} doesn't exist in header, using creation time instead".format(self.date_kw))
 		self.active = True
 		self.version = 2
-
-	def printd(self):
-		pass
 	def load_header(self):
 			try:
 				self.header = fits.getheader(self.path)
@@ -64,6 +60,7 @@ class File(Item):
 	def load_data(self):
 		try:
 			self.data = fits.getdata(self.path)
+			self.simple = False
 		except:
 			debug.error(self.path, "Couldn't read data from file: {0}. File corrupt or invalid".format(self.path), stop=False)
 			self.active = False
@@ -79,31 +76,23 @@ class File(Item):
 #--------------------------------------------------
 @dataclass
 class Star(Item):
-	name = "Estrella"
-	version = 2
+	name : str
 	location : tuple
-	guide : bool
-	sample : ndarray
-	size : int
-	bounds : int
-	bkg_samples : tuple
-	bkg_size : int
-
-	def printd(self):
-		pass
+	guide 				= False
+	sample : ndarray	= None
+	size : int			= 16
+	bounds : int		= 60
+	bkg_samples : tuple = None
+	bkg_size : int		= 4
 #--------------------------------------------------
 @dataclass
 class Track(Item):	
-	name = "Rastreador"
-	version = 2
 	state : TrackState 
 	star : Star
-	locations : list
-	values : list
-	losses : int
+	locations : list	= None
+	values : list		= None
+	losses : int		= 0
 
-	def printd(self):
-		pass
 #--------------------------------------------------
 @dataclass
 class Setting(object):
