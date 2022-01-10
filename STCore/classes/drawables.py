@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+from sys import maxsize
 import tkinter as tk
 from os import stat
 from os.path import basename, getsize
@@ -18,10 +20,31 @@ from STCore import styles
 
 # This file contains different UI elements which are repeated along the program
 
+class Drawable (ABC, tk.Widget):
+	command : callable = None
+	@abstractmethod
+	def __init__(self, master : tk.Widget, cmd : callable, *args, **kwargs) -> None:
+		raise NotImplementedError()
+	
+	def bind_cmd(self, tag: str, function : callable):
+		self.bind(tag, function)
+		for child in self.winfo_children():
+			child.bind(tag, function)
+
+	def config(self, **kwargs):
+		if "cmd" in kwargs:
+			self.command = kwargs["cmd"]
+			kwargs.pop("cmd")
+		elif "command" in kwargs:
+			self.command = kwargs["command"]
+			kwargs.pop("command")
+		self.configure(**kwargs)
+
 # Levels creates two sliders on the bottom of the ImageView viewport
 # It allow to control the brightness and contrast of an image
-class LevelsSlider(tk.Frame):	
-	def __init__(self, master, command, *args, **kwargs):
+class LevelsSlider(Drawable):	
+	def __init__(self, master, cmd, *args, **kwargs):
+		st_base, st_hover, st_press = st.styles.get_resources('handle_base', 'handle_hover', 'handle_press')
 		tk.Frame.__init__(self, master, *args, **kwargs)
 
 		self.configure(bg= master['bg'])
@@ -44,7 +67,9 @@ class LevelsSlider(tk.Frame):
 				self.__min.set(value=xdata)
 			elif widget is max_handle:
 				self.__max.set(value=xdata)	
-			interval.place(x= min_handle.winfo_x(), width= (max_handle.winfo_x() - min_handle.winfo_x()))	
+			interval.place(x= min_handle.winfo_x(), width= (max_handle.winfo_x() - min_handle.winfo_x()))
+			if cmd:
+				cmd(self.__min.get(), self.__max.get())
 		def handle_drag(e : tk.Event):
 			if e.widget is None:
 				return
@@ -94,22 +119,14 @@ class LevelsSlider(tk.Frame):
 		# ttk.Label(self, text = "Minimo:").grid(row = 1,column = 0)
 		# self.minScale=ttk.Scale(self, from_=0, to= 1, orient=tk.HORIZONTAL, variable = self.__min)
 		# self.minScale.grid(row = 1, column = 1, columnspan = 10, sticky = tk.EW)
-	def get(self) -> tuple:
+	def get_value(self) -> tuple:
 		return self.__min.get(), self.__max.get()
-	def set(self, levels : tuple):
+	def set_value(self, levels : tuple):
 		self.minScale.set(levels[0])
 		self.maxScale.set(levels[1])
 		self.on_config()
-	def config(self, **kwargs):
-		if "cmd" in kwargs:
-			self.command = kwargs["cmd"]
-			kwargs.pop("cmd")
-		elif "command" in kwargs:
-			self.command = kwargs["command"]
-			kwargs.pop("command")
-		self.configure(**kwargs)
 # ------------------------------------
-class Button(tk.Label):
+class Button(Drawable):
 	def __init__(self, master, cmd = None, *args,**kwargs):
 		tk.Label.__init__(self, master, image=st.styles.button_base, **kwargs)
 		self.config(**kwargs)
@@ -139,21 +156,13 @@ class Button(tk.Label):
 		self.bind("<ButtonRelease-1>", on_release)
 		# self.photo = st.styles.button_base
 	def setup_image(self):
-		self.photo = st.styles.button_base
-	def config(self, **kwargs):
-		if "cmd" in kwargs:
-			self.command = kwargs["cmd"]
-			kwargs.pop("cmd")
-		if "command" in kwargs:
-			self.command = kwargs["command"]
-			kwargs.pop("command")
-			
-		self.configure(**kwargs)
+		self.photo = styles.button_base
 # ------------------------------------
-class HButton(tk.Label):
-	def __init__(self, master, cmd, args = None,**kwargs):
-		tk.Label.__init__(self, master, image=st.styles.hbutton_base, **kwargs)
-		self.config(compound ="center", height = 32, width = 164, **st.styles.HBUTTON)
+class HButton(Drawable):
+	def __init__(self, master, cmd, *args, **kwargs):
+		st_base, st_hover, st_press = styles.get_resources('hbutton_base', 'hbutton_hover', 'hbutton_press')
+		tk.Label.__init__(self, master, image=st_base, **kwargs)
+		self.config(compound ="center", height = 32, width = 164, **styles.HBUTTON)
 		self.command = cmd
 		self.config(bg = master["bg"])
 		hover = False
@@ -184,18 +193,9 @@ class HButton(tk.Label):
 		# self.photo = st.styles.button_base
 	def setup_image(self):
 		self.photo = st.styles.button_base
-	def config(self, **kwargs):
-		if "cmd" in kwargs:
-			self.command = kwargs["cmd"]
-			kwargs.pop("cmd")
-		if "command" in kwargs:
-			self.command = kwargs["command"]
-			kwargs.pop("command")
-			
-		self.configure(**kwargs)
 # ------------------------------------
-class Scrollbar(tk.Frame):
-	def __init__(self, master, cmd= None, **kwargs):
+class Scrollbar(Drawable):
+	def __init__(self, master, cmd, *args, **kwargs):
 		tk.Frame.__init__(self, master, **kwargs)
 		
 		if 'bg' not in kwargs:
@@ -217,7 +217,7 @@ class Scrollbar(tk.Frame):
 			elif self.orientation == 'horizontal':
 				self.handle.place(relx=self.value, relheight=1, relwidth= self.handle_size)
 				rail.place(rely=0.5, relwidth=1, height=2, anchor='e')
-		def on_change(value):
+		def on_change(value, callback = True):
 			self.handle_size = abs(self.range[1] - self.range[0])
 			if  self.orientation == 'vertical':
 				self.handle.place(rely=value, relheight=self.handle_size)
@@ -225,7 +225,8 @@ class Scrollbar(tk.Frame):
 			elif self.orientation == 'horizontal':
 				self.handle.place(relx=value, relwidth=self.handle_size)
 				self.value = value
-			self.command(value)
+			if callback:
+				self.command(value)
 		def on_hover(e : tk.Event):
 			self.handle['bg'] = styles.hover_highlight
 		def on_release(e : tk.Event):
@@ -250,42 +251,60 @@ class Scrollbar(tk.Frame):
 		self.handle.bind('<ButtonRelease>', on_release)
 		self.bind('<Map>', on_config)
 
-		self.__update_shape = lambda: on_change(self.value)
-		self.__update_value = lambda v: on_change(v)
-	def config(self, **kwargs):
-		if "cmd" in kwargs:
-			self.command = kwargs["cmd"]
-			kwargs.pop("cmd")
-		elif "command" in kwargs:
-			self.command = kwargs["command"]
-			kwargs.pop("command")
-		self.configure(**kwargs)
+		self.__update_shape = lambda : on_change(self.range[0], False)
+		self.__update_value = lambda v: on_change(v, True)
 	def set_range(self, lower, upper):
 		self.range = (float(lower), float(upper))
 		self.__update_shape()
 	def set_value(self, value):
 		self.__update_value(float(value))
 # ------------------------------------
-class FileEntry(tk.Frame):
-	def __init__(self, master, fileitem : st.classes.items.File, **kwargs):
+class FileEntry(Drawable):
+	def __init__(self, master, cmd,  fileitem : st.classes.items.File, *args, **kwargs):
 		tk.Frame.__init__(self, master, **kwargs)
-		self.columnconfigure((1,2,3, 4), weight=1)
-		self.rowconfigure(0, weight=1)
-		self.config(bg= styles.base_dark, height=48)
+		self.columnconfigure((1,2,3, 4), weight=1, uniform='names')
+		self.config(height=48)
 
-		active   = tk.Checkbutton(self, width=1, **styles.DBUTTON)
-		filename = tk.Label(self, text= fileitem.name, **styles.LABEL)
-		filedate = tk.Label(self, text= fileitem.date, **styles.LABEL)
-		filesize = tk.Label(self, text= getsize(fileitem.path), **styles.LABEL)
-		delete   = tk.Button(self,text= 'del', **styles.DBUTTON)
+		self.file = fileitem
+		active_b = tk.Checkbutton(self, width=1)
+		filename = tk.Label(self, text= fileitem.name, wraplength=72)
+		filedate = tk.Label(self, text= fileitem.date, wraplength=72)
+		filesize = tk.Label(self, text= '{0} Mb'.format(fileitem.size))
+		delete_b = tk.Button(self,image= styles.get_resource('icon_clear-24'))
 
-		active.grid(row= 0, column= 0, sticky='e')
+		def on_set_active(event, active = True):	
+			if active:
+				self.config(bg= styles.base_highlight)
+				filename.config(**styles.HBUTTON)
+				filedate.config(**styles.HBUTTON)
+				filesize.config(**styles.HBUTTON)
+
+				active_b.config(**styles.HBUTTON)
+				delete_b.config(**styles.HBUTTON)
+			else:
+				self.config(bg= styles.base_dark)
+				filename.config(**styles.LABEL)
+				filedate.config(**styles.LABEL)
+				filesize.config(**styles.LABEL)
+
+				active_b.config(**styles.DBUTTON)
+				delete_b.config(**styles.DBUTTON)
+			if cmd is not None and event is not None:
+				cmd(self)
+
+		active_b.grid(row= 0, column= 0, sticky='e' )
 		filename.grid(row= 0, column= 1, sticky='ew')
 		filedate.grid(row= 0, column= 2, sticky='ew')
 		filesize.grid(row= 0, column= 3, sticky='ew')
-		delete.grid(row= 0, column= 4, sticky='w')
+		delete_b.grid(row= 0, column= 4, sticky='w' )
 
+		on_set_active(None, False)
 		self.grid_propagate(0)
+
+		self.bind_cmd('<Button>', on_set_active)
+		self.__set_active = lambda a: on_set_active(None, a)
+	def set_active(self, active : bool):
+		self.__set_active(active)
 
 # ------------------------------------
 # This class is instancesmin the sidebar of ImageView
