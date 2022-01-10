@@ -1,32 +1,33 @@
+import os
 import tkinter as tk
 from abc import ABC, abstractmethod
-from tkinter import Frame, Toplevel, ttk
-from tkinter import filedialog
-from matplotlib import figure
-
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from STCore import styles
-
-#from STCore import Settings, Tools
-from STCore.bin.data_management import SessionManager
-from STCore.classes.drawables import Button, FileEntry, FileListElement, HButton, LevelsSlider, Scrollbar
-from STCore.classes.items import  File
-from STCore.icons import get_icon
-from STCore.bin import env
+from os.path import basename
+from tkinter import Frame, Toplevel, filedialog, ttk
 
 import STCore as st
-import os
+from matplotlib import figure, axes
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.colors import Normalize, LogNorm, PowerNorm
+from STCore import debug, styles
+from STCore.bin import env
+#from STCore import Settings, Tools
+from STCore.bin.data_management import SessionManager
+from STCore.classes.drawables import (Button, FileEntry, FileListElement,
+                                      HButton, LevelsSlider, Scrollbar)
+from STCore.classes.items import File
+from STCore.icons import get_icon
 
 def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
 #-----------------------------------------
 
 # Base abstract class for instancing windows
 class STView(ABC):
-	# @property
-	# @abstractmethod
-	# def active (cls):
-	# 	raise NotImplementedError()
-	# build no debe llamarse desde dentro de la clase
+	callbacks : dict = NotImplemented
+
+	@abstractmethod
+	def __init__(self) -> None:
+		pass
+	
 	@abstractmethod
 	def build(self, master):
 		raise NotImplementedError()
@@ -35,17 +36,28 @@ class STView(ABC):
 	def close(self, master):
 		raise NotImplementedError()
 	
-	@abstractmethod
 	def config_callback(self, **args):
-		raise NotImplementedError()
-#-------------------------------------------
+		self.callbacks = args
+	
+	def get_callback(self, name : str) -> callable:
+		def __nothing(*args, **kwargs):
+			pass
+		
+		if name in self.callbacks:
+			return self.callbacks[name]
+		else:
+			debug.warn(__name__, f'The object of type {self.__class__.__name__} don\'t have a callable property named {name}')
+			return __nothing
 
+#-------------------------------------------
 # Class for managing the selector window UI
 class SelectorUI(STView, tk.Frame):
 	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
-		self.config(**styles.HFRAME)
-		elements = []
+		self.config(**styles.SFRAME)
+
+		elements : list[tuple[File, FileEntry]] = []
+		
 		#session_manager.CurrentWindow = 1
 		canvas = tk.Canvas(self, scrollregion= (0, 0, 0, 0), highlightthickness=0, **styles.FRAME)
 		scrollbar = Scrollbar(self, width= 12, cmd= canvas.yview_moveto)
@@ -57,22 +69,32 @@ class SelectorUI(STView, tk.Frame):
 		self.columnconfigure(0, weight=1)
 		self.rowconfigure(1, weight=1)
 		frame.columnconfigure(0,weight=1)
-
+		def on_mouse_scroll(e : tk.Event):
+			scroll = -1 if e.delta > 0 else 1
+			canvas.yview_scroll(scroll, "units")
+			scrollbar.set_range(*canvas.yview())
 		def on_config(e):
 			canvas.itemconfig(window, width=self.winfo_width())
 			canvas.config(scrollregion= canvas.bbox('all'))
 		def on_list_append(e):
-			item = FileEntry(frame, e)
+			item = FileEntry(frame, on_item_select, e)
 			elements.append((e, item))
 			item.grid(row= len(elements), column= 0, sticky='ew', pady=2, padx=4)
 			canvas.update_idletasks()
 		def on_file_add():
 			files = filedialog.askopenfilenames()
 			for file in files:
-				item = File(file, simple=True)
+				item = File(basename(file) , file)
 				item.date_from_file()
 				on_list_append(item)
 			on_config(None)
+		def on_item_select(selected : FileEntry):
+			item : FileEntry
+			for el, item in elements:
+				if item is not selected:
+					item.set_active(False)
+				else:
+					self.get_callback('on_file_select')(item.file)
 		def build_header():
 			header.columnconfigure((0, 4), minsize=16)
 			header.columnconfigure((1,2,3, 4), weight=1, uniform='names')
@@ -102,6 +124,8 @@ class SelectorUI(STView, tk.Frame):
 		
 		self.__add = lambda e : on_list_append(e)
 		self.bind('<Map>', on_config)
+
+		canvas.bind_all('<MouseWheel>', on_mouse_scroll)
 	
 	def add_element(self, item : File):
 		self.__add(item)
@@ -110,10 +134,7 @@ class SelectorUI(STView, tk.Frame):
 		
 	def close(self, master):
 		self.destroy()
-	def config_callback(self, **args):
-		# Callbacks: clear, add, apply
-		self.callbacks = args
-		
+
 	def create_canvas(self):
 		self.scroll_view = tk.Canvas(self, bg= "gray15", bd=0, relief="flat", highlightthickness=0)
 		scrollbar = ttk.Scrollbar(self, command=self.scroll_view.yview)
@@ -223,9 +244,6 @@ class MainScreenUI (STView, tk.Frame):
 		self.sidebar.destroy()
 		self.bottombar.destroy()
 		self.destroy()
-	def config_callback(self, **args):
-		# Callbarck: toplevel, load_data
-		self.callbacks = args
 
 	def create_top(self):
 		self.bottombar = tk.Frame(self, height=64, **st.styles.SFRAME)
@@ -352,8 +370,7 @@ class SessionDialog(STView, tk.Toplevel):
 
 	def build(self, master):
 		pass
-	def config_callback(self, **args):
-		pass
+	
 	def close(self, master):
 		master.unbind("<FocusIn>", self.raise_call)
 		master.unbind("<Configure>", self.sync_call)
@@ -421,23 +438,48 @@ class ViewerUI(STView, tk.Frame):
 		tk.Frame.__init__(self, master, **st.styles.HFRAME)
 		self.config(bg= styles.base_dark)
 
+		data_range   : tuple = (0, 1)
+		self.norm 	 : Normalize = None
+
 		tk.Label(self, bg= self['bg'], fg='gray70', text="Archivo").grid(row=0, columnspan=22)
 		fig	= figure.Figure(figsize = (10,7), dpi = 100)
 		fig.set_facecolor("black")
+		axis : axes.Axes = fig.add_subplot(111)
+		fig.subplots_adjust(0.0,0.05,1,1)
+
 		canvas = FigureCanvasTkAgg(fig, master=self)
 
-		self.viewport = canvas.get_tk_widget()
-		self.viewport.config(bg = 'black', cursor='fleur')
+		viewport = canvas.get_tk_widget()
+		viewport.config(bg = 'black', cursor='fleur')
 
-		self.levels = LevelsSlider(self, None)
-		# canvas.mpl_connect()
-		self.viewport.grid(row= 1, column=0, rowspan=2, columnspan=2, sticky='news', padx=4, pady=4)
-		self.levels.grid(row=3, column=0, columnspan=2, sticky='ew')	
+		def on_update_canvas(data):
+			nonlocal data_range
+			axis.clear()
+			axis.imshow(data, norm = self.norm)
+			data_range = data.min(), data.max()
+			canvas.draw_idle()
+
+		def on_level_change(lower, upper):
+			minv = data_range[0] * lower
+			maxv = data_range[1] * upper
+			self.norm = Normalize(minv, maxv)
+			print(minv, maxv)
+			canvas.draw_idle()
+		
+		levels = LevelsSlider(self, on_level_change)
+		#  canvas.mpl_connect()
+		viewport.grid(row= 1, column=0, rowspan=2, columnspan=2, sticky='news', padx=4, pady=4)
+		levels.grid(row=3, column=0, columnspan=2, sticky='ew')	
+		
+		self.__upd_canvas = on_update_canvas
 	
 	def build(self, master):
 		pass
 	def close(self, master):
 		pass
-	def config_callback(self, **args):
-		pass
+	def update_canvas(self, file : File):
+		if file.simple:
+			file.load_data()
+		self.__upd_canvas(file.data)
+
 #-------------------------------------------
