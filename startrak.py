@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
 		main = ui.SelectorUI(tk, width = 30)
 		main.grid(row=0, column=1, rowspan=2, sticky='news')
-		main.config_callback(toplevel=None)
+		main.config_callback(on_file_select= view.update_canvas)
 		main.build(tk)
 
 		tk.mainloop()

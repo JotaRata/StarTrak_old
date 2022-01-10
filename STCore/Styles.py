@@ -7,12 +7,12 @@ from STCore import debug
 # ---------------------------
 
 # Colors
-base_primary = 	'#37474F'
-base_dark = 	'#232931'
-base_light = 	'#393E46'
-base_highlight ='#007769'
+base_primary = 	'#263238'
+base_dark = 	'#000a12'
+base_light = 	'#4f5b62'
+base_highlight ='#00897b'
 
-hover_primary = '#525c61'
+hover_primary = '#364248'
 hover_dark =	'#3a4448'
 hover_highlight='#307a71'
 
