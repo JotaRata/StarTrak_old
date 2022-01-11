@@ -459,7 +459,7 @@ class ViewerUI(STView, tk.Frame):
 		fig.set_facecolor("black")
 		axis : Axes = fig.add_subplot(111)
 		axis.imshow(((0,0),(0,0)), cmap='gray')
-		axis.text(0.5, 0.5, "Abra una imagen", color='w', horizontalalignment= 'center', verticalalignment= 'center')
+		axis.text(0.5, 0.5, st.lang.get('open_image'), color='w', horizontalalignment= 'center', verticalalignment= 'center', fontsize=16)
 
 		fig.subplots_adjust(0.0,0.05,1,1)
 
