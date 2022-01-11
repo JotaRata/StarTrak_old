@@ -75,7 +75,7 @@ class LevelsSlider(Drawable, tk.Canvas):
 			_max_x = self.coords(max_handle_id)[0]
 			self.coords(interval_id, _min_x, height - 3, _max_x, height + 3)
 			if cmd:
-				cmd(self.__min.get(), self.__max.get())
+				cmd((self.__min.get(), self.__max.get()))
 		def handle_drag(e : tk.Event):
 			if e.widget is None:
 				return
