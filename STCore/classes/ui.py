@@ -1,4 +1,5 @@
 import os
+import threading
 import tkinter as tk
 from abc import ABC, abstractmethod
 from os.path import basename
@@ -9,6 +10,8 @@ from matplotlib.pyplot import colormaps
 import STCore as st
 
 from matplotlib import use
+
+from STCore.classes.threading import ChangeLevelsRequest
 use("TkAgg")
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
@@ -474,43 +477,29 @@ class ViewerUI(STView, tk.Frame):
 			nonlocal data_range, implot
 			
 			self.norm = Normalize()
-			slicing_rate = int(data.shape[0] / self.winfo_width()) + 1
+			slicing_rate = 2 * int(data.shape[0] / self.winfo_width()) + 1
 
 			if not implot:
 				axis.clear()
+				data_range = data.max() - data.min()
 				implot = axis.imshow(data, norm = self.norm, cmap='gray')
 			else:
 				implot.set_array(data[::slicing_rate,::slicing_rate])
-			data_range = data.min(), data.max()
 			canvas.draw_idle()
 		
-		# Threaded function
-		def mpl_render_call():
-			while True:
-				try:
-					level_data = level_requests.get()
-					minv = data_range[1] * level_data[0] + data_range[0]
-					maxv = data_range[1] * level_data[1] + data_range[0]
-					implot.norm.vmin = minv
-					implot.norm.vmax = maxv
-					canvas.draw_idle()
-				except:
-					continue
-		def enqueue_level_change(lower, upper):
-			try:
-				level_requests.put((lower, upper))
-			except:
-				pass # The queue is full
+		def enqueue_level_change(levels):
+			def mpl_callback(minv, maxv):
+				implot.norm.vmin = minv
+				implot.norm.vmax = maxv
+				canvas.draw_idle()
+			request = ChangeLevelsRequest(levels, data_range, mpl_callback)
+			st.render_thread.enqueue(request)
 
 		levels = LevelsSlider(self, enqueue_level_change, height = 64)
 		#  canvas.mpl_connect()
 		viewport.grid(row= 1, column=0, rowspan=2, columnspan=2, sticky='news', padx=4, pady=4)
 		levels.grid(row=3, column=0, columnspan=2, sticky='news')	
 		
-		# TODO: #20 Move to a dedicated class
-		render_thread = Thread(target= mpl_render_call, daemon= True, name= 'MPL Render Thread')
-		render_thread.start()
-
 		self.__upd_canvas = on_update_canvas
 	
 	def build(self, master):

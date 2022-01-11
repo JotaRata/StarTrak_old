@@ -7,7 +7,9 @@ import STCore.bin.env as env
 import STCore.bin.data_management as data
 import STCore.classes.drawables as drawables
 import STCore.classes.items as items
-import STCore.classes.ui
+import STCore.classes.ui as ui
+import STCore.classes.threading as thread
+from   STCore.classes.threading import render_thread
 
 
 def tk_exception(*args):
