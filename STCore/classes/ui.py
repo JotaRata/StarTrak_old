@@ -4,8 +4,14 @@ from abc import ABC, abstractmethod
 from os.path import basename
 from tkinter import Frame, Toplevel, filedialog, ttk
 
+from matplotlib.pyplot import colormaps
+
 import STCore as st
-from matplotlib import figure, axes
+
+from matplotlib import use
+use("TkAgg")
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.colors import Normalize, LogNorm, PowerNorm
 from STCore import debug, styles
@@ -16,6 +22,11 @@ from STCore.classes.drawables import (Button, FileEntry, FileListElement,
                                       HButton, LevelsSlider, Scrollbar)
 from STCore.classes.items import File
 from STCore.icons import get_icon
+
+from queue import Queue
+from threading import Thread, Timer
+
+import time
 
 def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
 #-----------------------------------------
@@ -439,12 +450,17 @@ class ViewerUI(STView, tk.Frame):
 		self.config(bg= styles.base_dark)
 
 		data_range   : tuple = (0, 1)
+		implot = None
 		self.norm 	 : Normalize = None
 
 		tk.Label(self, bg= self['bg'], fg='gray70', text="Archivo").grid(row=0, columnspan=22)
-		fig	= figure.Figure(figsize = (10,7), dpi = 100)
+		
+		fig	= Figure(figsize = (10,7), dpi = 100)
 		fig.set_facecolor("black")
-		axis : axes.Axes = fig.add_subplot(111)
+		axis : Axes = fig.add_subplot(111)
+		axis.imshow(((0,0),(0,0)), cmap='gray')
+		axis.text(0.5, 0.5, "Abra una imagen", color='w', horizontalalignment= 'center', verticalalignment= 'center')
+
 		fig.subplots_adjust(0.0,0.05,1,1)
 
 		canvas = FigureCanvasTkAgg(fig, master=self)
@@ -452,25 +468,47 @@ class ViewerUI(STView, tk.Frame):
 		viewport = canvas.get_tk_widget()
 		viewport.config(bg = 'black', cursor='fleur')
 
+		level_requests = Queue(8)
+
 		def on_update_canvas(data):
-			nonlocal data_range
-			axis.clear()
-			axis.imshow(data, norm = self.norm)
+			nonlocal data_range, implot
+			
+			self.norm = Normalize()
+			if not implot:
+				axis.clear()
+				implot = axis.imshow(data, norm = self.norm, cmap='gray')
+			else:
+				implot.set_array(data)
 			data_range = data.min(), data.max()
 			canvas.draw_idle()
-
-		def on_level_change(lower, upper):
-			minv = data_range[0] * lower
-			maxv = data_range[1] * upper
-			self.norm = Normalize(minv, maxv)
-			print(minv, maxv)
-			canvas.draw_idle()
 		
-		levels = LevelsSlider(self, on_level_change)
+		# Threaded function
+		def mpl_render_call():
+			while True:
+				try:
+					level_data = level_requests.get()
+					minv = data_range[1] * level_data[0] + data_range[0]
+					maxv = data_range[1] * level_data[1] + data_range[0]
+					implot.norm.vmin = minv
+					implot.norm.vmax = maxv
+					canvas.draw_idle()
+				except:
+					continue
+		def enqueue_level_change(lower, upper):
+			try:
+				level_requests.put((lower, upper))
+			except:
+				pass # The queue is full
+
+		levels = LevelsSlider(self, enqueue_level_change, height = 64)
 		#  canvas.mpl_connect()
 		viewport.grid(row= 1, column=0, rowspan=2, columnspan=2, sticky='news', padx=4, pady=4)
-		levels.grid(row=3, column=0, columnspan=2, sticky='ew')	
+		levels.grid(row=3, column=0, columnspan=2, sticky='news')	
 		
+		# TODO: #20 Move to a dedicated class
+		render_thread = Thread(target= mpl_render_call, daemon= True, name= 'MPL Render Thread')
+		render_thread.start()
+
 		self.__upd_canvas = on_update_canvas
 	
 	def build(self, master):
