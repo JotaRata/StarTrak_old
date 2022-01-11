@@ -28,10 +28,12 @@ if __name__ == '__main__':
 		view.config_callback(toplevel=None)
 		view.build(tk)
 
-		main = ui.SelectorUI(tk, width = 30)
-		main.grid(row=0, column=1, rowspan=2, sticky='news')
-		main.config_callback(on_file_select= view.update_canvas)
-		main.build(tk)
+		selector = ui.SelectorUI(tk, width = 30)
+		selector.grid(row=0, column=1, rowspan=2, sticky='news')
+		selector.config_callback(on_file_select= view.update_canvas)
+		selector.build(tk)
+		
+		st.render_thread.start()
 
 		tk.mainloop()
 	except:
