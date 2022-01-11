@@ -81,6 +81,8 @@ class SelectorUI(STView, tk.Frame):
 		self.rowconfigure(1, weight=1)
 		frame.columnconfigure(0,weight=1)
 		def on_mouse_scroll(e : tk.Event):
+			if not (self.bbox()[0] < e.x < self.bbox()[2] and self.bbox()[1] < e.y < self.bbox()[3]):
+				return
 			scroll = -1 if e.delta > 0 else 1
 			canvas.yview_scroll(scroll, "units")
 			scrollbar.set_range(*canvas.yview())
@@ -136,7 +138,7 @@ class SelectorUI(STView, tk.Frame):
 		self.__add = lambda e : on_list_append(e)
 		self.bind('<Map>', on_config)
 
-		canvas.bind_all('<MouseWheel>', on_mouse_scroll)
+		canvas.bind_all('<MouseWheel>', on_mouse_scroll, '+')
 	
 	def add_element(self, item : File):
 		self.__add(item)
