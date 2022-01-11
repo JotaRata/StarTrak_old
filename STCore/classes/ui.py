@@ -468,17 +468,19 @@ class ViewerUI(STView, tk.Frame):
 		viewport = canvas.get_tk_widget()
 		viewport.config(bg = 'black', cursor='fleur')
 
-		level_requests = Queue(8)
+		level_requests = Queue(1)
 
 		def on_update_canvas(data):
 			nonlocal data_range, implot
 			
 			self.norm = Normalize()
+			slicing_rate = int(data.shape[0] / self.winfo_width()) + 1
+
 			if not implot:
 				axis.clear()
 				implot = axis.imshow(data, norm = self.norm, cmap='gray')
 			else:
-				implot.set_array(data)
+				implot.set_array(data[::slicing_rate,::slicing_rate])
 			data_range = data.min(), data.max()
 			canvas.draw_idle()
 		
