@@ -1,14 +1,13 @@
 from abc import ABC, abstractmethod
 from sys import maxsize
 import tkinter as tk
-from os import stat
 from os.path import basename, getsize
-from tkinter import Label, ttk
+from tkinter import Label, Widget, ttk
 from astropy.io.fits import header
+from matplotlib import image
 
 import numpy
 from PIL import Image, ImageTk
-from numpy.lib.arraypad import pad
 
 import STCore as st
 from STCore import styles
@@ -42,83 +41,75 @@ class Drawable (ABC, tk.Widget):
 
 # Levels creates two sliders on the bottom of the ImageView viewport
 # It allow to control the brightness and contrast of an image
-class LevelsSlider(Drawable):	
-	def __init__(self, master, cmd, *args, **kwargs):
+class LevelsSlider(Drawable, tk.Canvas):	
+	def __init__(self, master : tk.Widget, cmd, *args, **kwargs):
 		st_base, st_hover, st_press = st.styles.get_resources('handle_base', 'handle_hover', 'handle_press')
-		tk.Frame.__init__(self, master, *args, **kwargs)
-
-		self.configure(bg= master['bg'])
-		self.columnconfigure(1, weight=1)
+		tk.Canvas.__init__(self, master,  *args, **kwargs)
+		
+		self.configure(bg= master['bg'], highlightthickness=0)
+		self.columnconfigure((0, 1), weight=1)
 		self.rowconfigure(0, weight=1)
 		self.__min = tk.DoubleVar(self.master, value = 0)
 		self.__max = tk.DoubleVar(self.master, value = 1)
+		
+		width = master.winfo_width()
+		height = master.winfo_height()
+		zero = (0, 0, 0, 0)
+		
+		label_id =self.create_text(0, 0, text= st.lang.get('levels'), fill='gray70', anchor='nw')
+		rail_id = self.create_rectangle(0, 0, 0, 0, fill= 'gray60')
+		interval_id = self.create_rectangle(0, 0, 0, 0, fill= styles.hover_highlight)
+		
+		max_handle_id = self.create_image(0, 0, image= st_base, activeimage= st_hover)
+		min_handle_id = self.create_image(0, 0, image= st_base, activeimage= st_hover)
 
-		label = tk.Label(self, text= st.lang.get('levels'), bg= master['bg'], fg= 'gray60')
-		rail  = tk.Frame(self, bg= master['bg'], height=34)
-
-		tk.Frame(rail, height=3, bg= 'gray40').place(rely=0.5, relx=0, relwidth=1)
-		interval= tk.Frame(rail, bg= styles.hover_highlight)
-		max_handle = tk.Label(rail, image = styles.handle_base, compound='center', bg=master['bg'], cursor='sb_h_double_arrow')
-		min_handle = tk.Label(rail, image = styles.handle_base, compound='center', bg=master['bg'], cursor='sb_h_double_arrow')
-		interval.place(rely=0.5, height= 5)
-
-		def update_wdgt(widget, xdata):
-			if   widget is min_handle:
+		def get_id(event):
+			return event.widget.find_withtag('current')[0]
+		def update_wdgt(id, xdata):
+			if   id == min_handle_id:
 				self.__min.set(value=xdata)
-			elif widget is max_handle:
+			elif id == max_handle_id:
 				self.__max.set(value=xdata)	
-			interval.place(x= min_handle.winfo_x(), width= (max_handle.winfo_x() - min_handle.winfo_x()))
+
+			_min_x = self.coords(min_handle_id)[0]
+			_max_x = self.coords(max_handle_id)[0]
+			self.coords(interval_id, _min_x, height - 3, _max_x, height + 3)
 			if cmd:
-				cmd(self.__min.get(), self.__max.get())
+				cmd((self.__min.get(), self.__max.get()))
 		def handle_drag(e : tk.Event):
 			if e.widget is None:
 				return
-			rel_w = 16 / rail.winfo_width()
-			max_cut = self.__max.get() if e.widget is min_handle else 1
-			min_cut = self.__min.get() + rel_w if e.widget is max_handle else 0
+			
+			rel_width = 8/width
+			max_cut = self.__max.get()  if get_id(e) == min_handle_id else 1
+			min_cut = self.__min.get() + 2*rel_width 	if get_id(e) == max_handle_id else 0
 
-			x = (e.x + e.widget.winfo_x() - 8) / rail.winfo_width()
-			x = numpy.clip(x, min_cut, max_cut - rel_w)
-			e.widget.place(relx= x)
-			update_wdgt(e.widget, x)
-		def handle_hover(e : tk.Event):
-			e.widget['image'] = styles.handle_hover
-		def handle_release(e : tk.Event):
-			e.widget['image'] = styles.handle_base
-		def handle_press(e : tk.Event):
-			e.widget['image'] = styles.handle_press
+			x = numpy.clip(e.x/ width, min_cut + rel_width, max_cut - rel_width)
+			self.coords(get_id(e), x * width,  height)
+			update_wdgt(get_id(e), (x - rel_width) * (width + rel_width)/width)
+
+		def on_widget_map(e):
+			nonlocal width, height
+			width = self.winfo_width()
+			height = self.winfo_height() * 0.5
+
+			self.coords(label_id, 0, 0)
+			self.coords(rail_id, 0, height - 1, width, height + 1)
+			self.coords(interval_id, self.__min.get()* width, height - 2, self.__max.get() * width, height + 2)
+
+			self.coords(min_handle_id, 8 + self.__min.get()*width, height)
+			self.coords(max_handle_id, self.__max.get()*width - 8, height)			
+		
 		self.on_config = lambda e: update_wdgt(None, 0)
 			
-		min_handle.place(y=1, relx= 0, width=16, height=32)
-		max_handle.place(y=1, relx= 0.5, width=16, height=32)
+		self.tag_bind(min_handle_id, '<B1-Motion>', handle_drag)
+		self.tag_bind(max_handle_id, '<B1-Motion>', handle_drag)
+		self.tag_bind(min_handle_id, '<Button>', handle_drag)
+		self.tag_bind(max_handle_id, '<Button>', handle_drag)
 
-		min_handle.bind('<B1-Motion>',    handle_drag)
-		min_handle.bind('<Button>', 	  handle_press)
-		min_handle.bind('<Enter>',		  handle_hover)
-		min_handle.bind('<Leave>', 		  handle_release)
-		min_handle.bind('<ButtonRelease>',handle_release)
+		self.bind('<Map>', on_widget_map)
+		self.bind('<Configure>', on_widget_map)
 
-		max_handle.bind('<B1-Motion>',    handle_drag)
-		max_handle.bind('<Button>', 	  handle_press)
-		max_handle.bind('<Enter>',		  handle_hover)
-		max_handle.bind('<Leave>', 		  handle_release)
-		max_handle.bind('<ButtonRelease>',handle_release)
-		max_handle.bind('<Map>', self.on_config)
-
-		label.grid(row=0, column=0)
-		rail.grid(row=0, column=1, sticky='news', padx=4)
-
-
-		# for x in range(10):
-		# 	tk.Grid.columnconfigure(self, x, weight=1)
-
-		# ttk.Label(self, text = "Maximo:").grid(row = 0,column = 0)
-		# self.maxScale=ttk.Scale(self, orient=tk.HORIZONTAL,from_=0, to=1, variable = self.__max)
-		# self.maxScale.grid(row = 0, column = 1, columnspan = 10, sticky = tk.EW)
-		
-		# ttk.Label(self, text = "Minimo:").grid(row = 1,column = 0)
-		# self.minScale=ttk.Scale(self, from_=0, to= 1, orient=tk.HORIZONTAL, variable = self.__min)
-		# self.minScale.grid(row = 1, column = 1, columnspan = 10, sticky = tk.EW)
 	def get_value(self) -> tuple:
 		return self.__min.get(), self.__max.get()
 	def set_value(self, levels : tuple):
@@ -128,33 +119,34 @@ class LevelsSlider(Drawable):
 # ------------------------------------
 class Button(Drawable):
 	def __init__(self, master, cmd = None, *args,**kwargs):
-		tk.Label.__init__(self, master, image=st.styles.button_base, **kwargs)
+		st_base, st_hover, st_press = styles.get_resources('button_base', 'button_hover', 'button_press')
+		tk.Label.__init__(self, master, image=st_base, **kwargs)
 		self.config(**kwargs)
-		self.config(compound ="center", height = 32, width = 164, **st.styles.BUTTON)
+		self.config(compound ="center", height = 32, width = 164, **styles.BUTTON)
 		self.config(bg = master["bg"])
-		hover = False
+		is_hover = False
 		def on_enter(e):
-			nonlocal hover
-			e.widget["image"] = st.styles.button_hover
-			hover = True
+			nonlocal is_hover
+			e.widget["image"] = st_hover
+			is_hover = True
 		def on_leave(e): 
-			nonlocal hover
-			e.widget["image"] = st.styles.button_base
-			hover = False
+			nonlocal is_hover
+			e.widget["image"] = st_base
+			is_hover = False
 		def on_press(e): 
-			e.widget["image"] = st.styles.button_press
+			e.widget["image"] = st_press
 			e.widget["relief"] = "flat"
 		def on_release(e): 
-			e.widget["image"] = st.styles.button_base
+			e.widget["image"] = st_base
 			e.widget["relief"] = "flat"
-			if cmd is not None and hover:
+			if cmd is not None and is_hover:
 				self.command(*args)
 		
 		self.bind("<Enter>", on_enter)
 		self.bind("<Leave>", on_leave)
 		self.bind('<Button-1>', on_press)
 		self.bind("<ButtonRelease-1>", on_release)
-		# self.photo = st.styles.button_base
+		# self.photo = styles.button_base
 	def setup_image(self):
 		self.photo = styles.button_base
 # ------------------------------------
@@ -168,17 +160,17 @@ class HButton(Drawable):
 		hover = False
 		def on_enter(e):
 			nonlocal hover
-			e.widget["image"] = st.styles.hbutton_hover
+			e.widget["image"] = st_hover
 			hover = True
 		def on_leave(e): 
 			nonlocal hover
-			e.widget["image"] = st.styles.hbutton_base
+			e.widget["image"] = st_base
 			hover = False
 		def on_press(e): 
-			e.widget["image"] = st.styles.hbutton_press
+			e.widget["image"] = st_press
 			e.widget["relief"] = "flat"
 		def on_release(e): 
-			e.widget["image"] = st.styles.hbutton_base
+			e.widget["image"] = st_base
 			e.widget["relief"] = "flat"
 			if self.command is not None and hover:
 				if args is None:
@@ -190,7 +182,7 @@ class HButton(Drawable):
 		self.bind("<Leave>", on_leave)
 		self.bind('<Button-1>', on_press)
 		self.bind("<ButtonRelease-1>", on_release)
-		# self.photo = st.styles.button_base
+		# self.photo = styles.button_base
 	def setup_image(self):
 		self.photo = st.styles.button_base
 # ------------------------------------
