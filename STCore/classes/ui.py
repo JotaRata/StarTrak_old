@@ -42,12 +42,7 @@ class STView(ABC, tk.Widget):
 
 	@abstractmethod
 	def __init__(self, master, *args, **kwargs) -> None:
-		def _resize(event):
-			print(self.winfo_width())
-		# self.bind('<Return>', resize)
-		self.bind('<Enter>', lambda e:self.focus())
-		self.bind('r', _resize)
-		# pass
+		pass
 	
 	@abstractmethod
 	def build(self, master):
@@ -75,7 +70,6 @@ class STView(ABC, tk.Widget):
 class SelectorUI(STView):
 	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
-		super().__init__(master)
 		self.config(**styles.SFRAME)
 		
 		elements : list[tuple[File, FileEntry]] = []
@@ -148,6 +142,7 @@ class SelectorUI(STView):
 		
 		self.__add = lambda e : on_list_append(e)
 		self.bind('<Map>', on_config)
+		self.bind('<Configure>', on_config)
 		
 		canvas.bind_all('<MouseWheel>', on_mouse_scroll, '+')
 	
@@ -460,7 +455,7 @@ class SessionDialog(STView):
 class ViewerUI(STView, tk.Frame):
 	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, **st.styles.HFRAME)
-		self.config(bg= styles.base_dark)
+		self.config(bg= styles.base_primary)
 
 		data_range   : tuple = (0, 1)
 		implot = None

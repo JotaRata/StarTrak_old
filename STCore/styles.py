@@ -7,9 +7,10 @@ from STCore import debug
 # ---------------------------
 
 # Colors
-base_primary = 	'#263238'
-base_dark = 	'#232931'
-base_light = 	'#4f5b62'
+# ---------------------------
+base_primary = 	'#171a20'
+base_dark = 	'#121418'
+base_light = 	'#1e1c1b'
 base_highlight ='#00897b'
 
 hover_primary = '#364248'

@@ -24,7 +24,7 @@ if __name__ == '__main__':
 		st.lang.register_languages()
 		st.lang.set_current_language("es")
 
-		panel = tkinter.PanedWindow(tk, bg=st.styles.base_primary, orient="horizontal")
+		panel = tkinter.PanedWindow(tk, orient="horizontal", showhandle=True, sashwidth=4, bg=st.styles.base_dark)
 		panel.pack(fill="both", expand=True)
 
 		view = ui.ViewerUI(panel, width= 400)
