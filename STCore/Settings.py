@@ -4,7 +4,6 @@ from tkinter import ttk
 import configparser
 from os.path import isfile
 from os import remove
-import STCore.DataManager
 #region Variables
 SettingsFrame = None
 Window = None
@@ -22,63 +21,6 @@ _VISUAL_COLOR_ = None
 _TRACK_PREDICTION_ = None
 _SHOW_TRACKEDPOS_ = None
 #endregion
-
-def LoadSettings():
-	global _RECENT_FILES_, _PROCESS_NUMBER_, _SHOW_GRID_, _VISUAL_MODE_, _VISUAL_COLOR_, _TRACK_PREDICTION_, _SHOW_TRACKEDPOS_
-	config = configparser.ConfigParser()
-	if (isfile(WorkingPath+"/Settings.ini")):
-		config.read(WorkingPath+"/Settings.ini")
-	else:
-		print ("Setting file not found, creating new file..")
-		SaveSettingsDefault()
-		LoadSettings()
-		return
-	_RECENT_FILES_ = tk.IntVar(value = int(config.get("GENERAL","_SHOW_RECENT_FILES_")))
-	_PROCESS_NUMBER_ = tk.StringVar(value = ThrNumber[int(config.get("GENERAL","_THREADS_NUMBER_"))])
-	_SHOW_GRID_ =   tk.IntVar(value = int(config.get("VISUALIZATION","_SHOW_GRID_")))
-	_VISUAL_MODE_ = tk.StringVar(value = VisModes[int(config.get("VISUALIZATION","_SCALE_MODE_"))])
-	_VISUAL_COLOR_ = tk.StringVar(value = VisColors[int(config.get("VISUALIZATION","_COLOR_MODE_"))])
-	_TRACK_PREDICTION_ = tk.IntVar(value = int(config.get("TRACKING","_USE_PREDICTION_")))
-	_SHOW_TRACKEDPOS_ = tk.IntVar(value = int(config.get("TRACKING","_SHOW_TRACKS_")))
-
-def SaveSettingsDefault():
-	config = configparser.ConfigParser()
-	config.add_section("GENERAL")
-	config.set("GENERAL", "_SHOW_RECENT_FILES_", "1")
-	config.set("GENERAL", "_THREADS_NUMBER_", "3")
-
-	config.add_section("VISUALIZATION")
-	config.set("VISUALIZATION", "_SHOW_GRID_", "0")
-	config.set("VISUALIZATION", "_SCALE_MODE_", "0")
-	config.set("VISUALIZATION", "_COLOR_MODE_", "0")
-
-	config.add_section("TRACKING")
-	config.set("TRACKING", "_USE_PREDICTION_", "1")
-	config.set("TRACKING", "_SHOW_TRACKS_", "1")
-	with open(WorkingPath+'/Settings.ini', 'w') as configfile:
-		 config.write(configfile)
-
-def SaveSettings():
-	config = configparser.ConfigParser()
-	config.add_section("GENERAL")
-	config.add_section("VISUALIZATION")
-	config.add_section("TRACKING")
-	config.set("TRACKING", "_USE_PREDICTION_", str(_TRACK_PREDICTION_.get()) )
-	config.set("TRACKING", "_SHOW_TRACKS_",str( _SHOW_TRACKEDPOS_.get()) )
-
-	config.set("VISUALIZATION", "_SHOW_GRID_", str(_SHOW_GRID_.get()) )
-	config.set("VISUALIZATION", "_SCALE_MODE_",str(VisModes.index(str(_VISUAL_MODE_.get()))) )
-	config.set("VISUALIZATION", "_COLOR_MODE_",str(VisColors.index(str(_VISUAL_COLOR_.get())))
- )
-	config.set("GENERAL", "_SHOW_RECENT_FILES_", str(_RECENT_FILES_.get()) )
-	config.set("GENERAL", "_THREADS_NUMBER_",str(ThrNumber.index(_PROCESS_NUMBER_.get())) )
-	with open(WorkingPath+'/Settings.ini', 'w') as configfile:
-		 config.write(configfile)
-	if STCore.DataManager.CurrentWindow == 2:
-		STCore.ImageView.UpdateImage()
-	if STCore.DataManager.CurrentWindow == 3:
-		STCore.Tracker.UpdateImage()
-	CloseWindow()
 
 def Awake(root):
 	global Window,SettingsFrame

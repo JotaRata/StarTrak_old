@@ -1,463 +1,230 @@
 # coding=utf-8
-#en esta linea se cargan los modulos principales
-#en esta linea se cargan los modulos principales
-#en esta linea se cargan los modulos principales
-try:
-	print("Cargando modulos principales..", end=" ") #en esta linea se cargan los modulos principales
-	import sys
-	if sys.version_info < (3, 0):
-		raise  SystemError("StarTrak debe ser ejecutado usando  Python3")
-		
-	from logging import log
-	from os.path import dirname, abspath, basename, isfile
-	import gc
-	import warnings
-	warnings.filterwarnings("ignore")	
-	print ("Listo")
-except:
-	raise ImportError("StarTrak no pudo cargar los modulos del sistema.\nCompruebe su instalacion de python.")
+
+_name_ = "STCore"
+import sys
+import gc
+from tkinter import Event
+from tkinter.constants import END
+import warnings
+from os.path import abspath, basename, dirname, isfile
+
+warnings.filterwarnings("ignore")	
 
 try:
-	print ("Iniciando modulos Tk..", end=" ")
-	from tkinter import Toplevel, font
-	from tkinter.filedialog import FileDialog
+	import debug
+except:
+	raise ImportError("No se pudo importar algunos modulos")
+if sys.version_info < (3, 0):
+	debug.Error(_name_, "StarTrak debe ser ejecutado usando  Python3")
+
+try:
+	debug.log(_name_, "Iniciando Tk..")
 	import tkinter as tk
-	from tkinter import filedialog
-	from tkinter import messagebox
-	from tkinter import ttk
-	print ("Listo")
+	from tkinter import Toplevel, filedialog, font, messagebox, ttk
+	from tkinter.filedialog import FileDialog
 except:
-	raise ImportError("No se pudo cargar los modulos de Tcl/Tk\nAsegurese que estos modulos esten activados en su instalacion de python.")
+	debug.error(_name_, "No se pudo cargar los modulos tkinter\nAsegurese que estos modulos esten activados en su instalacion de python.")
 
 try:
-	print("Iniciando NumPy..", end=" ")
-	from numpy.lib.npyio import load
-	print ("Listo")
-except:
-	raise ImportError("NumPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de NumPy usando:\npip3 install numpy")
-
-try:
-	print("Iniciando MatplotLib..", end=" ")
+	debug.log(_name_, "Iniciando MPL..")
 	import matplotlib.pyplot as plt
-	print ("Listo")
 except:
-	raise ImportError("MatplotLib no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de MatplotLib usando:\npip3 install matplotlib")
+	debug.error(_name_, "Matplotlib no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de MatplotLib usando:\npip3 install matplotlib")
 try:
-	print ("Iniciando AstroPy..", end=" ")
-	from astropy.io.fits.card import HIERARCH_VALUE_INDICATOR
-	from astropy.io.fits.convenience import info
-	print ("Listo")
+	debug.log(_name_, "Iniciando AstroPy..")
+	import astropy.io
 except:
-	raise ImportError("AstroPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de AstroPy usando:\npip3 install astropy")
+	debug.error(_name_, "AstroPy no se pudo cargar o no esta instalado\nAsegurate de instalar la ultima version de AstroPy usando:\npip3 install astropy")
 
 try:
-	print ("Iniciando PIL..", end=" ")
+	debug.log (_name_, "Iniciando PIL..")
 	from PIL import Image, ImageTk
-	print ("Listo")
 except:
-	raise ImportError("No se pudo cargar Python Image Library\nAsegurate de instalarlo usando:\npip3 install pillow")
-
+	debug.error(_name_, "No se pudo cargar Python Image Library\nAsegurate de instalarlo usando:\npip3 install pillow")
 try:
 	sys.path.append(dirname(dirname(abspath(__file__))))
 except NameError:  # We are the main py2exe script, not a module
 	sys.path.append(dirname(dirname(abspath(sys.argv[0]))))
-
 try:
-	print ("Cargando paquetes..", end=" ")
-	import STCore.utils.Icons as icons
-	from STCore import ImageSelector, ImageView, Results, Tracker, DataManager
-	from STCore import Settings
-	
-	from STCore import Composite, ResultsConfigurator, RuntimeAnalysis, Tools
-	print ("Listo")
-except Exception as e:
-	raise ImportError("Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n", e)
+	debug.log (_name_, "Cargando modulos de Startrak..")
+	# from STCore import Composite
+	# from STCore import DataManager
+	# from STCore import ImageSelector
+	# from STCore import ImageView
+	# from STCore import Results
+	# from STCore import ResultsConfigurator
+	#from STCore import RuntimeAnalysis
+	# from STCore import Settings
+	#from STCore import Tools
+	# from STCore import Tracker
+	# from STCore import Styles
+	from STCore.bin import env
+	from STCore import Icons
+	from STCore.bin.app.ui import MainScreenUI, STView, SelectorUI
+	from STCore.bin.data_management import RecentsManager, SettingsManager, SessionManager
+	from STCore.bin.app.ui import SessionDialog
+	from STCore import styles
 
 
+except:
+	debug.error(_name_, "Algunos archivos de StarTrak no existen o no pudieron ser cargados\nAsegurate de descargar la ultima version e intenta de nuevo\n")
 print ("=" * 60)
+
+# Define scope
+# ----------------------------------
+master : tk.Tk = None
+
+# Define functions
+#---------------------------------
+def change_view(view_name : str):
+	view = env.views[view_name]
 	
+	# if view.active:
+	# 	return view
+	if env.current_view is not None:
+		env.current_view.close()
+		#env.current_view.active = False
 
-def Awake(root):
-	global StartFrame, sidebar, bottombar
-	DataManager.CurrentWindow = 0
+	view.build(master)
+	#view.active = True
+	env.current_view = view
+	return view
 
-	WindowName()
-	gc.collect()
+def load_files():
+	paths = filedialog.askopenfilenames(parent = master, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
+	view = change_view("selector")
+	view.config_callback()
 
-	StartFrame = tk.Frame(root, width = 1100, height = 400, bg="gray18")
-	Tracker.DataChanged = False
-	StartFrame.pack(side = tk.RIGHT, anchor=tk.NE, expand = 1, fill = tk.BOTH)
+def create_session():
+	level = SessionDialog(master)
+	return level
+def load_session(path):
+	if not isfile(path):
+		messagebox.showerror("Error", "Este archivo no existe")
+		debug.error(_name_, "El archivo {0} no existe".format(path))
+		# DataManager.RecentFiles.remove(path)
+		# DataManager.SaveRecent()
+		return
 
-	# Sidebar Area
-	sidebar = tk.Frame(root, bg="gray15", width=400)
-	sidebar.pack(side = tk.LEFT, anchor = tk.NW, fill = tk.Y, expand = 0)
-	sidebar.pack_propagate(0)
+	session = SessionManager()
+	session.load_data(path)
 
-	logo = ImageTk.PhotoImage(file ="STCore/StarTrak.png")
-	logo_label = tk.Label(sidebar,image= logo, bg = "gray15")
-	logo_label.image = logo
-	logo_label.pack(pady=16)
-
-	tk.Label(sidebar, text = "Bienvenido a StarTrak",font="-weight bold", bg = "gray15", fg = "gray80").pack(pady=16)
-	
-	# Bottombar Area
-
-	bottombar = tk.Frame(StartFrame, bg ="gray18", height=64)
-	bottombar.pack(expand=1, side=tk.BOTTOM, anchor=tk.SW, fill = tk.X)
-	bottombar.pack_propagate(0)
-	SessionButton = ttk.Button(bottombar, text = "Nueva Sesion",image = icons.GetIcon("run"), compound = "left", command = lambda: NewSessionTopLevel(root), width=32, style="Highlight.TButton")
-	SessionButton.pack(side= tk.RIGHT, anchor = tk.E)
-	FilesButton = ttk.Button(StartFrame, text = "Abrir Imagenes",image = icons.GetIcon("multi"), compound = "left", command = lambda:LoadFiles(root), width = 100)
-	#FilesButton.pack()
-	#tk.Label(StartFrame, text = "\n O tambien puede ").pack(anchor = tk.CENTER)
-	LoadButton = ttk.Button(bottombar, text = "Cargar Sesion",image = icons.GetIcon("open"), compound = "left", command = Tools.OpenFileCommand, width=32)
-	LoadButton.pack(side= tk.RIGHT, anchor = tk.E, after=SessionButton)
-
-	# Right panel Area
-	CreateRecent(root)
-
-
-def CreateRecent(root):
-	global StartFrame, recentlabel
-	if Settings._RECENT_FILES_.get() == 1:
-		recentlabel = tk.LabelFrame(StartFrame, text = "Archivos recientes:", bg="gray18", fg="gray90", relief="flat", font="-weight bold")
-		recentlabel.pack(anchor = tk.NW, pady=16, expand=1, fill=tk.BOTH)
-
-		ttk.Label(recentlabel).pack()
-		for p in reversed(DataManager.RecentFiles):
-
-			file_el = ttk.Button(recentlabel, text = p[0], cursor="hand2", style= "Highlight.TButton", command= lambda : _helperLoadData(p[1], root))
-			#l.bind("<Button-1>", _helperOpenFile(p, root))
-			file_el.pack(anchor = tk.W, pady=4, fill=tk.X)
-
-			ttk.Button(file_el, image=icons.GetIcon("delete"), command=lambda:RemoveRecent(p, root), style="Highlight.TButton").pack(side=tk.RIGHT)
-			
-def _helperLoadData(path, root):
-	if isfile(path):
-		DataManager.LoadData(path)
-	else:
-		messagebox.showerror("Error", "Este archivo ya no existe")
-		DataManager.RecentFiles.remove(path)
-		DataManager.SaveRecent()
-		Destroy()
-		Awake(root)
-
-def RemoveRecent(path, root):
-	DataManager.RecentFiles.remove(path)
-	DataManager.SaveRecent()
-	recentlabel.destroy()
-	
-	CreateRecent(root)
-
-def LoadFiles(root):
-	paths = filedialog.askopenfilenames(parent = root, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
-	Destroy()
-	ImageSelector.Awake(root, paths)
-
-def Destroy():
-	StartFrame.destroy()
-	sidebar.destroy()
-	bottombar.destroy()
-
-def WindowName():
-	if len(DataManager.CurrentFilePath) > 0:
-		Window.wm_title(string = "StarTrak 1.1.0 - "+ basename(DataManager.CurrentFilePath))
-	else:
-		Window.wm_title(string = "StarTrak 1.1.0")
-
-
-def LoadData(window):
-	win = Window
-	ImageSelector.ItemList = DataManager.FileItemList
-	ImageView.Stars = DataManager.StarItemList
-	Tracker.TrackedStars = DataManager.TrackItemList
-	Tracker.DataChanged = False
-	ResultsConfigurator.SettingsObject = DataManager.ResultSetting
-	ImageView.level_perc = DataManager.Levels
-	Results.MagData = DataManager.ResultData
-	DataManager.RuntimeEnabled =  DataManager.RuntimeEnabled
-	Results.Constant = 0
-	Results.BackgroundFlux = 0
-	if  DataManager.RuntimeEnabled == True:
-		RuntimeAnalysis.directoryPath = DataManager.RuntimeDirectory
-		RuntimeAnalysis.filesList = DataManager.FileItemList
+	# Tracker.DataChanged = False
+	if  session.runtime:
+		RuntimeAnalysis.directoryPath = session.runtime_dir
+		RuntimeAnalysis.filesList = session.file_refs
 		RuntimeAnalysis.startFile = ""
-		RuntimeAnalysis.dirState = DataManager.RuntimeDirState
-
+		RuntimeAnalysis.dirState = session.runtime_dir_state
 		print ("---------------------------")
-		print ("DirState: ", len(DataManager.RuntimeDirState))
+		print ("DirState: ", len(session.RuntimeDirState))
 	else:
 		RuntimeAnalysis.directoryPath = ""
 		RuntimeAnalysis.dirState = []
 		RuntimeAnalysis.filesList = []
 		RuntimeAnalysis.startFile = ""
-	if window == 0:
-		# No hacer nada #
-		return
-	if window == 1:
-		Destroy()
-		ImageSelector.Awake(win)
-		return
 
-	if (window == 2) and DataManager.RuntimeEnabled == True:
-		Destroy()
-		ImageView.Awake(win)
-		return
+	if session.window == 1:
+		change_view("selector")
+		# Destroy()
+		# ImageSelector.Awake(win)
+	if (session.window == 2) and session.runtime == True:
+		change_view("viewer")
+		# Destroy()
+		# ImageView.Awake(win)
+	if session.window == 2:
+		change_view("selector")
+		# Destroy()
+		# ImageSelector.Awake(win)
+		# ImageSelector.Apply(win)
+	if (session.window == 4 or session.window == 3) and session.runtime == True:
+		# Destroy()
+		# Tracker.CurrentFile = 0
+		# Tracker.Awake(win, ImageView.Stars, DataManager.FileItemList)
+		change_view("tracker")
+		RuntimeAnalysis.StartRuntime(master)
+	if session.window == 3 or session.window == 5:
+		change_view("tracker")
+		# Destroy()
+		# ImageSelector.Awake(win)
+		# ImageSelector.Destroy()
+		# Tracker.Awake(win, ImageView.Stars, ImageSelector.FilteredList)
+	if session.window == 4:
+		change_view("graph")
+		# Destroy()
+		# ImageSelector.Awake(win)
+		# ImageSelector.Destroy()
+		# Results.Awake(win, ImageSelector.FilteredList, Tracker.TrackedStars)
 
-	if window == 2:
-		Destroy()
-		ImageSelector.Awake(win)
-		ImageSelector.Apply(win)
-		return
+	env.session_manager = session
+	return session
 
-	if (window == 4 or window == 3) and DataManager.RuntimeEnabled == True:
-		Destroy()
-		Tracker.CurrentFile = 0
-		Tracker.Awake(win, ImageView.Stars, DataManager.FileItemList)
-		RuntimeAnalysis.StartRuntime(win)
-		return
-	if window == 3 or window == 5:
-		Destroy()
-		ImageSelector.Awake(win)
-		ImageSelector.Destroy()
-		Tracker.Awake(win, ImageView.Stars, ImageSelector.FilteredList)
-		return
-	if window == 4:
-		Destroy()
-		ImageSelector.Awake(win)
-		ImageSelector.Destroy()
-		Results.Awake(win, ImageSelector.FilteredList, Tracker.TrackedStars)
-		return
-
-def Reset():
-	win = Window
-	ResultsConfigurator.SettingsObject = None
-	ImageSelector.ItemList = []
-	Tracker.TrackedStars = []
-	Tracker.CurrentFile = 0
-	Tracker.DataChanged = False
-	Tracker.ClearData()
-
-	ImageView.level_perc = -1
-	ImageView.ClearStars()
-	ImageView.implot = None
-	Results.MagData = None
+def reset():
+	if env.session_manager is None: return
+	env.session_manager = None
+	change_view("main")
 	
-	DataManager.RuntimeEnabled = False
-	DataManager.Levels = -1
-	DataManager.FileItemList = []
-	DataManager.StarItemList = []
-	
-	Results.Constant = 0
-	Results.BackgroundFlux = 0
-	RuntimeAnalysis.directoryPath = ""
-	RuntimeAnalysis.dirState = []
-	RuntimeAnalysis.filesList = []
-	RuntimeAnalysis.startFile = ""
 
-	print ("Window Reset")
-	if DataManager.CurrentWindow == 0:
-		# No hacer nada #
-		return
-	if DataManager.CurrentWindow == 1:
-		ImageSelector.Destroy()
-		ImageSelector.ClearList(win)
-		Awake(win)
-		return
-	if DataManager.CurrentWindow == 2:
-		ImageView.Destroy()
-		ImageView.ClearStars()
-		Awake(win)
-		return
-	if DataManager.CurrentWindow == 3:
-		Tracker.Destroy()
-		Awake(win)
-		return
-	if DataManager.CurrentWindow == 4:
-		Results.Destroy()
-		Awake(win)
-		return
-	if DataManager.CurrentWindow == 5:
-		Composite.Destroy()
-		Awake(win)
-		return
+def preload_view(root):
+	debug.log (_name_, "Preloading Views..")
+	env.views = { "main" : MainScreenUI(root), 
+				"selector" : SelectorUI(root)}
+def tk_exception(*args):
+	debug.error("Tk", "Se ha detectado un error de ejecuccion, revisa el registro para mas detalles.", stop=False)
 
-def NewSessionTopLevel(root):
-	global sessionName
-	Destroy()
-	sessionType = -1
-	top = tk.Toplevel(root)
-	top.geometry("720x480+%d+%d" % (root.winfo_width()/2 + root.winfo_x() - 360,  root.winfo_height()/2 + root.winfo_y() - 240) )
-	top.wm_title(string = "Nueva Sesion")
-	#top.attributes('-topmost', 'true')
-	#top.overrideredirect(1)
-	
-	TopFrame = ttk.Frame(top)
-	TopFrame.pack(expand=1, fill=tk.BOTH)
+# -----------------------------------
+try:
+	if __name__ == "__main__":
+		# Iniciar atributos de entorno
+		env.scope = __name__
+		env.working_path = dirname(abspath(__file__))
 
-	file_paths = []
-	directory_path = ""
-	load_frame = ttk.Frame(TopFrame)
-	load_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=1, pady=16)
-
-	info_label = None
-
-	def GetFilePaths():
-		nonlocal file_paths, info_label
-		file_paths = filedialog.askopenfilenames(parent = top, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
-		if info_label is not None:
-			info_label.config(text="Se seleccionaron %o archivos" % len(file_paths))
-	def GetDirectory():
-		nonlocal directory_path, info_label
-		directory_path = filedialog.askopenfilename(parent=top, filetypes=[("FIT Image", "*.fits;*.fit"), ("Todos los archivos",  "*.*")])
-		if info_label is not None:
-			info_label.config(text="Directorio de la sesion:\n"+dirname(directory_path))
-
-	def SetSessionType(index, rtbutton, asbutton):
-		nonlocal load_frame, sessionType, info_label
-		sessionType = index
+		master = tk.Tk()
+		master.state('zoomed')
+		master.configure(bg="black")
+		# master.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
+		# master.tk.call('package', 'require', 'awdark')
+		master.minsize(1140, 550)
+		master.report_callback_exception = tk_exception
 		
-		rtcolor = "gray20"
-		ascolor = "gray20"
-		selectText = ""
-		if index == 0:
-			rtcolor="gray30"
-			ascolor="gray20"
-			
-			for c in load_frame.winfo_children():
-				c.destroy()
-			ttk.Label(load_frame, text="Abrir la primera imagen de la sesion").pack()
-			ttk.Button(load_frame, text="Arbir archivo", command=GetDirectory, width=28).pack()
+		styles.load_styles()
+		env.recent_manager = RecentsManager()
+		env.settings_manager = SettingsManager()
+		env.tk = master
+
+		Icons.load_icons()
+		env.settings_manager.load_settings()
+		env.recent_manager.load_recent()
 		
-		if index == 1:
-			rtcolor ="gray20"
-			ascolor ="gray30"
+		preload_view(master),
 
-			for c in load_frame.winfo_children():
-				c.destroy()
-			
-			ttk.Label(load_frame, text="Abrir varias imagenes").pack()
-			ttk.Button(load_frame, text="Arbir archivos", command=GetFilePaths, width=28).pack()
+		env.views["main"].config_callback(toplevel = create_session, load_data = load_session)
+		main_view = change_view("main")
 
-		info_label = ttk.Label(load_frame, text = "")
-		info_label.pack()
+		# Settings.WorkingPath = dirname(abspath(__file__))
+		# DataManager.WorkingPath = dirname(abspath(__file__))
+		#Tools.Awake(master)
+		
+		#print DataManager.WorkingPath
 
-		rtbutton.config(bg=rtcolor)
-		for c in rtbutton.winfo_children():
-			c.config(bg=rtcolor)
-
-		asbutton.config(bg=ascolor)
-		for c in asbutton.winfo_children():
-			c.config(bg=ascolor)
-
-	def CloseLevel(wakemain = True):
-		nonlocal root
-		top.destroy()
-		if wakemain:
-			Awake(root)
-	
-	def Continue():
-		nonlocal sessionType, root, file_paths, directory_path
-		DataManager.SessionName = str(sessionName.get())
-		if sessionType == 0:
-			CloseLevel(False)
-			RuntimeAnalysis.startFile = directory_path
-			RuntimeAnalysis.Awake(root)
-		if sessionType == 1:
-			CloseLevel(False)
-			Destroy()
-			ImageSelector.Awake(root, file_paths)
-
-	ttk.Label(TopFrame, text="Crear nueva sesion", font="-weight bold").pack(side=tk.TOP, anchor=tk.NW, fill=tk.X, pady=16, padx=8)
-	ttk.Label(TopFrame, text="Nombre de la sesion").pack(side=tk.TOP, anchor=tk.N, fill=tk.X, pady=16, padx=16)
-	sessionName = tk.StringVar(top, value="Nueva Sesion")
-	entry = ttk.Entry(TopFrame, textvariable=sessionName)
-	entry.pack(side=tk.TOP, anchor=tk.N, fill=tk.X, padx=32)
-
-	rtsession = tk.Frame(TopFrame, relief=tk.FLAT, bg="gray18", height=4)
-	rtsession.pack(anchor=tk.CENTER, fill=tk.X, pady=8)
-	assession = tk.Frame(TopFrame, relief=tk.FLAT, bg="gray18", height=4)
-	assession.pack(anchor=tk.CENTER, fill=tk.X, pady=8)
-
-	rt_cmd = lambda e: SetSessionType(0, rtsession, assession)
-	as_cmd = lambda e: SetSessionType(1, rtsession, assession)
-
-	rtsession.bind('<Button-1>', rt_cmd)
-	assession.bind('<Button-1>', as_cmd)
-
-	rt_title = tk.Label(rtsession,text="Analisis en tiempo real", font="-weight bold", fg="gray80")
-	rt_title.pack(side=tk.TOP)
-	
-	as_title = tk.Label(assession,text="Analisis asincrono", font="-weight bold", fg="gray80")
-	as_title.pack(side=tk.TOP)
-	
-	rt_label = tk.Label(rtsession, text="Comienza un analisis fotometrico en tiempo real con el telescopio\nDebes seleccionar un archivo de muestra que se encuentre en la misma carpeta donde se exportaran los archivos FITS desde el CCD", fg="gray60")
-	rt_label.pack(side=tk.BOTTOM)
-	
-	as_label = tk.Label(assession, text="Selecciona varias imagenes tomadas anteriormente para comenzar un analisis fotometrico de estas\nTambien puedes apilar estas imagenes", fg="gray60")
-	as_label.pack(side=tk.BOTTOM)
-	
-	rt_title.bind('<Button-1>', rt_cmd)
-	as_title.bind('<Button-1>', as_cmd)
-
-	rt_label.bind('<Button-1>', rt_cmd)
-	as_label.bind('<Button-1>', as_cmd)
-
-	SetSessionType(-1, rtsession, assession)
-
-	button_frame = ttk.Frame(top)
-	button_frame.pack(side=tk.BOTTOM, fill=tk.X)
-
-	ttk.Button(button_frame, text = "Continuar", style="Highlight.TButton", command=Continue, width=40).pack(side=tk.RIGHT, pady=16, padx=8)
-	ttk.Button(button_frame, text = "Cancelar", command=CloseLevel, width=32).pack(side=tk.RIGHT, pady=16, padx=8)
-	
-
-def PreloadComponents():
-	print ("Preloading components..")
-	ImageView.BuildLayout(Window)
-	Tracker.BuildLayout(Window)
-
-if __name__ == "__main__":
-	Window = tk.Tk()
-	
-	Window.configure(bg="black")
-	Window.tk.call('lappend', 'auto_path', 'STCore/theme/awthemes-10.3.0')
-	Window.tk.call('package', 'require', 'awdark')
-
-	import Styles
-
-	Settings.WorkingPath = dirname(abspath(__file__))
-	DataManager.WorkingPath = dirname(abspath(__file__))
-	icons.Initialize()
-	DataManager.Awake()
-	Settings.LoadSettings()
-	Tools.Awake(Window)
-	
-	#print DataManager.WorkingPath
-	DataManager.LoadRecent()
-	DataManager.TkWindowRef = Window
-
-
-	StartFrame = None
-	Window.wm_title(string = "StarTrak 1.1.0")
-	Window.geometry("1280x640")
-	try:
-		Window.iconbitmap(DataManager.WorkingPath+"/icon.ico")
-	except:
-		pass
-	
-	PreloadComponents()
-
-	Window.after(20, Awake, Window)
-	
-	# Pre-initialize UI components
-	
-	if len(sys.argv) > 1:
-		_helperLoadData(str(sys.argv[1]), Window)
-	
-	#print(style.theme_names())
-	
-	
-	Window.mainloop()
+		master.wm_title(string = "StarTrak 1.2.0")
+		master.geometry("1280x640")
+		try:
+			master.iconbitmap(env.working_path+"/icon.ico")
+		except:
+			pass
+		
+		#master.after(20, Awake, master)
+		
+		# Pre-initialize UI Drawabless
+		
+		if len(sys.argv) > 1:
+			load_session(str(sys.argv[1]), master)
+		
+		#print(style.theme_names())
+		
+		
+		master.mainloop()
+except:
+	debug.error(_name_, "Ha ocurrido un error que ha hecho que Startrak deje de funcionar, revisa el registro para mas detalles")
 def GetWindow():
-	return Window 
+	return master 

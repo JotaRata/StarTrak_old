@@ -1,41 +1,39 @@
 # coding=utf-8
 
-from pickle import FALSE
-from sys import flags, version_info
 from tkinter import filedialog
-from STCore.Component import StarElement
-from logging import root
-from operator import contains
-from os import scandir
 from tkinter.constants import W
-import matplotlib
-from matplotlib import axes
+
 import numpy
-from matplotlib import use, figure
+from matplotlib import axes, figure, use
 from matplotlib.axes import Axes
 from numpy.lib.histograms import histogram
 
 from STCore.item import Star
-use("TkAgg")
 
-import matplotlib as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.patches import Rectangle
-from matplotlib.colors import Normalize, PowerNorm, LogNorm
-from matplotlib.artist import setp, getp
+try:
+	use("TkAgg")
+except:
+	debug.error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
 import tkinter as tk
 from tkinter import ttk
-from STCore.item.Star import *
-from STCore import SetStar, Tracker
-import STCore.DataManager
-from time import time
-import STCore.Settings
-import STCore.RuntimeAnalysis
-import gc
+
+import matplotlib as plt
+from matplotlib.artist import getp, setp
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.colors import LogNorm, Normalize, PowerNorm
+from matplotlib.patches import Rectangle
 from PIL import Image
-import STCore.utils.Icons as icons
-from STCore import DataManager, RuntimeAnalysis
-from Component import Levels, StarElement
+
+import DataManager
+import RuntimeAnalysis
+import SetStar
+import Settings
+import Tracker
+from classes.drawables import LevelsSlider, StarElement
+from icons import get_icon
+from STCore.classes.drawables import StarElement
+from STCore.item.Star import *
+from classes.items import Star
 
 #region Messages and Events
 params = {"ytick.color" : "w",
@@ -72,7 +70,7 @@ z_container : Rectangle = None
 z_box : Rectangle = None
 
 App : ttk.Frame = None
-levelFrame : Levels = None
+levelFrame : LevelsSlider = None
 Viewport : tk.Canvas = None
 Sidebar : tk.Canvas = None 
 sidebar_buttons : tk.Frame = None
@@ -87,19 +85,19 @@ isInitialized = False
 def Awake(root):
 	global ViewerFrame, Data, Stars, canvas, implot, ImageFrame, axis, Sidebar, SidebarList, SliderLabel, level_perc, levelFrame, isInitialized
 
-	STCore.DataManager.CurrentWindow = 2
+	DataManager.CurrentWindow = 2
 	
 	App.pack(fill=tk.BOTH, expand=1)
 
 	#ViewerFrame = tk.Frame(root)
 	#ttk.Label(ViewerFrame,text="Visor de Imagen").pack(fill = tk.X)
 	Data =  DataManager.FileItemList[0].data
-	level_perc = STCore.DataManager.Levels
+	level_perc = DataManager.Levels
 
 	# Setting Levels
 	if not isinstance(level_perc, tuple):
 		level_perc = (numpy.percentile(Data, 99.8), numpy.percentile(Data, 1))
-		STCore.DataManager.Levels = level_perc
+		DataManager.Levels = level_perc
 	
 	#BuildLayout(root)
 	if implot is None:
@@ -117,7 +115,7 @@ def Awake(root):
 		index += 1
 
 	if version_changed:
-		print ("Se actualizaron las estrellas de una version anterior")
+		debug.warn (__name__, "Se actualizaron las estrellas de una version anterior")
 		SetStar.closedTime = 0
 
 
@@ -192,8 +190,8 @@ def DrawCanvas():
 	global canvas, implot, ImageFrame, axis
 
 	axis.clear()
-	implot = axis.imshow(Data, vmin = level_perc[1], vmax = level_perc[0], cmap=ColorMaps[STCore.Settings._VISUAL_COLOR_.get()], norm = Modes[STCore.Settings._VISUAL_MODE_.get()])
-	if STCore.Settings._SHOW_GRID_.get() == 1:
+	implot = axis.imshow(Data, vmin = level_perc[1], vmax = level_perc[0], cmap=ColorMaps[Settings._VISUAL_COLOR_.get()], norm = Modes[Settings._VISUAL_MODE_.get()])
+	if Settings._SHOW_GRID_.get() == 1:
 		axis.grid()
 	
 	axis.relim()
@@ -229,9 +227,9 @@ def CreateSidebar(root):
 		SetStar.Awake(Data, None, OnStarChange, AddStar, location = loc, name = "Estrella " + str(len(Stars) + 1))
 	
 	def CommandBack():
-		import STCore.ImageSelector
+		import ImageSelector
 		Destroy()
-		STCore.ImageSelector.Awake(root, [])
+		ImageSelector.Awake(root, [])
 
 	def CommandExport():
 		with filedialog.asksaveasfile(mode="w", filetypes=[("Valores separados por comas", "*.csv"), ("Archivo de texto", "*.txt")]) as f:
@@ -246,11 +244,11 @@ def CreateSidebar(root):
 
 	sidebar_buttons = ttk.Frame(App)
 	
-	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, style="Highlight.TButton", image=icons.GetIcon("add"), compound="left")
+	AddButton = ttk.Button(sidebar_buttons, text = "Agregar estrella", command = CommandCreate, style="Highlight.TButton", image=get_icon("add"), compound="left")
 
-	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = icons.GetIcon("prev"), command = CommandBack, compound="left")
-	ExpButton = ttk.Button(sidebar_buttons, text= "Exportar datos", image=icons.GetIcon("export"), compound="left", command=CommandExport)
-	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = icons.GetIcon("next"), compound = "right")
+	PrevButton = ttk.Button(sidebar_buttons, text = " Volver", image = get_icon("prev"), command = CommandBack, compound="left")
+	ExpButton = ttk.Button(sidebar_buttons, text= "Exportar datos", image=get_icon("export"), compound="left", command=CommandExport)
+	NextButton = ttk.Button(sidebar_buttons, text = "Continuar", command = cmdTrack, image = get_icon("next"), compound = "right")
 
 	AddButton.grid(row = 0, column = 0, columnspan=3, sticky = "ew")
 	PrevButton.grid(row = 1, column = 0, sticky = "ew")	
@@ -260,7 +258,7 @@ def CreateSidebar(root):
 
 def CreateLevels():
 	global levelFrame
-	levelFrame = Levels(App, ChangeLevels)
+	levelFrame = LevelsSlider(App, ChangeLevels)
 
 #endregion
 
@@ -269,7 +267,7 @@ def CreateLevels():
 #region Update Funcions
 
 sidebar_dirty = False
-def AddStar(star : StarItem, onlyUI = False):
+def AddStar(star : Star, onlyUI = False):
 	global Stars, sidebar_elements
 	global SidebarList
 	
@@ -441,10 +439,10 @@ def ChangeLevels():
 		
 		implot.norm.vmax = _max
 		implot.norm.vmin = _min + 0.01
-		implot.set_cmap(ColorMaps[STCore.Settings._VISUAL_COLOR_.get()])
-		implot.set_norm(Modes[STCore.Settings._VISUAL_MODE_.get()])
+		implot.set_cmap(ColorMaps[Settings._VISUAL_COLOR_.get()])
+		implot.set_norm(Modes[Settings._VISUAL_MODE_.get()])
 
-		STCore.DataManager.Levels =  (_max, _min)
+		DataManager.Levels =  (_max, _min)
 		canvas.draw_idle()
 
 #endregion
@@ -470,12 +468,12 @@ def Destroy():
 	#gc.collect()
 
 def Apply(root):
-	items = DataManager.FileItemList
+	Items = DataManager.FileItemList
 	
 	from tkinter import messagebox
 	if len(Stars) > 0:
 		Destroy()
-		Tracker.Awake(root, Stars, items)
+		Tracker.Awake(root, Stars, Items)
 		if DataManager.RuntimeEnabled == True:
 			RuntimeAnalysis.StartRuntime(root)
 	else:
@@ -654,4 +652,4 @@ def OnStarChange(star : StarItem = None, index = -1):
 	
 	UpdateStarList()
 	#UpdateCanvasOverlay()
-	STCore.DataManager.StarItemList = Stars
+	DataManager.StarItemList = Stars

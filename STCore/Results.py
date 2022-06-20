@@ -1,20 +1,28 @@
 import tkinter as tk
 from tkinter import ttk
+
 from matplotlib import figure, use
-use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import numpy
-import STCore.DataManager
-from STCore.utils.backgroundEstimator import GetBackground, GetBackgroundMean
-from STCore.utils.Exporter import *
-import math
-from os.path import basename
-import STCore.ResultsConfigurator as Config
-from time import sleep, localtime, gmtime, strftime, time, mktime
-from multiprocessing import Pool
-import STCore.utils.Icons as icons
-from functools import partial
+from STCore import debug
+
+try:
+	use("TkAgg")
+except:
+	debug.error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
 import sys
+from os.path import basename
+from time import  mktime, strftime
+
+import numpy
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+import DataManager
+import ImageView
+import ResultsConfigurator as Config
+import Tracker
+from icons import get_icon
+from utils.backgroundEstimator import  GetBackgroundMean
+from utils.Exporter import *
+
 #region  Variables
 ResultsFrame = None
 PlotAxis = None
@@ -39,14 +47,14 @@ def Reset():
 
 def Awake(root, ItemList, TrackedStars):
 	global ResultsFrame, TimeLenght
-	STCore.DataManager.CurrentWindow = 4
+	DataManager.CurrentWindow = 4
 	TimeLenght = Config.SettingsObject.timeLenght
 	ResultsFrame = ttk.Frame(root)
 	ResultsFrame.pack(fill = tk.BOTH, expand = 1)
 	canvas = CreateCanvas(root, ResultsFrame, ItemList, TrackedStars)
 	Sidebar = ttk.Frame(ResultsFrame, width = 400)
 	Sidebar.pack(side = tk.RIGHT, fill = tk.Y)
-	cmdBack = lambda: (Destroy(), STCore.Tracker.Awake(root, STCore.ImageView.Stars, ItemList))
+	cmdBack = lambda: (Destroy(), Tracker.Awake(root, ImageView.Stars, ItemList))
 	Exportmenu = tk.Menu(root, tearoff=0)
 	Exportmenu.add_command(label="Exportar grafico", command=lambda: ExportImage(canvas[1]))
 	Exportmenu.add_command(label="Exportar datos", command=lambda: ExportData(TrackedStars, canvas[2], GetTimeLabel(ItemList)))
@@ -55,13 +63,13 @@ def Awake(root, ItemList, TrackedStars):
 	buttonFrame = ttk.Frame(Sidebar)
 	buttonFrame.pack(side=tk.TOP, fill=tk.X)
 
-	exportbutton = ttk.Button(buttonFrame, text = "Exportar",image = icons.Icons["export"], compound = "left")
+	exportbutton = ttk.Button(buttonFrame, text = "Exportar",image = get_icon("export"), compound = "left")
 	exportbutton.bind("<Button-1>", lambda event: PopupMenu(event, Exportmenu))
 	exportbutton.pack(side=tk.RIGHT, fill=tk.X)
-	if STCore.DataManager.RuntimeEnabled == False:
-		ttk.Button(buttonFrame, text = "Volver", command = cmdBack, image = icons.Icons["prev"], compound = "left").pack(side=tk.LEFT, fill=tk.X)
+	if DataManager.RuntimeEnabled == False:
+		ttk.Button(buttonFrame, text = "Volver", command = cmdBack, image = get_icon("prev"), compound = "left").pack(side=tk.LEFT, fill=tk.X)
 	else:
-		ttk.Button(buttonFrame, text = "Actualizar",image = icons.Icons["restart"], compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, STCore.Tracker.TrackedStars))).pack(side=tk.CENTER, anchor=tk.NW)
+		ttk.Button(buttonFrame, text = "Actualizar",image = get_icon("restart"), compound = "left", command = lambda: (Destroy(), Awake(root, ItemList, Tracker.TrackedStars))).pack(side=tk.CENTER, anchor=tk.NW)
 	#ttk.Button(Sidebar, text = "Configurar", image = icons.Icons["settings"], compound = "left", command = lambda: Config.Awake(root, ItemList, mini = True)).pack(side=tk.TOP)
 	ttk.Label(Sidebar, text="Leyenda").pack()
 	legend = figure.Figure(figsize = (1, len(TrackedStars) / 4.), dpi = 100, facecolor="0.25")
@@ -90,7 +98,7 @@ def AddPoint(point, stIndex):
 def UpdateGraph(ItemList):
 	global MagData, PlotAxis
 	
-	TrackedStars = STCore.Tracker.TrackedStars
+	TrackedStars = Tracker.TrackedStars
 
 	PlotData = None
 	
@@ -180,7 +188,7 @@ def CreateCanvas(root, app, TrackList, TrackedStars):
 
 	DrawGraph(MagData,TrackList, TrackedStars)
 	
-	STCore.DataManager.ResultData = MagData
+	DataManager.ResultData = MagData
 	
 	GetLimits()
 	ticks = Config.SettingsObject.tickNumber

@@ -8,7 +8,9 @@ AEFor/
 
 .vs/
 .vscode/
+__pycache__/
 
 # Ignore StarTrak generated files
 *.ini
 *.bin
+*.log

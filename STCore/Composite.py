@@ -1,16 +1,24 @@
 import tkinter as tk
 from tkinter import ttk
+
 import numpy
 import scipy.ndimage
-from matplotlib import use, figure
-use("TkAgg")
+from matplotlib import figure, use
+
+from STCore import debug
+
+try:
+	use("TkAgg")
+except:
+	debug.error(__name__, "No se pudo cargar TkAgg, asegurate que tienes un dispositivo grafico activo o comprueba tu instalacion de tkinter")
+from time import sleep, time
+
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import STCore.Settings
-from matplotlib.colors import LogNorm
-from STCore.utils.Exporter import *
 import STCore.DataManager
-from time import time, sleep
-import STCore.utils.Icons as icons
+import STCore.Settings
+from icons import get_icon
+from STCore.utils.Exporter import *
+
 #region Variables
 CompositeFrame = None
 CompositeData = None
@@ -59,9 +67,9 @@ def Awake(root, ItemList, TrackedStars):
 	#Exportmenu.add_command(label="Exportar PDF", command=lambda: ExportPDF(canvas[1], canvas[2], TrackedStars))
 	buttonFrame = ttk.Frame(Sidebar)
 	buttonFrame.grid(row = 0,column = 0, columnspan = 2, sticky = tk.EW)
-	exportbutton = ttk.Button(buttonFrame, text = " Exportar",image = icons.Icons["export"], compound = "left", command = lambda: Export(ItemList, canvas[2]))
+	exportbutton = ttk.Button(buttonFrame, text = " Exportar",image = get_icon("export"), compound = "left", command = lambda: Export(ItemList, canvas[2]))
 	exportbutton.grid(row = 0, column = 1)
-	ttk.Button(buttonFrame, text = " Volver",image = icons.Icons["prev"], compound = "left", command = cmdBack).grid(row = 0, column = 0)
+	ttk.Button(buttonFrame, text = " Volver",image = get_icon("prev"), compound = "left", command = cmdBack).grid(row = 0, column = 0)
 	for c in range(3):
 		tk.Grid.columnconfigure(Sidebar, c, weight=1)
 	levelFrame = tk.LabelFrame(Sidebar, text = "Niveles:", bg="gray18")

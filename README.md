@@ -1,5 +1,5 @@
 # StarTrak
-![Icon](STCore/help/Help_archivos/image002.png)
+![Icon](STCore/docs/Help_archivos/image002.png)
 
 Software utilizado para la deteccion y rastreo de estrellas variables
 
@@ -54,19 +54,19 @@ StarTrack es un sofware creado por alumnos de la Universidad de Valparaiso con e
 Para seleccionar archivos se debe hacer clic en "Agregar archivos" y luego seleccione las imágenes que se quieran analizar.
 Además se pueden descartar archivos que el usuario considere incompletos o no relevantes para el análisis de los datos, una vez finalizado se debe hacer clic en continuar.
 
-![](STCore/help/Help_archivos/image004.jpg)
+![](STCore/docs/Help_archivos/image004.jpg)
  
  #### Seleccion de estrellas y parámetros <a name="starsel"></a>
  
 Una vez seleccionados los archivos puede continuar a la sección de selección de estrellas, donde podrá ver los siguientes elementos:
 **Barras de Niveles**: Estas barras controla la visibilidad de la imagen tanto como el contraste para facilitar la identificación de estrellas
 
- ![](STCore/help/Help_archivos/image007.jpg)
- ![](STCore/help/Help_archivos/image009.jpg)
+ ![](STCore/docs/Help_archivos/image007.jpg)
+ ![](STCore/docs/Help_archivos/image009.jpg)
  
  **Barra lateral**:  Contiene un panel para ver y editar las estrellas, así como para agregar nuevas estrellas y moverse entre las diferentes pantallas.
  
- ![](STCore/help/Help_archivos/image012.jpg)
+ ![](STCore/docs/Help_archivos/image012.jpg)
  
 Para modificar una estrella simplemente haga clic en el nombre que aparece en la lista. Para eliminar una estrella presione la “X” al lado del nombre
 También puede modificar la posición de una estrella arrastrando el cursor sobre ella en el Visor de imágenes.
@@ -75,7 +75,7 @@ También puede modificar la posición de una estrella arrastrando el cursor sobr
 
 Para seleccionar una estrella simplemente haga clic in la imagen donde se encuentra la estrella, o presione el botón “Añadir estrella” en la barra lateral. Aparecerá una ventana como ésta con las siguientes opciones:
 
-![star selection](STCore/help/Help_archivos/image014.jpg)
+![star selection](STCore/docs/Help_archivos/image014.jpg)
 
 **Nombre de la estrella**: Da un nombre a la estrella para identificarla.          
 **Posición**: Ajusta la posición de la estrella por píxel utilizando las coordenadas de la imagen (+X derecha, +Y abajo).
@@ -91,12 +91,12 @@ El rastreo de StarTrak funciona localizando en cada imagen las estrellas selecci
 
 **Botones de búsqueda**: Una vez terminado el proceso de rastreo utilice estos botones para navegar entre las imágenes para inspeccionar y revisar las estrellas rastreadas.
 
-![search buttons](STCore/help/Help_archivos/image018.jpg)
+![search buttons](STCore/docs/Help_archivos/image018.jpg)
 
 **Visor de rastreo**: En esta ventana puede ver las estrellas que fueron rastreadas. Las estrellas que el rastreador ha perdido aparecerán en rojo, en este caso usted puede modificar los puntos rastreados arrastrando el cursor sobre las estrellas.
 
 
-![](STCore/help/Help_archivos/image020.jpg)|![](STCore/help/Help_archivos/image022.jpg)
+![](STCore/docs/Help_archivos/image020.jpg)|![](STCore/docs/Help_archivos/image022.jpg)
  
 *Si el rastreo falla para una estrella, el marcador se pondra rojo*
 
@@ -108,7 +108,7 @@ Una vez terminado presione el botón "Continuar" para analizar las magnitudes o 
 
 Para comenzar el análisis grafico primero se debe configurar el tipo de grafico que se quiere tener, en la ventana de configuración podrá ver las siguientes opciones:
 
-![](STCore/help/Help_archivos/image024.jpg)
+![](STCore/docs/Help_archivos/image024.jpg)
 
 **Ordenar datos**: Esta opción sirve para mostrar los datos según la fecha de la imagen, o según e nombre de las imágenes y tener un gráfico igualmente espaciado.
 
@@ -122,7 +122,7 @@ Para continuar pulse “Analizar”, los datos de la configuración serán guard
 La creación del gráfico es automática, dependiendo de la cantidad de datos, esto puede tardar unos minutos.
 Una vez listo se puede guardar el gráfico o exportar los datos en un archivo de texto o un documento PDF
 
-![](STCore/help/Help_archivos/image026.jpg)
+![](STCore/docs/Help_archivos/image026.jpg)
 
 #### Composición <a name="comp"></a>
 
@@ -130,11 +130,11 @@ Usted puede crear una composición de imágenes usando StarTrak, para ello simpl
 
 Una composición consiste en sobreponer una secuencia de imágenes de manera de aumentar la exposición y la magnitud límite de éstas, StarTrak utiliza los datos de rastreo para calibrar el movimiento de las imágenes para luego sobreponerlas.
 
-![](STCore/help/Help_archivos/image029.jpg) ![](STCore/help/Help_archivos/image031.jpg)
+![](STCore/docs/Help_archivos/image029.jpg) ![](STCore/docs/Help_archivos/image031.jpg)
 
 En la pantalla de composición usted verá las siguientes opciones:
 
-![](STCore/help/Help_archivos/image033.jpg)
+![](STCore/docs/Help_archivos/image033.jpg)
 
 **Niveles**: Esta opción al igual que en el Visor de Imágenes sirve para mejorar el brillo y el contraste de la imagen final.
 
@@ -147,7 +147,7 @@ En la pantalla de composición usted verá las siguientes opciones:
 Usted puede configurar la manera en la que StarTrak muestra sus archivos y cómo rastrea las estrellas
 Para abrir el menú de opciones vaya a la barra superior y haga clic en “Archivo > Opciones”
  
-![](STCore/help/Help_archivos/image035.jpg)
+![](STCore/docs/Help_archivos/image035.jpg)
 
 **Configuración General**: Controla los aspectos más básicos de StarTrak, como mostrar la lista de archivos recientes en la pantalla de inicio
 
@@ -157,15 +157,15 @@ Para abrir el menú de opciones vaya a la barra superior y haga clic en “Archi
 
 Linear|Raíz Cuadrada|Logaritmo
 -----|---------------|----------
-![](STCore/help/Help_archivos/image037.jpg)|![](STCore/help/Help_archivos/image039.jpg)|![](STCore/help/Help_archivos/image041.jpg)
+![](STCore/docs/Help_archivos/image037.jpg)|![](STCore/docs/Help_archivos/image039.jpg)|![](STCore/docs/Help_archivos/image041.jpg)
 
 **Mapa de color**: Permite cambiar la visualización de la imagen utilizando colores para enfatizar detalles
 
 Escala de grises|Temperatura
 ----------------|-----------
-![](STCore/help/Help_archivos/image043.jpg)|![](STCore/help/Help_archivos/image045.jpg)
+![](STCore/docs/Help_archivos/image043.jpg)|![](STCore/docs/Help_archivos/image045.jpg)
 Arcoiris|Negativo
-![](STCore/help/Help_archivos/image047.jpg)|![](STCore/help/Help_archivos/image049.jpg)
+![](STCore/docs/Help_archivos/image047.jpg)|![](STCore/docs/Help_archivos/image049.jpg)
 
 #### Preguntas Frecuentes <a name="faq"></a>
 
