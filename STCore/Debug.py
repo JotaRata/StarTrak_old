@@ -22,14 +22,14 @@ class bcolors:
 
 def initialize():
 	with open(DEBUG_PATH, "w") as f:
-		f.write(f"System date: ({datetime.now()})\nOS: {platform}\nStartrak version: 1.2.0\nPython version: {ver.major}.{ver.minor}.{ver.micro}\n")
+		f.write(f"System date: {datetime.now()}\nOS: {platform}\nStartrak version: 1.2.0\nPython version: {ver.major}.{ver.minor}.{ver.micro}\n")
 		if INCLUDE_IMPORTS:
 			installed = [m for m in modules.keys() if not m.startswith('_')]
 			installed.sort(key=str.lower)
 			
 			filter_indices = [j for i in range(len(installed)) for j in range(i+1, len(installed)) if installed[j].startswith(installed[i]+".")]
 			installed_filtered = [installed[i] for i in range(len(installed)) if i not in filter_indices]
-			f.write(f"Installed modules ({len(installed_filtered)}):\n{installed_filtered}\n")
+			f.write(f"Imported modules ({len(installed_filtered)}):\n{installed_filtered}\n\n")
 		f.write("="*20+ " Startrak Log " + "="*20+"\n")
 	return
 def log(provider, message):
