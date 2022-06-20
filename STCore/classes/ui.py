@@ -1,11 +1,9 @@
-from ctypes import resize
 import os
 import threading
 import tkinter as tk
 from abc import ABC, abstractmethod
 from os.path import basename
 from tkinter import Frame, Toplevel, filedialog, ttk
-from turtle import width
 
 from matplotlib.pyplot import colormaps
 
