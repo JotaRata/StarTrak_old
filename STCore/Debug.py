@@ -1,11 +1,13 @@
 from os import getcwd
 from os.path import join
 from sys import version_info as ver
+from sys import modules, platform
 from traceback import format_exc
 from tkinter import messagebox
+from datetime import datetime
 
 DEBUG_PATH = join(getcwd(), "Startrak.log")
-
+INCLUDE_IMPORTS = True
 
 class bcolors:
 	HEADER = '\033[95m'
@@ -20,7 +22,15 @@ class bcolors:
 
 def initialize():
 	with open(DEBUG_PATH, "w") as f:
-		f.write("Startrak log\nversion: 1.2.0\npython {0}.{1}.{2}\n".format(ver.major, ver.micro, ver.minor))
+		f.write(f"System date: ({datetime.now()})\nOS: {platform}\nStartrak version: 1.2.0\nPython version: {ver.major}.{ver.minor}.{ver.micro}\n")
+		if INCLUDE_IMPORTS:
+			installed = [m for m in modules.keys() if not m.startswith('_')]
+			installed.sort(key=str.lower)
+			
+			filter_indices = [j for i in range(len(installed)) for j in range(i+1, len(installed)) if installed[j].startswith(installed[i]+".")]
+			installed_filtered = [installed[i] for i in range(len(installed)) if i not in filter_indices]
+			f.write(f"Installed modules ({len(installed_filtered)}):\n{installed_filtered}\n")
+		f.write("="*20+ " Startrak Log " + "="*20+"\n")
 	return
 def log(provider, message):
 	print(bcolors.HEADER + "["+provider+"]", bcolors.OKBLUE + message + bcolors.ENDC)
