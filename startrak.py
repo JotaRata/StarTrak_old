@@ -1,5 +1,6 @@
 from os import name
 import tkinter
+from turtle import width
 import STCore as st
 from STCore import debug
 from STCore.classes import ui
@@ -23,15 +24,21 @@ if __name__ == '__main__':
 		st.lang.register_languages()
 		st.lang.set_current_language("es")
 
-		view = ui.ViewerUI(tk)
-		view.grid(row=0, column=0, sticky='new')
-		view.config_callback(toplevel=None)
-		view.build(tk)
+		panel = tkinter.PanedWindow(tk, bg=st.styles.base_primary, orient="horizontal")
+		panel.pack(fill="both", expand=True)
 
-		selector = ui.SelectorUI(tk, width = 30)
-		selector.grid(row=0, column=1, rowspan=2, sticky='news')
+		view = ui.ViewerUI(panel, width= 400)
+		# view.grid(row=0, column=0, sticky='new')
+		view.config_callback(toplevel=None)
+		view.build(panel)
+
+		selector = ui.SelectorUI(panel, width = 30)
+		# selector.grid(row=0, column=1, rowspan=2, sticky='news')
 		selector.config_callback(on_file_select= view.update_canvas)
-		selector.build(tk)
+		selector.build(panel)
+
+		panel.add(view)
+		panel.add(selector)
 		
 		st.render_thread.start()
 

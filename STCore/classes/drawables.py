@@ -47,7 +47,7 @@ class LevelsSlider(Drawable, tk.Canvas):
 		tk.Canvas.__init__(self, master,  *args, **kwargs)
 		
 		self.configure(bg= master['bg'], highlightthickness=0)
-		self.columnconfigure(1, weight=1)
+		self.columnconfigure((0, 1), weight=1)
 		self.rowconfigure(0, weight=1)
 		self.__min = tk.DoubleVar(self.master, value = 0)
 		self.__max = tk.DoubleVar(self.master, value = 1)
@@ -95,11 +95,10 @@ class LevelsSlider(Drawable, tk.Canvas):
 
 			self.coords(label_id, 0, 0)
 			self.coords(rail_id, 0, height - 1, width, height + 1)
-			self.coords(interval_id, 0, height - 2, width, height + 2)
+			self.coords(interval_id, self.__min.get()* width, height - 2, self.__max.get() * width, height + 2)
 
-			self.coords(min_handle_id, 8, height)
-			self.coords(max_handle_id, width -8, height)
-			
+			self.coords(min_handle_id, 8 + self.__min.get()*width, height)
+			self.coords(max_handle_id, self.__max.get()*width - 8, height)			
 		
 		self.on_config = lambda e: update_wdgt(None, 0)
 			
@@ -109,18 +108,8 @@ class LevelsSlider(Drawable, tk.Canvas):
 		self.tag_bind(max_handle_id, '<Button>', handle_drag)
 
 		self.bind('<Map>', on_widget_map)
+		self.bind('<Configure>', on_widget_map)
 
-
-		# for x in range(10):
-		# 	tk.Grid.columnconfigure(self, x, weight=1)
-
-		# ttk.Label(self, text = "Maximo:").grid(row = 0,column = 0)
-		# self.maxScale=ttk.Scale(self, orient=tk.HORIZONTAL,from_=0, to=1, variable = self.__max)
-		# self.maxScale.grid(row = 0, column = 1, columnspan = 10, sticky = tk.EW)
-		
-		# ttk.Label(self, text = "Minimo:").grid(row = 1,column = 0)
-		# self.minScale=ttk.Scale(self, from_=0, to= 1, orient=tk.HORIZONTAL, variable = self.__min)
-		# self.minScale.grid(row = 1, column = 1, columnspan = 10, sticky = tk.EW)
 	def get_value(self) -> tuple:
 		return self.__min.get(), self.__max.get()
 	def set_value(self, levels : tuple):

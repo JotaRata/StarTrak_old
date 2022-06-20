@@ -1,9 +1,11 @@
+from ctypes import resize
 import os
 import threading
 import tkinter as tk
 from abc import ABC, abstractmethod
 from os.path import basename
 from tkinter import Frame, Toplevel, filedialog, ttk
+from turtle import width
 
 from matplotlib.pyplot import colormaps
 
@@ -35,12 +37,17 @@ def_keywords = ["DATE-OBS", "EXPTIME", "OBJECT", "INSTRUME"]
 #-----------------------------------------
 
 # Base abstract class for instancing windows
-class STView(ABC):
+class STView(ABC, tk.Widget):
 	callbacks : dict = NotImplemented
 
 	@abstractmethod
-	def __init__(self) -> None:
-		pass
+	def __init__(self, master, *args, **kwargs) -> None:
+		def _resize(event):
+			print(self.winfo_width())
+		# self.bind('<Return>', resize)
+		self.bind('<Enter>', lambda e:self.focus())
+		self.bind('r', _resize)
+		# pass
 	
 	@abstractmethod
 	def build(self, master):
@@ -65,11 +72,12 @@ class STView(ABC):
 
 #-------------------------------------------
 # Class for managing the selector window UI
-class SelectorUI(STView, tk.Frame):
+class SelectorUI(STView):
 	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
+		super().__init__(master)
 		self.config(**styles.SFRAME)
-
+		
 		elements : list[tuple[File, FileEntry]] = []
 		
 		#session_manager.CurrentWindow = 1
@@ -140,7 +148,7 @@ class SelectorUI(STView, tk.Frame):
 		
 		self.__add = lambda e : on_list_append(e)
 		self.bind('<Map>', on_config)
-
+		
 		canvas.bind_all('<MouseWheel>', on_mouse_scroll, '+')
 	
 	def add_element(self, item : File):
@@ -234,7 +242,7 @@ class SelectorUI(STView, tk.Frame):
 			i += 1
 #-------------------------------------------
 
-class MainScreenUI (STView, tk.Frame):
+class MainScreenUI (STView):
 	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, *args, **kwargs)
 		# TODO Move to another script
@@ -305,7 +313,7 @@ class MainScreenUI (STView, tk.Frame):
 			master.wm_title(string = "StarTrak 1.2.0 - "+ os.basename(env.session_manager.current_path))
 #-------------------------------------------
 
-class SessionDialog(STView, tk.Toplevel):
+class SessionDialog(STView):
 	def __init__(self, master : tk.Tk, *args, **kwargs) :
 		center = (master.winfo_width()/2 + master.winfo_x() - 360 + 100,  master.winfo_height()/2 + master.winfo_y() - 240 + 60)
 		Toplevel.__init__(self, master, *args, **kwargs)
@@ -450,7 +458,7 @@ class SessionDialog(STView, tk.Toplevel):
 #-------------------------------------------
 
 class ViewerUI(STView, tk.Frame):
-	def __init__(self, master):
+	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, **st.styles.HFRAME)
 		self.config(bg= styles.base_dark)
 
@@ -460,7 +468,7 @@ class ViewerUI(STView, tk.Frame):
 
 		tk.Label(self, bg= self['bg'], fg='gray70', text="Archivo").grid(row=0, columnspan=22)
 		
-		fig	= Figure(figsize = (10,7), dpi = 100)
+		fig	= Figure(figsize = (3, 2), dpi = 100)
 		fig.set_facecolor("black")
 		axis : Axes = fig.add_subplot(111)
 		axis.imshow(((0,0),(0,0)), cmap='gray')
@@ -471,7 +479,7 @@ class ViewerUI(STView, tk.Frame):
 		canvas = FigureCanvasTkAgg(fig, master=self)
 
 		viewport = canvas.get_tk_widget()
-		viewport.config(bg = 'black', cursor='fleur')
+		viewport.config(bg = 'black', cursor='fleur', width= 1280, height= 720)
 
 		level_requests = Queue(1)
 
@@ -502,6 +510,7 @@ class ViewerUI(STView, tk.Frame):
 		viewport.grid(row= 1, column=0, rowspan=2, columnspan=2, sticky='news', padx=4, pady=4)
 		levels.grid(row=3, column=0, columnspan=2, sticky='news')	
 		
+		self.grid_columnconfigure((0, 1), weight=1)
 		self.__upd_canvas = on_update_canvas
 	
 	def build(self, master):

@@ -8,7 +8,7 @@ from STCore import debug
 
 # Colors
 base_primary = 	'#263238'
-base_dark = 	'#000a12'
+base_dark = 	'#232931'
 base_light = 	'#4f5b62'
 base_highlight ='#00897b'
 
