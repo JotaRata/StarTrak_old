@@ -19,7 +19,7 @@ def register_languages():
 		language = Language(file)
 		error_msg = 'The file \"{0}\" could not be loaded: '.format(file)
 		count = 0
-		with open(file, 'r') as f:
+		with open(file, 'r', encoding='utf-8') as f:
 			start_line = 64
 			end_line = 64
 			error = None
@@ -97,13 +97,13 @@ def register_languages():
 def load_language(id: str):
 	def read_file(file: str, line_offset: int):
 		_dict = {}
-		with open(file, "r") as f:
+		with open(file, "r", encoding='utf-8') as f:
 			lines = f.readlines()
 			for index, line in enumerate(lines[line_offset + 1:]):
 				keyval = line.split('=')
 				if len(keyval) == 2:
 					key = keyval[0].lower().removesuffix(' ')
-					val = keyval[1].removeprefix(' ')
+					val = keyval[1].removeprefix(' ').removesuffix('\n')
 
 					if ' ' in key:
 						debug.warn(

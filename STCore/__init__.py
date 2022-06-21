@@ -11,6 +11,8 @@ import STCore.classes.ui as ui
 import STCore.classes.threading as thread
 from   STCore.classes.threading import render_thread
 
+NAME = "stcore"
+APP_VERSION = "1.2.0"
 
 def tk_exception(*args):
 	debug.error(

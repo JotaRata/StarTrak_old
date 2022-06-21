@@ -5,15 +5,13 @@ import STCore as st
 from STCore import debug
 from STCore.classes import ui
 
-NAME = "stcore"
-APP_VERSION = "1.2.0"
 if __name__ == '__main__':
 	try:
 		tk = tkinter.Tk()
 		# tk.state('zoomed')
 		tk.minsize(1140, 550)
 		tk.config(**st.styles.FRAME)
-		tk.wm_title("StarTrak {0}".format(APP_VERSION))
+		tk.wm_title("StarTrak {0}".format(st.APP_VERSION))
 		tk.report_callback_exception = st.tk_exception
 		tk.columnconfigure((0, ), weight=1)
 		tk.rowconfigure((0, 1), weight=1)
@@ -41,7 +39,7 @@ if __name__ == '__main__':
 		panel.add(selector)
 		
 		st.render_thread.start()
-
+		
 		tk.mainloop()
 	except:
-		debug.error(NAME, st.lang.get('runtime_error'))
+		debug.error(st.NAME, st.lang.get('runtime_error'))

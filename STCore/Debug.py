@@ -5,6 +5,7 @@ from sys import modules, platform
 from traceback import format_exc
 from tkinter import messagebox
 from datetime import datetime
+import STCore as st
 
 DEBUG_PATH = join(getcwd(), "Startrak.log")
 INCLUDE_IMPORTS = True
@@ -21,8 +22,8 @@ class bcolors:
 	UNDERLINE = '\033[4m'
 
 def initialize():
-	with open(DEBUG_PATH, "w") as f:
-		f.write(f"System date: {datetime.now()}\nOS: {platform}\nStartrak version: 1.2.0\nPython version: {ver.major}.{ver.minor}.{ver.micro}\n")
+	with open(DEBUG_PATH, "w", encoding='utf-8') as f:
+		f.write(f"System date: {datetime.now()}\nOS: {platform}\nStartrak version: {st.APP_VERSION}\nPython version: {ver.major}.{ver.minor}.{ver.micro}\n")
 		if INCLUDE_IMPORTS:
 			installed = [m for m in modules.keys() if not m.startswith('_')]
 			installed.sort(key=str.lower)
@@ -45,6 +46,7 @@ def warn(provider, message):
 def error(provider, message, stop=True):
 	end = ""
 	if stop:
+		flush("\nStartrak crashed!!")
 		end = "\n\nEnd of log"
 	print(bcolors.HEADER + "["+provider+"]", bcolors.FAIL + message + bcolors.ENDC)
 	messagebox.showerror("Error", message)
@@ -56,5 +58,5 @@ def error(provider, message, stop=True):
 
 
 def flush(message):
-	with open(DEBUG_PATH, "a") as f:
+	with open(DEBUG_PATH, "a", encoding='utf-8') as f:
 		f.write(message+"\n")

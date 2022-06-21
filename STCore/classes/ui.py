@@ -10,6 +10,7 @@ from matplotlib.pyplot import colormaps
 import STCore as st
 
 from matplotlib import use
+from STCore import lang
 
 from STCore.classes.threading import ChangeLevelsRequest
 use("TkAgg")
@@ -116,15 +117,15 @@ class SelectorUI(STView):
 			header.columnconfigure((1,2,3, 4), weight=1, uniform='names')
 			header.rowconfigure((0, 1), weight=1)
 
-			tk.Label(header, text= 'Nombre'	, **styles.SLABEL).grid(row= 1, column=1, sticky='ew')
-			tk.Label(header, text= 'Fecha'	, **styles.SLABEL).grid(row= 1, column=2, sticky='ew')
-			tk.Label(header, text= 'Tamaño'	, **styles.SLABEL).grid(row= 1, column=3, sticky='ew')	
+			tk.Label(header, text= lang.get('name')	, **styles.SLABEL).grid(row= 1, column=1, sticky='ew')
+			tk.Label(header, text= lang.get('date')	, **styles.SLABEL).grid(row= 1, column=2, sticky='ew')
+			tk.Label(header, text= lang.get('size')	, **styles.SLABEL).grid(row= 1, column=3, sticky='ew')	
 
 			header.grid_propagate(0)
 		def build_footer():
 			footer.columnconfigure((0,1), weight=1)
-			add_button = HButton(footer, on_file_add, text= "Añadir archivos")
-			clear_button = Button(footer, on_list_append, text= "Limpiar lista")
+			add_button = HButton(footer, on_file_add, text= lang.get('add_files'))
+			clear_button = Button(footer, on_list_append, text= lang.get('clear_list'))
 
 			add_button.grid(row= 0, column= 0, sticky='news')
 			clear_button.grid(row= 0, column= 1, sticky='news')
@@ -454,7 +455,7 @@ class ViewerUI(STView, tk.Frame):
 	def __init__(self, master, *args, **kwargs):
 		tk.Frame.__init__(self, master, **st.styles.HFRAME)
 		self.config(bg= styles.base_primary)
-
+		self._A = None
 		data_range   : tuple = (0, 1)
 		implot = None
 		self.norm 	 : Normalize = None
@@ -465,7 +466,7 @@ class ViewerUI(STView, tk.Frame):
 		fig.set_facecolor("black")
 		axis : Axes = fig.add_subplot(111)
 		axis.imshow(((0,0),(0,0)), cmap='gray')
-		axis.text(0.5, 0.5, st.lang.get('open_image'), color='w', horizontalalignment= 'center', verticalalignment= 'center', fontsize=16)
+		axis.text(0.5, 0.5, lang.get('open_image'), color='w', horizontalalignment= 'center', verticalalignment= 'center', fontsize=16)
 
 		fig.subplots_adjust(0.0,0.05,1,1)
 
@@ -474,20 +475,21 @@ class ViewerUI(STView, tk.Frame):
 
 		viewport.config(bg = 'black', cursor='fleur', width= 1280, height= 720)
 
-		level_requests = Queue(1)
-
 		def on_update_canvas(data):
 			nonlocal data_range, implot
 			
+			TARGET_RES = 512
 			self.norm = Normalize()
-			slicing_rate = 2 * int(data.shape[0] / self.winfo_width()) + 1
-
+			stride_x = int(data.shape[0] / min(self.winfo_width(), TARGET_RES)) + 1
+			stride_y = int(data.shape[1] / min(self.winfo_height(), TARGET_RES)) + 1
+			aspect = data.shape[0] / data.shape[1]
 			if not implot:
 				axis.clear()
 				data_range = data.max() - data.min()
-				implot = axis.imshow(data, norm = self.norm, cmap='gray')
+				implot = axis.imshow(data[::stride_x,::stride_y], norm = self.norm, cmap='gray')
 			else:
-				implot.set_array(data[::slicing_rate,::slicing_rate])
+				implot.set_array(data[::stride_x,::stride_y])
+			axis.set_aspect(aspect)
 			canvas.draw_idle()
 		
 		def enqueue_level_change(levels):
@@ -502,10 +504,9 @@ class ViewerUI(STView, tk.Frame):
 		_last_configure_event = None
 		def resize_viewport(event):
 			nonlocal _configure_event
-			print("afetr clicked")
 			if _configure_event == 1:
 				canvas.resize(_last_configure_event)
-				print(_last_configure_event)
+				on_update_canvas(self._A)
 				_configure_event = 0
 		def begin_resize(event):
 			nonlocal _configure_event, _last_configure_event
@@ -534,6 +535,7 @@ class ViewerUI(STView, tk.Frame):
 	def update_canvas(self, file : File):
 		if file.simple:
 			file.load_data()
+		self._A = file.data
 		self.__upd_canvas(file.data)
 
 #-------------------------------------------
