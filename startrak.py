@@ -10,7 +10,7 @@ APP_VERSION = "1.2.0"
 if __name__ == '__main__':
 	try:
 		tk = tkinter.Tk()
-		tk.state('zoomed')
+		# tk.state('zoomed')
 		tk.minsize(1140, 550)
 		tk.config(**st.styles.FRAME)
 		tk.wm_title("StarTrak {0}".format(APP_VERSION))

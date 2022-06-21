@@ -461,7 +461,7 @@ class ViewerUI(STView, tk.Frame):
 
 		tk.Label(self, bg= self['bg'], fg='gray70', text="Archivo").grid(row=0, columnspan=22)
 		
-		fig	= Figure(figsize = (3, 2), dpi = 100)
+		fig	= Figure(dpi = 100)
 		fig.set_facecolor("black")
 		axis : Axes = fig.add_subplot(111)
 		axis.imshow(((0,0),(0,0)), cmap='gray')
@@ -470,8 +470,8 @@ class ViewerUI(STView, tk.Frame):
 		fig.subplots_adjust(0.0,0.05,1,1)
 
 		canvas = FigureCanvasTkAgg(fig, master=self)
-
 		viewport = canvas.get_tk_widget()
+
 		viewport.config(bg = 'black', cursor='fleur', width= 1280, height= 720)
 
 		level_requests = Queue(1)
@@ -497,9 +497,30 @@ class ViewerUI(STView, tk.Frame):
 				canvas.draw_idle()
 			request = ChangeLevelsRequest(levels, data_range, mpl_callback)
 			st.render_thread.enqueue(request)
-
+		
+		_configure_event = -1
+		_last_configure_event = None
+		def resize_viewport(event):
+			nonlocal _configure_event
+			print("afetr clicked")
+			if _configure_event == 1:
+				canvas.resize(_last_configure_event)
+				print(_last_configure_event)
+				_configure_event = 0
+		def begin_resize(event):
+			nonlocal _configure_event, _last_configure_event
+			if _configure_event == -1:
+				canvas.resize(event)
+				_configure_event = 0
+				return
+			_configure_event = 1
+			_last_configure_event = event
+		
 		levels = LevelsSlider(self, enqueue_level_change, height = 64)
 		#  canvas.mpl_connect()
+
+		master.bind("<ButtonRelease-1>", resize_viewport, '+')
+		viewport.bind("<Configure>", begin_resize)
 		viewport.grid(row= 1, column=0, rowspan=2, columnspan=2, sticky='news', padx=4, pady=4)
 		levels.grid(row=3, column=0, columnspan=2, sticky='news')	
 		
