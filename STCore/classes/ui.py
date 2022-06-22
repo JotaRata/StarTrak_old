@@ -477,8 +477,9 @@ class ViewerUI(STView, tk.Frame):
 
 		def on_update_canvas(data):
 			nonlocal data_range, implot
-			
 			TARGET_RES = 512
+			if data is None:
+				return
 			self.norm = Normalize()
 			stride_x = int(data.shape[0] / min(self.winfo_width(), TARGET_RES)) + 1
 			stride_y = int(data.shape[1] / min(self.winfo_height(), TARGET_RES)) + 1
