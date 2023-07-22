@@ -1,19 +1,19 @@
-# Dice a Python que esta carpeta contiene modulos
-import STCore.styles as styles
-import STCore.debug as debug
-import STCore.icons as icons
-import STCore.lang as lang
-import STCore.bin.env as env
-import STCore.bin.data_management as data
-import STCore.classes.drawables as drawables
-import STCore.classes.items as items
-import STCore.classes.ui as ui
-import STCore.classes.threading as thread
-from   STCore.classes.threading import render_thread
+from . import styles
+from . import debug
+from . import icons
+from . import lang
+from .bin import env
+from .bin import data_management as data
+from .classes import drawables
+from .classes import items
+from .classes import ui
+from .classes import threading as thread
+from .classes.threading import render_thread
 
 NAME = "stcore"
 APP_VERSION = "1.2.0"
 
+
 def tk_exception(*args):
-	debug.error(
-		"Tk", lang.get("tk_error"), stop=False)
+    debug.error(
+        "Tk", lang.get("tk_error"), stop=False)
