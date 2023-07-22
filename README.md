@@ -1,3 +1,9 @@
+
+## Atención:
+
+Este repositorio será descontinuado para dar lugar a una nueva version de StarTrak con nuevas funciones y mejoras de rendimiento
+---
+
 # StarTrak
 ![Icon](STCore/help/Help_archivos/image002.png)
 
